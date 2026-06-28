@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Generator - Generador de codis QR</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.input-game{background:#141417;border:1px solid #27272a;color:#e4e4e7;font-size:1rem;padding:0.75rem 1rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-game:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+select.input-game{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.75rem center;background-repeat:no-repeat;background-size:1.25rem;padding-right:2.5rem}
+.btn-primary{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1.25rem;border-radius:0.375rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-secondary{background:#27272a;color:#d4d4d8;border:1px solid #3f3f46;padding:0.5rem 1.25rem;border-radius:0.375rem;font-weight:500;font-size:0.875rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-secondary:hover{background:#3f3f46;border-color:#52525b}
+.qr-container{display:flex;align-items:center;justify-content:center;padding:1rem;background:#fff;border-radius:0.75rem;min-height:16rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.preset-btn{background:#141417;border:1px solid #27272a;color:#a1a1aa;font-size:0.75rem;padding:0.375rem 0.75rem;border-radius:0.375rem;cursor:pointer;transition:all .2s}
+.preset-btn:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+</style>
+</head>
+<body>
+
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-qrcode text-[#2dd4bf] text-2xl"></i>
+      QR Generator
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Genera codis QR personalitzats</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-title text-xs text-[#a1a1aa] font-semibold uppercase tracking-wider mb-3"><i class="fa-solid fa-pen mr-2"></i>Contingut</div>
+        <textarea id="qrInput" class="input-game" rows="4" placeholder="Introdueix text o URL...">https://github.com/Sgallartfanlo</textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-title text-xs text-[#a1a1aa] font-semibold uppercase tracking-wider mb-3"><i class="fa-solid fa-sliders mr-2"></i>Opcions</div>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-[#52525b] block mb-1">Mida</label>
+            <select id="qrSize" class="input-game text-sm py-2">
+              <option value="128">Petit (128x128)</option>
+              <option value="256" selected>Mitjà (256x256)</option>
+              <option value="384">Gran (384x384)</option>
+              <option value="512">Extra (512x512)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-[#52525b] block mb-1">Nivell de correcció</label>
+            <select id="qrLevel" class="input-game text-sm py-2">
+              <option value="L">Baix (L - 7%)</option>
+              <option value="M" selected>Mitjà (M - 15%)</option>
+              <option value="Q">Alt (Q - 25%)</option>
+              <option value="H">Molt alt (H - 30%)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-[#52525b] block mb-1">Color del QR</label>
+            <input type="color" id="qrColor" class="w-full h-10 rounded cursor-pointer bg-transparent border-0" value="#000000">
+          </div>
+          <div>
+            <label class="text-xs text-[#52525b] block mb-1">Color de fons</label>
+            <input type="color" id="qrBgColor" class="w-full h-10 rounded cursor-pointer bg-transparent border-0" value="#ffffff">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn-primary flex-1" onclick="generateQR()"><i class="fa-solid fa-qrcode mr-1"></i> Generar</button>
+        <button class="btn-secondary" onclick="downloadQR()" id="downloadBtn" disabled><i class="fa-solid fa-download mr-1"></i> Descarregar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title text-xs text-[#a1a1aa] font-semibold uppercase tracking-wider mb-3"><i class="fa-regular fa-image mr-2"></i>Vista prèvia</div>
+      <div class="qr-container" id="qrContainer">
+        <div id="qrPlaceholder" class="text-center text-[#52525b]">
+          <i class="fa-solid fa-qrcode text-6xl mb-3 block opacity-30"></i>
+          <p class="text-sm">Fes clic a "Generar"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-title text-xs text-[#a1a1aa] font-semibold uppercase tracking-wider mb-3"><i class="fa-regular fa-clock mr-2"></i>Genera ràpid</div>
+    <div class="flex flex-wrap gap-2">
+      <button class="preset-btn" onclick="presetQR('https://github.com/Sgallartfanlo')"><i class="fab fa-github mr-1"></i> GitHub</button>
+      <button class="preset-btn" onclick="presetQR('https://www.linkedin.com/in/sergi-gallart-fanlo-b73b4433b/')"><i class="fab fa-linkedin mr-1"></i> LinkedIn</button>
+      <button class="preset-btn" onclick="presetQR('mailto:gallartfanlos@gmail.com')"><i class="fa-solid fa-envelope mr-1"></i> Email</button>
+      <button class="preset-btn" onclick="presetQR('https://sgallartfanlo.github.io/')"><i class="fa-solid fa-globe mr-1"></i> Web</button>
+      <button class="preset-btn" onclick="presetQR('WIFI:S:LaMevaXarxa;T:WPA;P:LaMevaContrasenya;;')"><i class="fa-solid fa-wifi mr-1"></i> WiFi</button>
+    </div>
+  </div>
+
+  <footer class="text-center mt-8 pt-6 border-t border-[#27272a]">
+    <a href="/" class="footer-link text-sm"><i class="fa-solid fa-arrow-left mr-1"></i> Tornar al portfolio</a>
+    <p class="text-[#52525b] text-xs mt-2">QR Generator &mdash; Genera codis QR al moment</p>
+  </footer>
+</div>
+
+<script>
+let qrCode = null;
+
+function generateQR() {
+  const text = document.getElementById('qrInput').value.trim();
+  if (!text) return;
+
+  const container = document.getElementById('qrContainer');
+  container.innerHTML = '';
+
+  const size = parseInt(document.getElementById('qrSize').value);
+  const level = document.getElementById('qrLevel').value;
+  const color = document.getElementById('qrColor').value;
+  const bgColor = document.getElementById('qrBgColor').value;
+
+  qrCode = new QRCode(container, {
+    text,
+    width: size,
+    height: size,
+    colorDark: color,
+    colorLight: bgColor,
+    correctLevel: QRCode.CorrectLevel[level]
+  });
+
+  document.getElementById('downloadBtn').disabled = false;
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qrContainer canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = 'qrcode.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function presetQR(text) {
+  document.getElementById('qrInput').value = text;
+  generateQR();
+}
+
+document.getElementById('qrInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateQR(); }
+});
+</script>
+</body>
+</html>

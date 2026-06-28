@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Clock - Hora mundial</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.input-game{background:#141417;border:1px solid #27272a;color:#e4e4e7;font-size:1rem;padding:0.75rem 1rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-game:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.btn-primary{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1.25rem;border-radius:0.375rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{opacity:0.9}
+.btn-secondary{background:#27272a;color:#d4d4d8;border:1px solid #3f3f46;padding:0.5rem 1.25rem;border-radius:0.375rem;font-weight:500;font-size:0.875rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-secondary:hover{background:#3f3f46}
+.clock-card{background:#141417;border:1px solid #27272a;border-radius:0.75rem;padding:1rem;text-align:center;transition:all .2s;position:relative}
+.clock-card:hover{border-color:#3f3f46}
+.clock-card .time{font-family:'Fira Code',monospace;font-size:1.75rem;font-weight:700;color:#e4e4e7;line-height:1.2}
+.clock-card .time.seconds{font-size:1rem;color:#52525b;font-weight:400}
+.clock-card .city{font-weight:600;font-size:0.95rem;margin-bottom:0.25rem}
+.clock-card .tz{font-size:0.7rem;color:#52525b;text-transform:uppercase;letter-spacing:0.05em}
+.clock-card .date{font-size:0.75rem;color:#71717a;margin-top:0.25rem}
+.clock-card .remove-btn{position:absolute;top:0.5rem;right:0.5rem;width:1.5rem;height:1.5rem;border-radius:50%;border:none;background:#27272a;color:#52525b;cursor:pointer;font-size:0.7rem;display:flex;align-items:center;justify-content:center;transition:all .15s;opacity:0}
+.clock-card:hover .remove-btn{opacity:1}
+.clock-card .remove-btn:hover{background:#ef4444;color:#fff}
+.dst-badge{font-size:0.6rem;padding:0.125rem 0.375rem;border-radius:0.25rem;background:rgba(45,212,191,0.1);color:#2dd4bf;margin-left:0.25rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.tag-btn{background:#27272a;border:1px solid #3f3f46;color:#a1a1aa;font-size:0.75rem;padding:0.25rem 0.5rem;border-radius:0.25rem;cursor:pointer;transition:all .15s}
+.tag-btn:hover{background:#3f3f46;border-color:#2dd4bf;color:#2dd4bf}
+</style>
+</head>
+<body>
+
+<div class="max-w-5xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-regular fa-clock text-[#2dd4bf] text-2xl"></i>
+      World Clock
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Hora actual de ciutats d'arreu del món</p>
+  </header>
+
+  <div class="space-y-4">
+    <div class="card">
+      <div class="flex gap-3">
+        <div class="flex-1 relative">
+          <input type="text" id="cityInput" class="input-game" placeholder="Cerca una ciutat (ex: Tokyo, New York, London...)" autofocus>
+          <div id="citySuggestions" class="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[#27272a] rounded-lg z-10 hidden max-h-48 overflow-y-auto"></div>
+        </div>
+        <button class="btn-primary" onclick="addCity()"><i class="fa-solid fa-plus mr-1"></i> Afegir</button>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mt-3" id="regionTags"></div>
+    </div>
+
+    <div id="clocksGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    </div>
+
+    <div id="emptyState" class="text-center py-8 text-[#52525b]">
+      <i class="fa-regular fa-clock text-5xl mb-3 block opacity-30"></i>
+      <p class="text-base">Afegeix ciutats per veure la seva hora</p>
+    </div>
+  </div>
+
+  <footer class="text-center mt-8 pt-6 border-t border-[#27272a]">
+    <a href="/" class="footer-link text-sm"><i class="fa-solid fa-arrow-left mr-1"></i> Tornar al portfolio</a>
+    <p class="text-[#52525b] text-xs mt-2">World Clock &mdash; Hora mundial en temps real</p>
+  </footer>
+</div>
+
+<script>
+const CITIES = [
+  { name: 'Barcelona', tz: 'Europe/Madrid', region: 'Europa' },
+  { name: 'Madrid', tz: 'Europe/Madrid', region: 'Europa' },
+  { name: 'London', tz: 'Europe/London', region: 'Europa' },
+  { name: 'Paris', tz: 'Europe/Paris', region: 'Europa' },
+  { name: 'Berlin', tz: 'Europe/Berlin', region: 'Europa' },
+  { name: 'Rome', tz: 'Europe/Rome', region: 'Europa' },
+  { name: 'Amsterdam', tz: 'Europe/Amsterdam', region: 'Europa' },
+  { name: 'Brussels', tz: 'Europe/Brussels', region: 'Europa' },
+  { name: 'Vienna', tz: 'Europe/Vienna', region: 'Europa' },
+  { name: 'Zurich', tz: 'Europe/Zurich', region: 'Europa' },
+  { name: 'Stockholm', tz: 'Europe/Stockholm', region: 'Europa' },
+  { name: 'Oslo', tz: 'Europe/Oslo', region: 'Europa' },
+  { name: 'Copenhagen', tz: 'Europe/Copenhagen', region: 'Europa' },
+  { name: 'Helsinki', tz: 'Europe/Helsinki', region: 'Europa' },
+  { name: 'Warsaw', tz: 'Europe/Warsaw', region: 'Europa' },
+  { name: 'Prague', tz: 'Europe/Prague', region: 'Europa' },
+  { name: 'Budapest', tz: 'Europe/Budapest', region: 'Europa' },
+  { name: 'Athens', tz: 'Europe/Athens', region: 'Europa' },
+  { name: 'Lisbon', tz: 'Europe/Lisbon', region: 'Europa' },
+  { name: 'Dublin', tz: 'Europe/Dublin', region: 'Europa' },
+  { name: 'Moscow', tz: 'Europe/Moscow', region: 'Europa' },
+  { name: 'Istanbul', tz: 'Europe/Istanbul', region: 'Europa' },
+  { name: 'Kyiv', tz: 'Europe/Kyiv', region: 'Europa' },
+  { name: 'Belgrade', tz: 'Europe/Belgrade', region: 'Europa' },
+  { name: 'Bucharest', tz: 'Europe/Bucharest', region: 'Europa' },
+  { name: 'Sofia', tz: 'Europe/Sofia', region: 'Europa' },
+  { name: 'Zagreb', tz: 'Europe/Zagreb', region: 'Europa' },
+  { name: 'Ljubljana', tz: 'Europe/Ljubljana', region: 'Europa' },
+  { name: 'Bratislava', tz: 'Europe/Bratislava', region: 'Europa' },
+  { name: 'Tallinn', tz: 'Europe/Tallinn', region: 'Europa' },
+  { name: 'Reykjavik', tz: 'Atlantic/Reykjavik', region: 'Europa' },
+  { name: 'New York', tz: 'America/New_York', region: 'Amèrica' },
+  { name: 'Chicago', tz: 'America/Chicago', region: 'Amèrica' },
+  { name: 'Denver', tz: 'America/Denver', region: 'Amèrica' },
+  { name: 'Los Angeles', tz: 'America/Los_Angeles', region: 'Amèrica' },
+  { name: 'Toronto', tz: 'America/Toronto', region: 'Amèrica' },
+  { name: 'Vancouver', tz: 'America/Vancouver', region: 'Amèrica' },
+  { name: 'Mexico City', tz: 'America/Mexico_City', region: 'Amèrica' },
+  { name: 'Miami', tz: 'America/New_York', region: 'Amèrica' },
+  { name: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires', region: 'Amèrica' },
+  { name: 'Santiago', tz: 'America/Santiago', region: 'Amèrica' },
+  { name: 'Bogota', tz: 'America/Bogota', region: 'Amèrica' },
+  { name: 'Lima', tz: 'America/Lima', region: 'Amèrica' },
+  { name: 'Sao Paulo', tz: 'America/Sao_Paulo', region: 'Amèrica' },
+  { name: 'Rio de Janeiro', tz: 'America/Sao_Paulo', region: 'Amèrica' },
+  { name: 'Caracas', tz: 'America/Caracas', region: 'Amèrica' },
+  { name: 'Tokyo', tz: 'Asia/Tokyo', region: 'Àsia' },
+  { name: 'Shanghai', tz: 'Asia/Shanghai', region: 'Àsia' },
+  { name: 'Beijing', tz: 'Asia/Shanghai', region: 'Àsia' },
+  { name: 'Hong Kong', tz: 'Asia/Hong_Kong', region: 'Àsia' },
+  { name: 'Seoul', tz: 'Asia/Seoul', region: 'Àsia' },
+  { name: 'Singapore', tz: 'Asia/Singapore', region: 'Àsia' },
+  { name: 'Dubai', tz: 'Asia/Dubai', region: 'Àsia' },
+  { name: 'Mumbai', tz: 'Asia/Kolkata', region: 'Àsia' },
+  { name: 'Bangkok', tz: 'Asia/Bangkok', region: 'Àsia' },
+  { name: 'Jakarta', tz: 'Asia/Jakarta', region: 'Àsia' },
+  { name: 'Manila', tz: 'Asia/Manila', region: 'Àsia' },
+  { name: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur', region: 'Àsia' },
+  { name: 'Taipei', tz: 'Asia/Taipei', region: 'Àsia' },
+  { name: 'Tel Aviv', tz: 'Asia/Jerusalem', region: 'Àsia' },
+  { name: 'Riyadh', tz: 'Asia/Riyadh', region: 'Àsia' },
+  { name: 'Doha', tz: 'Asia/Qatar', region: 'Àsia' },
+  { name: 'Abu Dhabi', tz: 'Asia/Dubai', region: 'Àsia' },
+  { name: 'Sydney', tz: 'Australia/Sydney', region: 'Oceania' },
+  { name: 'Melbourne', tz: 'Australia/Melbourne', region: 'Oceania' },
+  { name: 'Brisbane', tz: 'Australia/Brisbane', region: 'Oceania' },
+  { name: 'Perth', tz: 'Australia/Perth', region: 'Oceania' },
+  { name: 'Auckland', tz: 'Pacific/Auckland', region: 'Oceania' },
+  { name: 'Wellington', tz: 'Pacific/Auckland', region: 'Oceania' },
+  { name: 'Suva', tz: 'Pacific/Fiji', region: 'Oceania' },
+  { name: 'Cairo', tz: 'Africa/Cairo', region: 'Àfrica' },
+  { name: 'Casablanca', tz: 'Africa/Casablanca', region: 'Àfrica' },
+  { name: 'Cape Town', tz: 'Africa/Johannesburg', region: 'Àfrica' },
+  { name: 'Lagos', tz: 'Africa/Lagos', region: 'Àfrica' },
+  { name: 'Nairobi', tz: 'Africa/Nairobi', region: 'Àfrica' },
+  { name: 'Tunis', tz: 'Africa/Tunis', region: 'Àfrica' },
+  { name: 'Algiers', tz: 'Africa/Algiers', region: 'Àfrica' },
+];
+
+const REGIONS = [...new Set(CITIES.map(c => c.region))];
+const DEFAULT = ['Barcelona', 'New York', 'Tokyo', 'London', 'Sydney'];
+let activeCities = [...DEFAULT];
+let interval = null;
+
+function getTime(tz) {
+  const now = new Date();
+  const opt = { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short', year: 'numeric', weekday: 'short' };
+  const parts = new Intl.DateTimeFormat('ca-ES', opt).formatToParts(now);
+  const get = (type) => (parts.find(p => p.type === type) || {}).value || '';
+  const hour = get('hour');
+  const minute = get('minute');
+  const second = get('second');
+  const date = `${get('weekday')}, ${get('day')} ${get('month')} ${get('year')}`;
+  const offset = getOffset(tz);
+  return { hour, minute, second, date, offset };
+}
+
+function getOffset(tz) {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const tzTime = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+  const diff = (tzTime - now) / 60000;
+  const hours = Math.floor(Math.abs(diff) / 60);
+  const mins = Math.abs(diff) % 60;
+  const sign = diff >= 0 ? '+' : '-';
+  return `UTC${sign}${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
+}
+
+function renderClocks() {
+  const grid = document.getElementById('clocksGrid');
+  const empty = document.getElementById('emptyState');
+
+  if (!activeCities.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    if (interval) { clearInterval(interval); interval = null; }
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  grid.innerHTML = activeCities.map(city => {
+    const data = CITIES.find(c => c.name === city);
+    if (!data) return '';
+    const t = getTime(data.tz);
+    const isDST = (() => {
+      const jan = new Date(new Date().getFullYear(), 0, 1).toLocaleString('en-US', { timeZone: data.tz });
+      const jul = new Date(new Date().getFullYear(), 6, 1).toLocaleString('en-US', { timeZone: data.tz });
+      return jan !== jul;
+    })();
+    return `<div class="clock-card">
+      <button class="remove-btn" onclick="removeCity('${city}')" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
+      <div class="city">${city}${isDST ? '<span class="dst-badge">DST</span>' : ''}</div>
+      <div class="tz">${t.offset}</div>
+      <div class="time mt-2">${t.hour}:${t.minute}<span class="time seconds">:${t.second}</span></div>
+      <div class="date">${t.date}</div>
+    </div>`;
+  }).join('');
+
+  if (!interval) {
+    interval = setInterval(renderClocks, 1000);
+  }
+}
+
+function removeCity(name) {
+  activeCities = activeCities.filter(c => c !== name);
+  saveCities();
+  renderClocks();
+}
+
+function addCity(name) {
+  const input = document.getElementById('cityInput');
+  const q = (name || input.value.trim()).toLowerCase();
+  const match = CITIES.find(c => c.name.toLowerCase() === q);
+  if (!match) return;
+  if (activeCities.includes(match.name)) return;
+  activeCities.push(match.name);
+  saveCities();
+  renderClocks();
+  input.value = '';
+  document.getElementById('citySuggestions').classList.add('hidden');
+}
+
+function saveCities() {
+  localStorage.setItem('wc_cities', JSON.stringify(activeCities));
+}
+
+function loadCities() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('wc_cities'));
+    if (saved && saved.length) activeCities = saved;
+  } catch(e) {}
+}
+
+function renderRegionTags() {
+  const container = document.getElementById('regionTags');
+  container.innerHTML = REGIONS.map(r =>
+    `<button class="tag-btn" onclick="filterByRegion('${r}')">${r}</button>`
+  ).join('');
+}
+
+function filterByRegion(region) {
+  const list = document.getElementById('citySuggestions');
+  list.innerHTML = CITIES.filter(c => c.region === region).map(c =>
+    `<button class="w-full text-left px-3 py-2 text-sm text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#2dd4bf] transition-all" onclick="pickCity('${c.name}')">${c.name} <span class="text-[#52525b] text-xs">${c.tz}</span></button>`
+  ).join('');
+  list.classList.remove('hidden');
+}
+
+function pickCity(name) {
+  addCity(name);
+  document.getElementById('citySuggestions').classList.add('hidden');
+}
+
+document.getElementById('cityInput').addEventListener('input', () => {
+  const q = document.getElementById('cityInput').value.trim().toLowerCase();
+  const list = document.getElementById('citySuggestions');
+  if (!q) { list.classList.add('hidden'); return; }
+  const matches = CITIES.filter(c => c.name.toLowerCase().includes(q)).slice(0, 8);
+  if (!matches.length) { list.classList.add('hidden'); return; }
+  list.innerHTML = matches.map(c =>
+    `<button class="w-full text-left px-3 py-2 text-sm text-[#a1a1aa] hover:bg-[#27272a] hover:text-[#2dd4bf] transition-all" onclick="pickCity('${c.name}')">${c.name} <span class="text-[#52525b] text-xs">${c.region} · ${c.tz}</span></button>`
+  ).join('');
+  list.classList.remove('hidden');
+});
+
+document.getElementById('cityInput').addEventListener('blur', () => setTimeout(() => document.getElementById('citySuggestions').classList.add('hidden'), 200));
+document.getElementById('cityInput').addEventListener('keydown', e => { if (e.key === 'Enter') addCity(); });
+
+loadCities();
+renderRegionTags();
+renderClocks();
+</script>
+</body>
+</html>

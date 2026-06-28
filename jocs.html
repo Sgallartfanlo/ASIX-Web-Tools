@@ -1,0 +1,860 @@
+﻿<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jocs - Col·lecció de jocs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:1rem}
+.game-btn{background:#18181b;border:1px solid #27272a;color:#d4d4d8;padding:0.75rem 1rem;border-radius:0.5rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:0.75rem;width:100%;text-align:left;font-family:'Inter',sans-serif;font-size:0.9rem}
+.game-btn:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf;transform:translateX(4px)}
+.game-btn.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.game-btn i{width:1.5rem;text-align:center;font-size:1.1rem}
+.game-area{min-height:400px}
+.input-game{background:#141417;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:1rem;padding:0.5rem 0.75rem;border-radius:0.375rem;transition:all .2s}
+.input-game:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.btn-primary{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1.25rem;border-radius:0.375rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-secondary{background:#27272a;color:#d4d4d8;border:1px solid #3f3f46;padding:0.5rem 1.25rem;border-radius:0.375rem;font-weight:500;font-size:0.875rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-secondary:hover{background:#3f3f46;border-color:#52525b}
+.btn-sm{padding:0.375rem 0.75rem;font-size:0.75rem}
+.hangman-draw{font-family:'Fira Code',monospace;font-size:1rem;line-height:1.2;color:#2dd4bf;white-space:pre}
+.letter-box{display:inline-flex;align-items:center;justify-content:center;width:2.25rem;height:2.75rem;border-bottom:3px solid #2dd4bf;margin:0 0.25rem;font-family:'Fira Code',monospace;font-size:1.5rem;font-weight:700;color:#e4e4e7;transition:all .2s}
+.letter-box.revealed{border-color:#fbbf24;color:#fbbf24}
+.key-btn{background:#27272a;border:1px solid #3f3f46;color:#d4d4d8;width:2.25rem;height:2.5rem;border-radius:0.375rem;cursor:pointer;font-family:'Fira Code',monospace;font-size:0.875rem;font-weight:600;transition:all .15s}
+.key-btn:hover{background:#3f3f46;border-color:#2dd4bf;color:#2dd4bf}
+.key-btn.used{opacity:0.2;cursor:not-allowed;pointer-events:none}
+.key-btn.wrong{background:rgba(239,68,68,0.15);border-color:#ef4444;color:#ef4444}
+.mine-cell{width:2rem;height:2rem;border:1px solid #3f3f46;display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all .1s;background:#18181b;user-select:none}
+.mine-cell:hover{background:#27272a}
+.mine-cell.revealed{background:#141417;cursor:default}
+.mine-cell.revealed:hover{background:#141417}
+.mine-cell.mine{background:rgba(239,68,68,0.2);border-color:#ef4444}
+.mine-cell.flagged{background:rgba(251,191,36,0.1);border-color:#fbbf24;color:#fbbf24}
+.mine-cell.revealed.n1{color:#2dd4bf}
+.mine-cell.revealed.n2{color:#22c55e}
+.mine-cell.revealed.n3{color:#ef4444}
+.mine-cell.revealed.n4{color:#a855f7}
+.mine-cell.revealed.n5{color:#f59e0b}
+.mine-cell.revealed.n6{color:#06b6d4}
+.mine-cell.revealed.n7{color:#1e293b}
+.mine-cell.revealed.n8{color:#64748b}
+.memory-card{width:4.5rem;height:4.5rem;background:linear-gradient(135deg,#2dd4bf,#06b6d4);border-radius:0.5rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.75rem;transition:all .3s}
+.memory-card:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(45,212,191,0.3)}
+.memory-card.flipped{background:#18181b;border:1px solid #27272a}
+.memory-card.matched{background:rgba(45,212,191,0.1);border:2px solid #2dd4bf;cursor:default;opacity:0.7;transform:scale(0.95)}
+.memory-card.matched:hover{box-shadow:none}
+.ttt-cell{width:5rem;height:5rem;border:1px solid #3f3f46;display:flex;align-items:center;justify-content:center;font-size:2.5rem;font-weight:700;cursor:pointer;transition:all .2s;background:#18181b}
+.ttt-cell:hover{background:#27272a}
+.ttt-cell.x{color:#2dd4bf}
+.ttt-cell.o{color:#fbbf24}
+.ttt-cell.win{background:rgba(45,212,191,0.15);border-color:#2dd4bf}
+.trivia-opt{background:#141417;border:1px solid #27272a;color:#d4d4d8;padding:1rem;border-radius:0.5rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-size:0.9rem;text-align:left;width:100%}
+.trivia-opt:hover{background:#27272a;border-color:#52525b}
+.trivia-opt.correct{background:rgba(34,197,94,0.15);border-color:#22c55e;color:#22c55e}
+.trivia-opt.wrong{background:rgba(239,68,68,0.15);border-color:#ef4444;color:#ef4444}
+.trivia-opt:disabled{cursor:default}
+.trivia-progress{height:0.375rem;background:#27272a;border-radius:999px;overflow:hidden}
+.trivia-progress-bar{height:100%;background:linear-gradient(90deg,#2dd4bf,#06b6d4);border-radius:999px;transition:width .3s}
+.snake-cell{width:1.25rem;height:1.25rem;border-radius:2px}
+.snake-cell.head{background:#2dd4bf;border-radius:4px;box-shadow:0 0 8px rgba(45,212,191,0.5)}
+.snake-cell.body{background:#06b6d4;border-radius:3px}
+.snake-cell.food{background:#fbbf24;border-radius:50%;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.t2048-cell{width:4.5rem;height:4.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;font-size:1.25rem;font-weight:700;transition:all .1s;background:#141417}
+.t2048-cell.t2{background:rgba(45,212,191,0.15);color:#2dd4bf}
+.t2048-cell.t4{background:rgba(45,212,191,0.25);color:#2dd4bf}
+.t2048-cell.t8{background:rgba(251,191,36,0.25);color:#fbbf24}
+.t2048-cell.t16{background:rgba(251,191,36,0.35);color:#fbbf24}
+.t2048-cell.t32{background:rgba(239,68,68,0.25);color:#ef4444}
+.t2048-cell.t64{background:rgba(239,68,68,0.35);color:#ef4444}
+.t2048-cell.t128{background:rgba(168,85,247,0.25);color:#a855f7}
+.t2048-cell.t256{background:rgba(168,85,247,0.35);color:#a855f7}
+.t2048-cell.t512{background:rgba(168,85,247,0.45);color:#a855f7}
+.t2048-cell.t1024{background:rgba(45,212,191,0.4);color:#2dd4bf;font-size:1rem}
+.t2048-cell.t2048{background:rgba(45,212,191,0.5);color:#fff;font-size:1rem}
+.c4-cell{width:3rem;height:3rem;border-radius:50%;border:2px solid #3f3f46;display:flex;align-items:center;justify-content:center;background:#141417;transition:all .2s}
+.c4-cell.player1{background:#2dd4bf;border-color:#2dd4bf}
+.c4-cell.player2{background:#fbbf24;border-color:#fbbf24}
+.c4-cell.win{box-shadow:0 0 12px rgba(45,212,191,0.6)}
+.c4-cell.player2.win{box-shadow:0 0 12px rgba(251,191,36,0.6)}
+.c4-col{cursor:pointer;transition:all .2s}
+.c4-col:hover{background:rgba(45,212,191,0.05)}
+</style>
+</head>
+<body>
+<div class="max-w-6xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-dice-d6 text-[#2dd4bf] text-2xl"></i>
+      Jocs
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Col·lecció de jocs clàssics</p>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="lg:col-span-1">
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-list mr-2"></i>Selecciona un joc</div>
+        <div class="space-y-2">
+          <button class="game-btn active" data-game="hangman"><i class="fa-solid fa-person"></i> Penjat</button>
+          <button class="game-btn" data-game="minesweeper"><i class="fa-solid fa-bomb"></i> Busca Mines</button>
+          <button class="game-btn" data-game="tictactoe"><i class="fa-regular fa-circle"></i> Tres en Ratlla</button>
+          <button class="game-btn" data-game="memory"><i class="fa-solid fa-cards"></i> Memory</button>
+          <button class="game-btn" data-game="trivia"><i class="fa-solid fa-question"></i> Trivial IT</button>
+          <button class="game-btn" data-game="snake"><i class="fa-solid fa-worm"></i> Snake</button>
+          <button class="game-btn" data-game="game2048"><i class="fa-solid fa-th"></i> 2048</button>
+          <button class="game-btn" data-game="connect4"><i class="fa-solid fa-circle"></i> Connecta 4</button>
+          <button class="game-btn" data-game="simon"><i class="fa-solid fa-lightbulb"></i> Simon</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-3">
+      <div class="card game-area" id="gameArea">
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-8 pt-6 border-t border-[#27272a]">
+    <a href="/" class="footer-link text-sm"><i class="fa-solid fa-arrow-left mr-1"></i> Tornar al portfolio</a>
+    <p class="text-[#52525b] text-xs mt-2">Jocs &mdash; Col·lecció de jocs clàssics</p>
+  </footer>
+</div>
+<script>
+const HANGMAN_WORDS = [
+  {word:'LINUX',hint:'Sistema operatiu de codi obert'},
+  {word:'DOCKER',hint:'Contenidors de programari'},
+  {word:'PYTHON',hint:'Llenguatge de programaci\xf3'},
+  {word:'GITHUB',hint:'Plataforma de control de versions'},
+  {word:'ROUTER',hint:'Dispositiu de xarxa'},
+  {word:'FIREWALL',hint:'Seguretat de xarxa'},
+  {word:'KERNEL',hint:'Nucli del sistema operatiu'},
+  {word:'SERVER',hint:'Ordinador que proveeix serveis'},
+  {word:'CLOUD',hint:'Inform\xe0tica al n\xfavol'},
+  {word:'HTML',hint:'Llenguatge de marcatge web'},
+  {word:'JAVA',hint:'Llenguatge de programaci\xf3 orientat a objectes'},
+  {word:'BINARY',hint:'Sistema num\xe8ric de base 2'},
+  {word:'PROXY',hint:'Servidor intermediari'},
+  {word:'CACHE',hint:'Emmagatzematge temporal de dades'},
+  {word:'SWITCH',hint:'Dispositiu de xarxa per connectar dispositius'},
+  {word:'CISCO',hint:'Marca de dispositius de xarxa'},
+  {word:'SCRIPT',hint:'Programa automatitzat'},
+  {word:'GIT',hint:'Sistema de control de versions'},
+  {word:'SSH',hint:'Protocol segur de connexi\xf3 remota'},
+  {word:'FTP',hint:'Protocol de transfer\xe8ncia de fitxers'},
+  {word:'DNS',hint:'Resoluci\xf3 de noms de domini'},
+  {word:'HTTP',hint:"Protocol de transfer\xe8ncia d'hipertext"},
+  {word:'HTTPS',hint:"Versi\xf3 segura d'HTTP"},
+  {word:'SMTP',hint:'Protocol de correu electr\xf2nic'},
+  {word:'DHCP',hint:"Assignaci\xf3 din\xe0mica d'adreces IP"},
+  {word:'PING',hint:'Comanda per provar connectivitat'},
+  {word:'BASH',hint:"Int\xe8rpret de comandes Unix"},
+  {word:'DEBIAN',hint:'Distribuci\xf3 Linux estable'},
+  {word:'UBUNTU',hint:'Distribuci\xf3 Linux popular'},
+  {word:'ALPINE',hint:'Distribuci\xf3 Linux lleugera'},
+  {word:'NGINX',hint:'Servidor web i proxy invers'},
+  {word:'APACHE',hint:'Servidor web popular'},
+  {word:'MYSQL',hint:"Sistema de gesti\xf3 de bases de dades"},
+  {word:'REDIS',hint:'Cach\xe9 en mem\xf2ria'},
+  {word:'JAVASCRIPT',hint:'Llenguatge de programaci\xf3 web'},
+  {word:'NODE',hint:"Entorn d'execuci\xf3 JavaScript"},
+  {word:'REACT',hint:'Biblioteca JavaScript per a interf\xedcies'},
+  {word:'ANGULAR',hint:'Framework de JavaScript'},
+  {word:'VUE',hint:'Framework progressiu de JavaScript'},
+  {word:'POSTGRES',hint:'Base de dades relacional avan\xe7ada'},
+  {word:'MONGO',hint:'Base de dades NoSQL'},
+  {word:'SQLITE',hint:'Base de dades lleugera'},
+  {word:'WEBPACK',hint:'Empaquetador de m\xf2duls'},
+  {word:'BABEL',hint:'Transpilador de JavaScript'},
+  {word:'TYPESCRIPT',hint:'JavaScript amb tipus'},
+  {word:'SASS',hint:'Preprocessador de CSS'},
+  {word:'BOOTSTRAP',hint:'Framework de CSS'},
+  {word:'TAILWIND',hint:'Framework CSS utilitari'},
+  {word:'AJAX',hint:'Comunicaci\xf3 as\xedncrona amb el servidor'},
+  {word:'JSON',hint:'Format de dades lleuger'},
+  {word:'XML',hint:'Llenguatge de marcatge extensible'},
+  {word:'YAML',hint:'Format de serialitzaci\xf3 de dades'},
+  {word:'MARKDOWN',hint:'Llenguatge de marcatge lleuger'},
+  {word:'CURL',hint:'Eina de transfer\xe8ncia de dades'},
+  {word:'WGET',hint:'Eina de desc\xe0rrega per terminal'},
+  {word:'GREP',hint:'Cerca de text en fitxers'},
+  {word:'SED',hint:'Editor de flux de text'},
+  {word:'AWK',hint:'Llenguatge de processament de text'},
+  {word:'CRON',hint:'Programador de tasques'},
+  {word:'ANSIBLE',hint:"Eina d'automatitzaci\xf3 de TI"},
+  {word:'TERRAFORM',hint:'Infraestructura com a codi'},
+  {word:'KUBERNETES',hint:'Orquestraci\xf3 de contenidors'},
+  {word:'PODMAN',hint:"Alternativa a Docker sense dimoni"},
+  {word:'VAGRANT',hint:'Eina de m\xe0quines virtuals'},
+  {word:'PROXMOX',hint:'Plataforma de virtualitzaci\xf3'},
+  {word:'VMWARE',hint:'Virtualitzaci\xf3 de servidors'},
+  {word:'VIRTUALBOX',hint:"Virtualitzaci\xf3 d'escriptori"},
+  {word:'IPV4',hint:"Protocol d'Internet versi\xf3 4"},
+  {word:'IPV6',hint:"Protocol d'Internet versi\xf3 6"},
+  {word:'SUBNET',hint:"Divisi\xf3 d'una xarxa IP"},
+  {word:'GATEWAY',hint:"Porta d'enlla\xe7 a una xarxa"},
+  {word:'VLAN',hint:'Xarxa virtual local'},
+  {word:'VPN',hint:'Xarxa privada virtual'},
+  {word:'NAT',hint:"Traducci\xf3 d'adreces de xarxa"},
+  {word:'RAID',hint:'Conjunt redundant de discs independents'},
+  {word:'NAS',hint:'Emmagatzematge connectat a la xarxa'},
+  {word:'SAN',hint:"Xarxa d'emmagatzematge"},
+  {word:'LVM',hint:'Gestor de volums l\xf2gics'},
+  {word:'ZFS',hint:'Sistema de fitxers avan\xe7at'},
+  {word:'EXT4',hint:'Sistema de fitxers Linux'},
+  {word:'NTFS',hint:'Sistema de fitxers Windows'},
+  {word:'FAT32',hint:'Sistema de fitxers antic'},
+  {word:'UEFI',hint:'Interf\xedcie de firmware modern'},
+  {word:'BIOS',hint:"Sistema b\xe0sic d'entrada/sortida"},
+  {word:'RAM',hint:"Mem\xf2ria d'acc\xe9s aleatori"},
+  {word:'CPU',hint:'Unitat central de processament'},
+  {word:'GPU',hint:'Unitat de processament gr\xe0fic'},
+  {word:'SSD',hint:"Disc d'estat s\xf2lid"},
+  {word:'HDD',hint:'Disc dur mec\xe0nic'},
+  {word:'USB',hint:'Bus s\xe8rie universal'},
+  {word:'HDMI',hint:"Interf\xedcie multim\xe8dia d'alta definici\xf3"},
+  {word:'POWER',hint:"Subministrament d'energia"},
+  {word:'MAC',hint:'Adre\xe7a f\xedsica de xarxa'},
+  {word:'ARP',hint:"Protocol de resoluci\xf3 d'adreces"},
+  {word:'ICMP',hint:'Protocol de missatges de control'},
+  {word:'TCP',hint:'Protocol de control de transmissi\xf3'},
+  {word:'UDP',hint:"Protocol de datagrames d'usuari"},
+  {word:'OSI',hint:'Model de xarxa de 7 capes'},
+  {word:'SATA',hint:'Interf\xedcie de connexi\xf3 de discs'},
+  {word:'PCIE',hint:'Interf\xedcie de connexi\xf3 de components'},
+  {word:'GPIO',hint:"Entrada/sortida de prop\xf2sit general"},
+  {word:'API',hint:"Interf\xedcie de programaci\xf3 d'aplicacions"},
+  {word:'REST',hint:"Estil d'arquitectura de serveis web"},
+  {word:'SOAP',hint:'Protocol de serveis web'},
+  {word:'GRAPHQL',hint:"Llenguatge de consulta d'API"},
+  {word:'JWT',hint:'Token web JSON'},
+  {word:'OAUTH',hint:"Protocol d'autenticaci\xf3"},
+  {word:'LDAP',hint:"Protocol d'acc\xe9s a directoris"},
+  {word:'RADIUS',hint:'Autenticaci\xf3 remota'},
+  {word:'SSL',hint:'Capa de connexions segures'},
+  {word:'TLS',hint:'Seguretat de la capa de transport'},
+  {word:'PKI',hint:'Infraestructura de clau p\xfablica'},
+  {word:'DES',hint:"Est\xe0ndard de xifratge de dades"},
+  {word:'AES',hint:"Est\xe0ndard de xifratge avan\xe7at"},
+  {word:'RSA',hint:'Algorisme de xifratge asim\xe8tric'},
+  {word:'SHA',hint:'Algorisme de hash segur'},
+  {word:'MD5',hint:'Algorisme de resum de missatge'},
+  {word:'BASE64',hint:'Codificaci\xf3 de dades bin\xe0ries'},
+  {word:'ASCII',hint:"Codi est\xe0ndard de car\xe0cters"},
+  {word:'UTF8',hint:'Codificaci\xf3 de car\xe0cters universal'},
+  {word:'REGEX',hint:'Expressi\xf3 regular'},
+  {word:'OOP',hint:'Programaci\xf3 orientada a objectes'},
+  {word:'MVC',hint:"Patr\xf3 d'arquitectura Model-Vista-Controlador"},
+  {word:'IDE',hint:'Entorn de desenvolupament integrat'},
+  {word:'CLI',hint:"Interf\xedcie de l\xednia de comandes"},
+  {word:'GUI',hint:'Interf\xedcie gr\xe0fica d\'usuari'},
+  {word:'TUI',hint:"Interf\xedcie d'usuari de terminal"},
+  {word:'YUM',hint:'Gestor de paquets RPM'},
+  {word:'APT',hint:'Gestor de paquets Debian'},
+  {word:'PACMAN',hint:'Gestor de paquets Arch'},
+  {word:'SNAP',hint:'Sistema de paquets universal'},
+  {word:'FLATPAK',hint:'Sistema de paquets universal'},
+  {word:'GIMP',hint:"Editor d'imatges de codi obert"},
+  {word:'VIM',hint:'Editor de text de terminal'},
+  {word:'NANO',hint:'Editor de text senzill'},
+  {word:'EMACS',hint:'Editor de text extensible'},
+  {word:'VSCODE',hint:'Editor de codi de Microsoft'},
+  {word:'INTERNET',hint:'Xarxa global de comunicacions'},
+  {word:'INTRANET',hint:"Xarxa privada d'empresa"},
+  {word:'EXTRANET',hint:'Xarxa privada virtual externa'},
+  {word:'MODEM',hint:'Modulador/demodulador'},
+  {word:'HUB',hint:'Dispositiu de xarxa b\xe0sic'},
+  {word:'BRIDGE',hint:'Dispositiu que connecta xarxes'},
+  {word:'REPEATER',hint:'Repetidor de senyal de xarxa'},
+  {word:'BLUETOOTH',hint:'Tecnologia de comunicaci\xf3 sense fil'},
+  {word:'WIFI',hint:'Tecnologia de xarxa sense fil'},
+  {word:'ETHERNET',hint:'Tecnologia de xarxa per cable'},
+  {word:'FIBER',hint:'Cable de fibra \xf2ptica'},
+  {word:'COAXIAL',hint:'Tipus de cable de xarxa'},
+  {word:'TWISTED',hint:'Cable de parell trenat'},
+  {word:'PATCH',hint:'Cable de connexi\xf3 curta'},
+  {word:'RJ45',hint:'Connector de xarxa est\xe0ndard'},
+  {word:'BGP',hint:'Protocol de gateway de frontera'},
+  {word:'OSPF',hint:"Protocol d'encaminament din\xe0mic"},
+  {word:'RIP',hint:"Protocol d'informaci\xf3 d'encaminament"},
+  {word:'EIGRP',hint:'Protocol d\'encaminament millorat'},
+  {word:'STP',hint:"Protocol d'arbre d'expansi\xf3"},
+  {word:'LACP',hint:'Agregaci\xf3 d\'enlla\xe7os'},
+  {word:'SNMP',hint:'Protocol de gesti\xf3 de xarxa'},
+  {word:'SYSLOG',hint:'Registre de missatges del sistema'},
+  {word:'NETFLOW',hint:'Protocol de monitoritzaci\xf3 de tr\xe0nsit'},
+  {word:'TELNET',hint:'Protocol de connexi\xf3 remota sense xifrar'},
+  {word:'SCP',hint:'C\xf2pia segura per SSH'},
+  {word:'SFTP',hint:'Transfer\xe8ncia de fitxers segura'},
+  {word:'NFS',hint:'Sistema de fitxers en xarxa'},
+  {word:'SMB',hint:'Protocol de compartici\xf3 de fitxers'},
+  {word:'CIFS',hint:'Protocol de compartici\xf3 de fitxers'},
+  {word:'ISCSI',hint:"Protocol d'emmagatzematge en xarxa"},
+  {word:'NVME',hint:"Protocol d'emmagatzematge r\xe0pid"},
+  {word:'QOS',hint:'Qualitat de servei'},
+  {word:'DMZ',hint:'Zona desmilitaritzada de xarxa'},
+  {word:'IDS',hint:"Sistema de detecci\xf3 d'intrusions"},
+  {word:'IPS',hint:"Sistema de prevenci\xf3 d'intrusions"},
+  {word:'WAF',hint:"Tallafocs d'aplicacions web"},
+  {word:'UTM',hint:'Gesti\xf3 unificada d\'amenaces'},
+  {word:'SOC',hint:"Centre d'operacions de seguretat"},
+  {word:'SIEM',hint:"Gesti\xf3 d'esdeveniments i informaci\xf3 de seguretat"},
+  {word:'DLP',hint:'Prevenci\xf3 de p\xe8rdua de dades'},
+  {word:'ACL',hint:"Llista de control d'acc\xe9s"},
+  {word:'RBAC',hint:"Control d'acc\xe9s basat en rols"},
+  {word:'MFA',hint:'Autenticaci\xf3 multifactor'},
+  {word:'SSO',hint:'Inici de sessi\xf3 \xfanic'},
+  {word:'DEVOPS',hint:'Combinaci\xf3 de desenvolupament i operacions'},
+  {word:'SLA',hint:'Acord de nivell de servei'},
+  {word:'KPI',hint:'Indicador clau de rendiment'},
+  {word:'RTO',hint:'Objectiu de temps de recuperaci\xf3'},
+  {word:'RPO',hint:'Objectiu de punt de recuperaci\xf3'},
+  {word:'DRP',hint:'Pla de recuperaci\xf3 de desastres'},
+  {word:'BCP',hint:'Pla de continu\xeftat de negoci'},
+  {word:'MTBF',hint:'Temps mitj\xe0 entre fallades'},
+  {word:'MTTR',hint:'Temps mitj\xe0 de reparaci\xf3'},
+  {word:'UPS',hint:"Font d'alimentaci\xf3 ininterrompuda"},
+  {word:'KVM',hint:'Commutador de teclat, v\xeddeo i ratol\xed'},
+  {word:'PXE',hint:'Arrencada per xarxa'},
+  {word:'TFTP',hint:'Protocol de transfer\xe8ncia de fitxers trivial'},
+  {word:'NTP',hint:'Protocol de temps de xarxa'},
+  {word:'MPLS',hint:"Commutaci\xf3 d'etiquetes multiprotocol"},
+  {word:'SDN',hint:'Xarxa definida per programari'},
+  {word:'VXLAN',hint:'Extensi\xf3 de LAN virtual'},
+  {word:'IPSEC',hint:"Seguretat del protocol d'Internet"},
+  {word:'OPENVPN',hint:'Soluci\xf3 VPN de codi obert'},
+  {word:'WIREGUARD',hint:'Protocol VPN modern i r\xe0pid'},
+  {word:'RDP',hint:"Protocol d'escriptori remot"},
+  {word:'VNC',hint:'Computaci\xf3 en xarxa virtual'},
+  {word:'CSS',hint:"Fulls d'estil en cascada"},
+  {word:'PHP',hint:"Llenguatge de programaci\xf3 del costat del servidor"},
+  {word:'RUST',hint:'Llenguatge de programaci\xf3 de sistemes'},
+  {word:'GOLANG',hint:'Llenguatge de programaci\xf3 de Google'},
+  {word:'CSHARP',hint:'Llenguatge de programaci\xf3 de Microsoft'},
+  {word:'PERL',hint:'Llenguatge de programaci\xf3 pr\xe0ctic'},
+  {word:'LUA',hint:'Llenguatge de programaci\xf3 lleuger'},
+  {word:'DART',hint:'Llenguatge de programaci\xf3 de Google'},
+  {word:'FLUTTER',hint:"Framework d'UI de Google"},
+  {word:'DJANGO',hint:'Framework web Python'},
+  {word:'FLASK',hint:'Microframework web Python'},
+  {word:'FASTAPI',hint:'Framework web Python modern'},
+  {word:'SPRING',hint:'Framework Java'},
+  {word:'LARAVEL',hint:'Framework PHP'},
+  {word:'RAILS',hint:'Framework Ruby'},
+  {word:'EXPRESS',hint:'Framework Node.js'},
+  {word:'NEXTJS',hint:'Framework React'},
+  {word:'NUXT',hint:'Framework Vue'},
+  {word:'SVELTE',hint:'Framework de compilaci\xf3'},
+];
+let hangmanState = {};
+function initHangman() {
+  const idx = Math.floor(Math.random() * HANGMAN_WORDS.length);
+  const data = HANGMAN_WORDS[idx];
+  hangmanState = { word: data.word, hint: data.hint, guessed: [], wrong: 0, maxWrong: 6 };
+  renderHangman();
+}
+function renderHangman() {
+  const s = hangmanState;
+  const revealed = s.word.split('').every(l => s.guessed.includes(l));
+  const lost = s.wrong >= s.maxWrong;
+  const parts = ['','  O','  O\n  |','  O\n /|','  O\n /|\\\\','  O\n /|\\\\\n /','  O\n /|\\\\\n / \\\\'];
+  let html = '<div class="flex flex-col md:flex-row gap-6 items-start"><div class="text-center"><pre class="hangman-draw text-left">' + parts[s.wrong] + '</pre></div><div class="flex-1 w-full"><div class="flex justify-center flex-wrap gap-1 mb-4">';
+  s.word.split('').forEach(l => { html += '<span class="letter-box' + (s.guessed.includes(l)?' revealed':'') + '">' + (s.guessed.includes(l)?l:'') + '</span>'; });
+  html += '</div><div class="text-center text-sm text-[#a1a1aa] mb-4"><i class="fa-solid fa-lightbulb mr-1 text-[#fbbf24]"></i> ' + s.hint + '</div><div class="text-center text-sm mb-3">Errors: ' + s.wrong + '/' + s.maxWrong + '</div>';
+  if (revealed) html += '<div class="text-center text-[#2dd4bf] font-bold text-lg mb-4"><i class="fa-solid fa-trophy mr-1"></i> Has guanyat!</div>';
+  else if (lost) html += '<div class="text-center text-[#ef4444] font-bold text-lg mb-4"><i class="fa-solid fa-skull mr-1"></i> Has perdut! La paraula era: <span class="text-[#fbbf24]">' + s.word + '</span></div>';
+  else {
+    html += '<div class="flex flex-wrap justify-center gap-1 max-w-md mx-auto mb-4">';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(l => {
+      const used = s.guessed.includes(l);
+      html += '<button class="key-btn' + (used?' used':'') + (used&&!s.word.includes(l)?' wrong':'') + '" data-letter="' + l + '"' + (used?' disabled':'') + '>' + l + '</button>';
+    });
+    html += '</div>';
+  }
+  html += '<div class="text-center"><button class="btn-primary btn-sm" onclick="initHangman()"><i class="fa-solid fa-rotate mr-1"></i> Nova paraula</button></div></div></div>';
+  document.getElementById('gameArea').innerHTML = html;
+  if (!revealed && !lost) {
+    document.querySelectorAll('.key-btn:not(.used)').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const letter = btn.dataset.letter;
+        hangmanState.guessed.push(letter);
+        if (!hangmanState.word.includes(letter)) hangmanState.wrong++;
+        renderHangman();
+      });
+    });
+  }
+}
+let mineState = {};
+function initMinesweeper() {
+  const rows=9, cols=9, mines=10;
+  const grid=Array.from({length:rows},()=>Array(cols).fill(0));
+  const pos=new Set();
+  while(pos.size<mines){const r=Math.floor(Math.random()*rows),c=Math.floor(Math.random()*cols);pos.add(r+','+c);grid[r][c]=-1;}
+  pos.forEach(p=>{const[r,c]=p.split(',').map(Number);for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&grid[nr][nc]!==-1)grid[nr][nc]++;}});
+  mineState={grid,rows,cols,mines,revealed:Array.from({length:rows},()=>Array(cols).fill(false)),flagged:Array.from({length:rows},()=>Array(cols).fill(false)),gameOver:false,won:false};
+  renderMinesweeper();
+}
+function renderMinesweeper(){
+  const{grid,rows,cols,mines,revealed,flagged,gameOver,won}=mineState;
+  let flagCount=0;flagged.forEach(r=>r.forEach(f=>f&&flagCount++));
+  let html='<div class="flex items-center justify-between mb-4"><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-bomb mr-1"></i> Mines: '+mines+'</div><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-flag mr-1"></i> '+flagCount+'/'+mines+'</div><button class="btn-primary btn-sm" onclick="initMinesweeper()"><i class="fa-solid fa-rotate mr-1"></i> Nou</button></div><div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat('+cols+',2rem)">';
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const rev=revealed[r][c]||(gameOver&&grid[r][c]===-1)||(won&&grid[r][c]!==-1);
+    const fl=flagged[r][c]&&!gameOver;
+    let content='',cls='mine-cell';
+    if(rev){cls+=' revealed';if(grid[r][c]===-1){cls+=' mine';content='<i class="fa-solid fa-bomb" style="font-size:0.7rem;color:#ef4444"></i>';}else if(grid[r][c]>0){content=grid[r][c];cls+=' n'+grid[r][c];}}
+    else if(fl){cls+=' flagged';content='<i class="fa-solid fa-flag" style="font-size:0.65rem"></i>';}
+    html+='<div class="'+cls+'" data-r="'+r+'" data-c="'+c+'">'+content+'</div>';
+  }
+  html+='</div></div>';
+  if(gameOver)html+='<div class="text-center mt-4 '+(won?'text-[#2dd4bf]':'text-[#ef4444]')+' font-bold"><i class="fa-solid '+(won?'fa-trophy':'fa-skull')+' mr-1"></i> '+(won?'Has guanyat!':'Has perdut!')+'</div>';
+  html+='<div class="text-center mt-2 text-xs text-[#52525b]">Clic esquerre: descobrir &middot; Clic dret: bandera</div>';
+  document.getElementById('gameArea').innerHTML=html;
+  if(!gameOver){
+    document.querySelectorAll('.mine-cell').forEach(cell=>{
+      cell.addEventListener('click',()=>{
+        const r=parseInt(cell.dataset.r),c=parseInt(cell.dataset.c);
+        if(mineState.revealed[r][c]||mineState.flagged[r][c]||mineState.gameOver)return;
+        if(mineState.grid[r][c]===-1){mineState.gameOver=true;renderMinesweeper();return;}
+        revealCell(r,c);checkWin();renderMinesweeper();
+      });
+      cell.addEventListener('contextmenu',e=>{e.preventDefault();const r=parseInt(cell.dataset.r),c=parseInt(cell.dataset.c);if(mineState.revealed[r][c]||mineState.gameOver)return;mineState.flagged[r][c]=!mineState.flagged[r][c];renderMinesweeper();});
+    });
+  }
+}
+function revealCell(r,c){
+  const{grid,rows,cols,revealed,flagged}=mineState;
+  if(revealed[r][c]||flagged[r][c]||grid[r][c]===-1)return;
+  revealed[r][c]=true;
+  if(grid[r][c]===0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols)revealCell(nr,nc);}
+}
+function checkWin(){
+  const{grid,rows,cols,revealed}=mineState;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(grid[r][c]!==-1&&!revealed[r][c])return;
+  mineState.won=true;mineState.gameOver=true;
+}
+let tttState={};
+function initTicTacToe(){tttState={board:Array(9).fill(null),turn:'X',gameOver:false};renderTicTacToe();}
+function renderTicTacToe(){
+  const{board,turn,gameOver}=tttState;
+  const win=checkTttWin(board);const draw=!win&&board.every(c=>c!==null);
+  let html='<div class="text-center mb-4 text-sm text-[#a1a1aa]">';
+  if(win)html+='<span class="text-[#2dd4bf] font-bold text-lg"><i class="fa-solid fa-trophy mr-1"></i> '+win.player+' ha guanyat!</span>';
+  else if(draw)html+='<span class="text-[#fbbf24] font-bold text-lg"><i class="fa-solid fa-hand mr-1"></i> Empate!</span>';
+  else html+='Torn de <span class="'+(turn==='X'?'text-[#2dd4bf]':'text-[#fbbf24]')+' font-bold">'+turn+'</span>'+(turn==='O'?' <span class="text-xs text-[#52525b]">(IA)</span>':'');
+  html+='</div><div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat(3,5rem)">';
+  for(let i=0;i<9;i++){
+    const v=board[i];let cls='ttt-cell';
+    if(v==='X')cls+=' x';else if(v==='O')cls+=' o';
+    if(win&&win.indices.includes(i))cls+=' win';
+    html+='<div class="'+cls+'" data-idx="'+i+'">'+(v||'')+'</div>';
+  }
+  html+='</div></div><div class="text-center mt-4"><button class="btn-primary btn-sm" onclick="initTicTacToe()"><i class="fa-solid fa-rotate mr-1"></i> Reiniciar</button></div>';
+  document.getElementById('gameArea').innerHTML=html;
+  if(!gameOver&&!win&&!draw){
+    document.querySelectorAll('.ttt-cell:empty').forEach(cell=>{
+      cell.addEventListener('click',()=>{
+        const idx=parseInt(cell.dataset.idx);
+        if(tttState.board[idx]!==null||tttState.turn==='O'||tttState.gameOver)return;
+        tttState.board[idx]='X';tttState.turn='O';renderTicTacToe();setTimeout(tttMove,300);
+      });
+    });
+  }
+}
+function checkTttWin(b){const l=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];for(const[a,b1,c]of l)if(b[a]&&b[a]===b[b1]&&b[a]===b[c])return{player:b[a],indices:[a,b1,c]};return null;}
+function tttMove(){
+  const{board,gameOver}=tttState;if(gameOver)return;
+  const win=checkTttWin(board),draw=!win&&board.every(c=>c!==null);
+  if(win||draw)return;
+  const empty=board.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+  if(!empty.length)return;
+  let best=-Infinity,bestMove=empty[0];
+  for(const m of empty){board[m]='O';const s=minimax(board,0,false);board[m]=null;if(s>best){best=s;bestMove=m;}}
+  board[bestMove]='O';tttState.turn='X';renderTicTacToe();
+}
+function minimax(b,d,isMax){
+  const w=checkTttWin(b);if(w)return w.player==='O'?10-d:d-10;
+  if(b.every(c=>c!==null))return 0;
+  if(isMax){let best=-Infinity;for(let i=0;i<9;i++){if(b[i]!==null)continue;b[i]='O';best=Math.max(best,minimax(b,d+1,false));b[i]=null;}return best;}
+  else{let best=Infinity;for(let i=0;i<9;i++){if(b[i]!==null)continue;b[i]='X';best=Math.min(best,minimax(b,d+1,true));b[i]=null;}return best;}
+}
+let memoryState={};
+function initMemory(){
+  const emojis=['\u{1F427}','\u{1F4BB}','\u{1F5A5}','\u{1F4E1}','\u{1F512}','\u{1F511}','\u{1F310}','\u{26A1}','\u{1F4E6}','\u{1F40D}','\u{2615}','\u{1F98A}','\u{1F433}','\u{1F527}','\u{1F4C0}','\u{1F6E1}','\u{1F9E0}','\u{2699}','\u{1F50C}','\u{1F4F6}'];
+  const pairs=emojis.slice(0,6);
+  const cards=[...pairs,...pairs].sort(()=>Math.random()-0.5).map((e,i)=>({id:i,emoji:e,flipped:false,matched:false}));
+  memoryState={cards,flipped:[],locked:false,moves:0,matched:0,totalPairs:pairs.length};
+  renderMemory();
+}
+function renderMemory(){
+  const{cards,flipped,locked,moves,matched,totalPairs}=memoryState;
+  let html='<div class="flex items-center justify-between mb-4"><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-repeat mr-1"></i> Moviments: '+moves+'</div><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-check mr-1"></i> Parelles: '+matched+'/'+totalPairs+'</div><button class="btn-primary btn-sm" onclick="initMemory()"><i class="fa-solid fa-rotate mr-1"></i> Nou</button></div><div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat(4,4.5rem);gap:0.75rem">';
+  cards.forEach((c,i)=>{
+    let cls='memory-card';
+    if(c.flipped||c.matched)cls+=' flipped';
+    if(c.matched)cls+=' matched';
+    const show=c.flipped||c.matched;
+    html+='<div class="'+cls+'" data-idx="'+i+'">'+(show?c.emoji:'')+'</div>';
+  });
+  html+='</div></div>';
+  if(matched===totalPairs)html+='<div class="text-center mt-4 text-[#2dd4bf] font-bold text-lg"><i class="fa-solid fa-trophy mr-1"></i> Has guanyat en '+moves+' moviments!</div>';
+  document.getElementById('gameArea').innerHTML=html;
+  if(matched!==totalPairs){
+    document.querySelectorAll('.memory-card:not(.matched)').forEach(cell=>{
+      cell.addEventListener('click',()=>{
+        if(locked)return;
+        const idx=parseInt(cell.dataset.idx);
+        const{cards,flipped,matched,totalPairs}=memoryState;
+        if(cards[idx].flipped||cards[idx].matched||flipped.length>=2)return;
+        cards[idx].flipped=true;flipped.push(idx);memoryState.moves++;
+        if(flipped.length===2){
+          locked=true;
+          const[a,b]=flipped;
+          if(cards[a].emoji===cards[b].emoji){cards[a].matched=true;cards[b].matched=true;memoryState.matched++;memoryState.flipped=[];locked=false;renderMemory();}
+          else{setTimeout(()=>{cards[a].flipped=false;cards[b].flipped=false;memoryState.flipped=[];locked=false;renderMemory();},800);}
+        }
+        renderMemory();
+      });
+    });
+  }
+}
+const TRIVIA = [
+  {q:'Quin \xe9s el protocol encarregat d\'assignar adreces IP din\xe0micament?',opts:['DNS','DHCP','HTTP','FTP'],ans:1},
+  {q:'Quina s\xe9rie d\'adreces IP correspon a una xarxa privada?',opts:['8.8.8.0/24','192.168.0.0/16','172.32.0.0/16','10.0.0.0/8'],ans:3},
+  {q:'Quina capa del model OSI s\'encarrega de l\'encaminament?',opts:['Capa 2','Capa 3','Capa 4','Capa 7'],ans:1},
+  {q:'Quina \xe9s la m\xe0scara de subxarxa per a /24?',opts:['255.0.0.0','255.255.0.0','255.255.255.0','255.255.255.255'],ans:2},
+  {q:'Quin port utilitza HTTP?',opts:['21','22','80','443'],ans:2},
+  {q:'Quina comanda s\'utilitza per provar connectivitat de xarxa?',opts:['ping','ls','grep','chmod'],ans:0},
+  {q:'Quin \xe9s el sistema de fitxers per defecte a Linux modern?',opts:['NTFS','FAT32','ext4','HFS+'],ans:2},
+  {q:'Quina eina s\'utilitza per visualitzar processos a Linux?',opts:['dir','ps','ipconfig','echo'],ans:1},
+  {q:'Quin dispositiu de xarxa funciona a la capa 2?',opts:['Router','Switch','Firewall','Modem'],ans:1},
+  {q:'Quina \xe9s l\'adre\xe7a de broadcast per a 192.168.1.0/24?',opts:['192.168.1.0','192.168.1.255','192.168.0.255','255.255.255.0'],ans:1},
+  {q:'Quin protocol proporciona comunicaci\xf3 fiable i orientada a connexi\xf3?',opts:['UDP','TCP','IP','ICMP'],ans:1},
+  {q:'Quina s\xf3n les sigles de "Domain Name System"?',opts:['DNS','DHCP','DNP','DMS'],ans:0},
+  {q:'Quina comanda es fa servir per canviar permisos a Linux?',opts:['chown','chmod','chgrp','chperm'],ans:1},
+  {q:'Quin \xe9s el port per defecte de SSH?',opts:['21','22','23','443'],ans:1},
+  {q:'Quina tecnologia permet executar diversos sistemes operatius en un mateix hardware?',opts:['Docker','Virtualitzaci\xf3','Cloud','Cluster'],ans:1},
+  {q:'Quin protocol s\'utilitza per a correu electr\xf2nic?',opts:['HTTP','FTP','SMTP','SNMP'],ans:2},
+  {q:'Quina IP especial s\'anomena "localhost"?',opts:['0.0.0.0','127.0.0.1','255.255.255.255','1.1.1.1'],ans:1},
+  {q:'Quina comanda mostra les connexions de xarxa a Linux?',opts:['ifconfig','netstat','iptables','route'],ans:1},
+  {q:'Quin \xe9s el prop\xf2sit d\'un tallafocs?',opts:['Accelerar xarxa','Bloquejar tr\xe0nsit no desitjat','Assignar IPs','Enrutar paquets'],ans:1},
+  {q:'Quina capa OSI correspon als protocols HTTP i FTP?',opts:['Capa 4','Capa 5','Capa 6','Capa 7'],ans:3},
+  {q:'Quina comanda crea un directori a Linux?',opts:['mkdir','rmdir','touch','cat'],ans:0},
+  {q:'Quin \xe9s el port d\'HTTPS?',opts:['80','443','8080','8443'],ans:1},
+  {q:'Quina t\xe8cnica permet dividir una xarxa IP en subxarxes m\xe9s petites?',opts:['NAT','Subnetting','VLAN','Routing'],ans:1},
+  {q:'Quina eina de Docker mostra els contenidors en execuci\xf3?',opts:['docker ps','docker ls','docker list','docker show'],ans:0},
+  {q:'Quin protocol de xarxa \xe9s sense fil?',opts:['Ethernet','Wi-Fi','Fibra','Coaxial'],ans:1},
+];
+let triviaState={};
+function initTrivia(){
+  const qs=TRIVIA.sort(()=>Math.random()-0.5).slice(0,10);
+  triviaState={questions:qs,idx:0,correct:0,answered:false};
+  renderTrivia();
+}
+function renderTrivia(){
+  const{questions,idx,correct,answered}=triviaState;
+  const total=questions.length;
+  const q=questions[idx];
+  let html='<div class="trivia-progress mb-4"><div class="trivia-progress-bar" style="width:'+((idx+1)/total*100)+'%"></div></div>';
+  html+='<div class="flex justify-between text-xs text-[#52525b] mb-3"><span>Pregunta '+(idx+1)+'/'+total+'</span><span>Correctes: '+correct+'</span></div>';
+  html+='<div class="text-lg font-medium mb-4">'+q.q+'</div><div class="space-y-2">';
+  q.opts.forEach((o,i)=>{
+    let cls='trivia-opt';
+    if(answered&&i===q.ans)cls+=' correct';
+    else if(answered&&i===triviaState.selected)cls+=' wrong';
+    html+='<button class="'+cls+'" data-opt="'+i+'"'+(answered?' disabled':'')+'>'+o+'</button>';
+  });
+  html+='</div>';
+  if(answered){
+    if(idx+1<total)html+='<div class="text-center mt-4"><button class="btn-primary btn-sm" onclick="nextTrivia()"><i class="fa-solid fa-arrow-right mr-1"></i> Seg\xfcent</button></div>';
+    else html+='<div class="text-center mt-4"><button class="btn-primary btn-sm" onclick="initTrivia()"><i class="fa-solid fa-rotate mr-1"></i> Tornar a jugar</button></div>';
+  }
+  html+='<div class="text-center mt-3"><button class="btn-secondary btn-sm" onclick="initTrivia()"><i class="fa-solid fa-rotate mr-1"></i> Reiniciar</button></div>';
+  document.getElementById('gameArea').innerHTML=html;
+  if(!answered){
+    document.querySelectorAll('.trivia-opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const sel=parseInt(btn.dataset.opt);
+        triviaState.selected=sel;
+        triviaState.answered=true;
+        if(sel===triviaState.questions[triviaState.idx].ans)triviaState.correct++;
+        renderTrivia();
+      });
+    });
+  }
+}
+function nextTrivia(){
+  triviaState.idx++;
+  triviaState.answered=false;
+  renderTrivia();
+}
+// ====== SNAKE ======
+let snakeState={};
+function initSnake(){
+  snakeState={grid:Array.from({length:15},()=>Array(15).fill(0)),snake:[{r:7,c:7}],dir:{dr:0,dc:1},nextDir:{dr:0,dc:1},food:{r:5,c:5},score:0,gameOver:false,interval:null};
+  spawnSnakeFood();
+  renderSnake();
+  if(snakeState.interval)clearInterval(snakeState.interval);
+  snakeState.interval=setInterval(()=>{snakeTick();renderSnake();},150);
+}
+function spawnSnakeFood(){
+  const{grid,snake}=snakeState;
+  let r,c;
+  do{r=Math.floor(Math.random()*15);c=Math.floor(Math.random()*15);}while(snake.some(s=>s.r===r&&s.c===c));
+  snakeState.food={r,c};
+}
+function snakeTick(){
+  const{snake,dir,food}=snakeState;
+  snakeState.dir={...snakeState.nextDir};
+  const{dr,dc}=snakeState.dir;
+  const head=snake[0];
+  const nr=head.r+dr,nc=head.c+dc;
+  if(nr<0||nr>=15||nc<0||nc>=15||snake.some(s=>s.r===nr&&s.c===nc)){snakeState.gameOver=true;if(snakeState.interval)clearInterval(snakeState.interval);renderSnake();return;}
+  snake.unshift({r:nr,c:nc});
+  if(nr===food.r&&nc===food.c){snakeState.score+=10;spawnSnakeFood();}else snake.pop();
+}
+function renderSnake(){
+  const{grid,snake,food,score,gameOver}=snakeState;
+  let html='<div class="flex items-center justify-between mb-4"><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-star mr-1"></i> Puntuaci\xf3: '+score+'</div><div class="flex gap-2">';
+  html+='<button class="btn-primary btn-sm" onclick="initSnake()"><i class="fa-solid fa-rotate mr-1"></i> Nou</button></div></div>';
+  html+='<div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat(15,1.25rem);gap:2px;background:#141417;padding:4px;border-radius:8px">';
+  for(let r=0;r<15;r++)for(let c=0;c<15;c++){
+    const isHead=snake[0].r===r&&snake[0].c===c;
+    const isBody=snake.some(s=>s.r===r&&s.c===c);
+    const isFood=food.r===r&&food.c===c;
+    let cls='snake-cell';
+    if(isHead)cls+=' head';
+    else if(isBody)cls+=' body';
+    else if(isFood)cls+=' food';
+    html+='<div class="'+cls+'"></div>';
+  }
+  html+='</div></div>';
+  if(gameOver)html+='<div class="text-center mt-4 text-[#ef4444] font-bold"><i class="fa-solid fa-skull mr-1"></i> Game Over! Puntuaci\xf3: '+score+'</div>';
+  html+='<div class="text-center mt-2 text-xs text-[#52525b]">Fletxes del teclat per moure</div>';
+  document.getElementById('gameArea').innerHTML=html;
+}
+document.addEventListener('keydown',(e)=>{
+  if(!snakeState||!snakeState.snake)return;
+  const k=e.key;
+  if(k==='ArrowUp'&&snakeState.dir.dr!==1)snakeState.nextDir={dr:-1,dc:0};
+  else if(k==='ArrowDown'&&snakeState.dir.dr!==-1)snakeState.nextDir={dr:1,dc:0};
+  else if(k==='ArrowLeft'&&snakeState.dir.dc!==1)snakeState.nextDir={dr:0,dc:-1};
+  else if(k==='ArrowRight'&&snakeState.dir.dc!==-1)snakeState.nextDir={dr:0,dc:1};
+  e.preventDefault();
+});
+
+// ====== 2048 ======
+let g2048State={};
+function init2048(){
+  const grid=Array.from({length:4},()=>Array(4).fill(0));
+  g2048State={grid,score:0,gameOver:false};
+  add2048Tile();add2048Tile();
+  render2048();
+}
+function add2048Tile(){
+  const{grid}=g2048State;
+  const empty=[];
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!grid[r][c])empty.push({r,c});
+  if(!empty.length)return;
+  const{r,c}=empty[Math.floor(Math.random()*empty.length)];
+  grid[r][c]=Math.random()<0.9?2:4;
+}
+function slide2048Row(row){
+  let arr=row.filter(v=>v);
+  for(let i=0;i<arr.length-1;i++){
+    if(arr[i]===arr[i+1]){arr[i]*=2;g2048State.score+=arr[i];arr.splice(i+1,1);}
+  }
+  while(arr.length<4)arr.push(0);
+  return arr;
+}
+function move2048(dir){
+  const{grid,gameOver}=g2048State;
+  if(gameOver)return;
+  const before=JSON.stringify(grid);
+  if(dir==='left')for(let r=0;r<4;r++)grid[r]=slide2048Row(grid[r]);
+  else if(dir==='right')for(let r=0;r<4;r++){grid[r].reverse();grid[r]=slide2048Row(grid[r]);grid[r].reverse();}
+  else if(dir==='up')for(let c=0;c<4;c++){const col=grid.map(r=>r[c]);const slid=slide2048Row(col);for(let r=0;r<4;r++)grid[r][c]=slid[r];}
+  else if(dir==='down')for(let c=0;c<4;c++){const col=grid.map(r=>r[c]).reverse();const slid=slide2048Row(col).reverse();for(let r=0;r<4;r++)grid[r][c]=slid[r];}
+  if(JSON.stringify(grid)!==before){add2048Tile();check2048();}
+  render2048();
+}
+function check2048(){
+  const{grid}=g2048State;
+  let hasZero=false;
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){if(!grid[r][c])hasZero=true;else if(grid[r][c]===2048){g2048State.won=true;return;}}
+  if(!hasZero){
+    for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+      if(c<3&&grid[r][c]===grid[r][c+1])return;
+      if(r<3&&grid[r][c]===grid[r+1][c])return;
+    }
+    g2048State.gameOver=true;
+  }
+}
+function render2048(){
+  const{grid,score,gameOver,won}=g2048State;
+  let html='<div class="flex items-center justify-between mb-4"><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-star mr-1"></i> Puntuaci\xf3: '+score+'</div><button class="btn-primary btn-sm" onclick="init2048()"><i class="fa-solid fa-rotate mr-1"></i> Nou</button></div>';
+  html+='<div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat(4,4.5rem);gap:0.5rem">';
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    const v=grid[r][c];
+    let cls='t2048-cell';
+    if(v)cls+=' t'+v;
+    html+='<div class="'+cls+'">'+(v||'')+'</div>';
+  }
+  html+='</div></div>';
+  if(won)html+='<div class="text-center mt-4 text-[#2dd4bf] font-bold text-lg"><i class="fa-solid fa-trophy mr-1"></i> Has guanyat! 2048!</div>';
+  else if(gameOver)html+='<div class="text-center mt-4 text-[#ef4444] font-bold"><i class="fa-solid fa-skull mr-1"></i> Game Over!</div>';
+  html+='<div class="text-center mt-2 text-xs text-[#52525b]">Fletxes del teclat per moure</div>';
+  document.getElementById('gameArea').innerHTML=html;
+}
+document.addEventListener('keydown',(e)=>{
+  if(!g2048State||!g2048State.grid)return;
+  const k=e.key;
+  if(k==='ArrowLeft')move2048('left');
+  else if(k==='ArrowRight')move2048('right');
+  else if(k==='ArrowUp')move2048('up');
+  else if(k==='ArrowDown')move2048('down');
+  else return;
+  e.preventDefault();
+});
+
+// ====== CONNECTA 4 ======
+let c4State={};
+function initConnect4(){
+  c4State={grid:Array.from({length:6},()=>Array(7).fill(0)),turn:1,moves:0,gameOver:false};
+  renderConnect4();
+}
+function renderConnect4(){
+  const{grid,turn,moves,gameOver,winner}=c4State;
+  let html='<div class="flex items-center justify-between mb-4"><div class="text-sm text-[#a1a1aa]">Torn: <span style="color:'+(turn===1?'#2dd4bf':'#fbbf24')+';font-weight:700">Jugador '+turn+'</span></div><button class="btn-primary btn-sm" onclick="initConnect4()"><i class="fa-solid fa-rotate mr-1"></i> Nou</button></div>';
+  html+='<div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat(7,3rem)">';
+  for(let c=0;c<7;c++)html+='<div class="c4-col" style="height:2rem;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#52525b" data-col="'+c+'">\u25BC</div>';
+  for(let r=0;r<6;r++)for(let c=0;c<7;c++){
+    const v=grid[r][c];
+    let cls='c4-cell';
+    if(v===1)cls+=' player1';
+    else if(v===2)cls+=' player2';
+    html+='<div class="'+cls+'"></div>';
+  }
+  html+='</div></div>';
+  if(gameOver)html+='<div class="text-center mt-4 '+(winner?'text-[#2dd4bf]':'text-[#52525b]')+' font-bold"><i class="fa-solid '+(winner?'fa-trophy':'fa-hand')+' mr-1"></i> '+(winner?'Jugador '+winner+' ha guanyat!':'Empat!')+'</div>';
+  document.getElementById('gameArea').innerHTML=html;
+  if(!gameOver){
+    document.querySelectorAll('.c4-col').forEach(col=>{
+      col.addEventListener('click',()=>{
+        const c=parseInt(col.dataset.col);
+        if(c4State.gameOver)return;
+        const grid=c4State.grid;
+        let r;
+        for(r=5;r>=0;r--)if(!grid[r][c])break;
+        if(r<0)return;
+        grid[r][c]=c4State.turn;
+        c4State.moves++;
+        const win=checkC4Win(grid);
+        if(win){c4State.gameOver=true;c4State.winner=c4State.turn;renderConnect4();return;}
+        if(c4State.moves===42){c4State.gameOver=true;renderConnect4();return;}
+        c4State.turn=c4State.turn===1?2:1;
+        renderConnect4();
+      });
+    });
+  }
+}
+function checkC4Win(grid){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<6;r++)for(let c=0;c<7;c++){
+    const v=grid[r][c];
+    if(!v)continue;
+    for(const[dr,dc]of dirs){
+      let count=1;
+      for(let i=1;i<4;i++){
+        const nr=r+dr*i,nc=c+dc*i;
+        if(nr<0||nr>=6||nc<0||nc>=7||grid[nr][nc]!==v)break;
+        count++;
+      }
+      if(count>=4)return true;
+    }
+  }
+  return false;
+}
+
+// ====== SIMON ======
+let simonState={};
+function initSimon(){
+  simonState={sequence:[],playerIdx:0,playing:false,accepting:false,score:0,gameOver:false};
+  simonAddStep();
+}
+function simonAddStep(){
+  simonState.sequence.push(Math.floor(Math.random()*4));
+  simonState.playerIdx=0;
+  simonState.accepting=false;
+  renderSimon();
+  simonPlaySequence();
+}
+function simonPlaySequence(){
+  const{sequence}=simonState;
+  simonState.playing=true;
+  let i=0;
+  const colors=['#2dd4bf','#fbbf24','#ef4444','#a855f7'];
+  const interval=setInterval(()=>{
+    if(i>=sequence.length){clearInterval(interval);simonState.playing=false;simonState.accepting=true;renderSimon();return;}
+    renderSimon(sequence[i]);
+    i++;
+  },500);
+}
+function renderSimon(highlight){
+  const{sequence,playerIdx,playing,accepting,score,gameOver}=simonState;
+  const colors=['#2dd4bf','#fbbf24','#ef4444','#a855f7'];
+  const labels=['Verd','Groc','Vermell','Lila'];
+  let html='<div class="flex items-center justify-between mb-4"><div class="text-sm text-[#a1a1aa]"><i class="fa-solid fa-star mr-1"></i> Puntuaci\xf3: '+score+'</div><button class="btn-primary btn-sm" onclick="initSimon()"><i class="fa-solid fa-rotate mr-1"></i> Nou</button></div>';
+  html+='<div class="flex justify-center"><div style="display:grid;grid-template-columns:repeat(2,6rem);gap:0.75rem">';
+  for(let i=0;i<4;i++){
+    const isHighlight=highlight===i;
+    html+='<button class="simon-btn" data-idx="'+i+'" style="width:6rem;height:6rem;border-radius:1rem;border:none;cursor:'+(accepting?'pointer':'default')+';background:'+(isHighlight?colors[i]:colors[i]+'66')+';transition:all .15s;opacity:'+(playing&&!isHighlight?'0.4':'1')+'"'+(accepting?'':' disabled')+'></button>';
+  }
+  html+='</div></div>';
+  if(gameOver)html+='<div class="text-center mt-4 text-[#ef4444] font-bold"><i class="fa-solid fa-skull mr-1"></i> Game Over! Puntuaci\xf3: '+score+'</div>';
+  else if(accepting)html+='<div class="text-center mt-3 text-sm text-[#a1a1aa]">Repeteix la seq\xfc\xe8ncia</div>';
+  else if(playing)html+='<div class="text-center mt-3 text-sm text-[#a1a1aa]">Observa la seq\xfc\xe8ncia...</div>';
+  document.getElementById('gameArea').innerHTML=html;
+  if(accepting){
+    document.querySelectorAll('.simon-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(!simonState.accepting||simonState.playing)return;
+        const idx=parseInt(btn.dataset.idx);
+        const expected=simonState.sequence[simonState.playerIdx];
+        if(idx!==expected){simonState.gameOver=true;simonState.accepting=false;renderSimon();return;}
+        simonState.playerIdx++;
+        if(simonState.playerIdx>=simonState.sequence.length){
+          simonState.score+=10;
+          setTimeout(()=>simonAddStep(),500);
+        }
+        renderSimon();
+      });
+    });
+  }
+}
+const games={hangman:initHangman,minesweeper:initMinesweeper,tictactoe:initTicTacToe,memory:initMemory,trivia:initTrivia,snake:initSnake,game2048:init2048,connect4:initConnect4,simon:initSimon};
+document.addEventListener('DOMContentLoaded',()=>{
+  initHangman();
+  document.querySelectorAll('.game-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.game-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const game=btn.dataset.game;
+      if(games[game])games[game]();
+    });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Port Scanner</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.btn{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1.25rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:0.5rem}
+.btn:hover{opacity:0.9}
+.btn:active{opacity:0.8}
+.btn-outline{background:#18181b;border:1px solid #27272a;color:#d4d4d8;font-family:'Inter',sans-serif;font-size:0.875rem;padding:0.5rem 1.25rem;border-radius:0.5rem;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:0.5rem}
+.btn-outline:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.preset-btn{background:#18181b;border:1px solid #27272a;color:#d4d4d8;font-family:'Fira Code',monospace;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:0.375rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.preset-btn:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.progress-bar{height:6px;background:#27272a;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#2dd4bf,#06b6d4);border-radius:3px;transition:width .15s;width:0%}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid #27272a;color:#a1a1aa;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em}
+td{padding:0.5rem 0.75rem;border-bottom:1px solid #27272a;font-family:'Fira Code',monospace;font-size:0.8rem}
+.status-open{color:#22c55e}
+.status-closed{color:#ef4444}
+.status-filtered{color:#f59e0b}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-network-wired text-[#2dd4bf] text-2xl"></i>
+      Port Scanner
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Simulated port scan with common service database</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-gear mr-2"></i>Target & Range</div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label>Host / IP</label>
+        <input id="hostInput" class="input-field" type="text" placeholder="e.g. 192.168.1.1" value="10.0.0.1">
+      </div>
+      <div>
+        <label>Start Port</label>
+        <input id="startPort" class="input-field" type="number" min="1" max="65535" value="1">
+      </div>
+      <div>
+        <label>End Port</label>
+        <input id="endPort" class="input-field" type="number" min="1" max="65535" value="1024">
+      </div>
+    </div>
+    <div class="mb-4">
+      <label class="mb-2">Quick Presets</label>
+      <div class="flex flex-wrap gap-1.5">
+        <button class="preset-btn" data-start="1" data-end="1024">Well-known (1-1024)</button>
+        <button class="preset-btn" data-start="80" data-end="80">HTTP</button>
+        <button class="preset-btn" data-start="443" data-end="443">HTTPS</button>
+        <button class="preset-btn" data-start="22" data-end="22">SSH</button>
+        <button class="preset-btn" data-start="21" data-end="21">FTP</button>
+        <button class="preset-btn" data-start="25" data-end="25">SMTP</button>
+        <button class="preset-btn" data-start="3306" data-end="3306">MySQL</button>
+        <button class="preset-btn" data-start="5432" data-end="5432">PostgreSQL</button>
+        <button class="preset-btn" data-start="27017" data-end="27017">MongoDB</button>
+        <button class="preset-btn" data-start="6379" data-end="6379">Redis</button>
+        <button class="preset-btn" data-start="3389" data-end="3389">RDP</button>
+        <button class="preset-btn" data-start="1" data-end="65535">Full Range</button>
+      </div>
+    </div>
+    <div class="flex gap-3 items-center">
+      <button class="btn" id="scanBtn"><i class="fa-solid fa-play"></i> Start Scan</button>
+      <button class="btn-outline" id="stopBtn" disabled><i class="fa-solid fa-stop"></i> Stop</button>
+    </div>
+  </div>
+
+  <div id="progressSection" class="card mb-6 hidden">
+    <div class="card-title"><i class="fa-regular fa-hourglass-half mr-2"></i>Scan Progress</div>
+    <div class="progress-bar mb-2"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="flex justify-between text-xs text-[#a1a1aa]">
+      <span id="progressText">0 / 0 ports scanned</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <div id="resultsSection" class="card hidden">
+    <div class="card-title flex items-center justify-between">
+      <span><i class="fa-regular fa-rectangle-list mr-2"></i>Results</span>
+      <span class="text-xs text-[#a1a1aa]" id="resultSummary"></span>
+    </div>
+    <div id="resultsTable" style="max-height:400px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#27272a transparent"></div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> Port Scanner</a>
+  </footer>
+</div>
+
+<script>
+var PORT_SERVICES = {
+  20: "FTP Data", 21: "FTP Control", 22: "SSH", 23: "Telnet", 25: "SMTP",
+  53: "DNS", 67: "DHCP Server", 68: "DHCP Client", 69: "TFTP", 80: "HTTP",
+  110: "POP3", 123: "NTP", 135: "RPC", 137: "NetBIOS Name", 138: "NetBIOS Datagram",
+  139: "NetBIOS Session", 143: "IMAP", 161: "SNMP", 162: "SNMP Trap", 179: "BGP",
+  194: "IRC", 389: "LDAP", 443: "HTTPS", 445: "SMB", 465: "SMTPS",
+  500: "IKE", 514: "Syslog", 520: "RIP", 521: "RIPng", 554: "RTSP",
+  587: "SMTP Submission", 636: "LDAPS", 691: "MS Exchange", 873: "rsync",
+  989: "FTPS Data", 990: "FTPS Control", 992: "Telnet over TLS", 993: "IMAPS",
+  995: "POP3S", 1025: "NFS-or-IIS", 1080: "SOCKS", 1194: "OpenVPN",
+  1352: "Lotus Notes", 1433: "MSSQL", 1434: "MSSQL Browser", 1521: "Oracle DB",
+  1701: "L2TP", 1723: "PPTP", 1812: "RADIUS Auth", 1813: "RADIUS Acct",
+  1883: "MQTT", 1900: "UPnP", 2049: "NFS", 2082: "cPanel", 2083: "cPanel SSL",
+  2086: "WHM", 2087: "WHM SSL", 2095: "Webmail", 2096: "Webmail SSL",
+  2181: "ZooKeeper", 2222: "DirectAdmin", 2375: "Docker REST", 2376: "Docker TLS",
+  2379: "etcd Client", 2380: "etcd Peer", 2483: "Oracle DB", 2484: "Oracle DB SSL",
+  3000: "Node.js Dev", 3128: "Squid Proxy", 3306: "MySQL", 3389: "RDP",
+  3690: "SVN", 4000: "Node.js", 4040: "Jenkins", 4190: "ManageSieve",
+  4222: "NATS", 4333: "ahcpd", 4443: "HTTPS Alt", 4500: "IPsec NAT-T",
+  4567: "Sinatra", 4569: "IAX2", 4643: "OwnCloud", 4662: "eMule",
+  4848: "GlassFish", 4899: "Radmin", 4900: "H2 Database", 4949: "Munin",
+  5000: "Flask/Dev", 5001: "Synology DSM", 5004: "RTP", 5005: "RTCP",
+  5038: "Asterisk AMI", 5040: "DameWare", 5050: "Yahoo Messenger",
+  5060: "SIP", 5061: "SIP TLS", 5070: "SIP Alt", 5104: "IBM Tivoli",
+  5140: "Splunk", 5222: "XMPP Client", 5223: "XMPP SSL", 5269: "XMPP Server",
+  5280: "XMPP BOSH", 5349: "STUN TLS", 5353: "mDNS", 5432: "PostgreSQL",
+  5443: "HTTPS Alt", 5500: "VNC", 5555: "ADB", 5601: "Kibana",
+  5631: "pcAnywhere", 5632: "pcAnywhere Data", 5666: "Nagios",
+  5672: "RabbitMQ", 5678: "Mikrotik", 5683: "CoAP", 5800: "VNC HTTP",
+  5900: "VNC", 5901: "VNC 1", 5938: "TeamViewer", 5984: "CouchDB",
+  5985: "WinRM HTTP", 5986: "WinRM HTTPS", 6000: "X11", 6001: "X11 1",
+  6080: "noVNC", 6123: "Beanstalkd", 6346: "Gnutella", 6347: "Gnutella UDP",
+  6379: "Redis", 6443: "Kubernetes API", 6480: "iSCSI", 6566: "Sane",
+  6580: "Parsec", 6667: "IRC", 6668: "IRC Alt", 6679: "IRC SSL",
+  6697: "IRC SSL Alt", 6829: "HIP", 6881: "BitTorrent", 6969: "BitTorrent Tracker",
+  7001: "WebLogic", 7002: "WebLogic SSL", 7077: "Spark Master", 7199: "Cassandra JMX",
+  7210: "MaxDB", 7474: "Neo4j", 7547: "CWMP", 7634: "hddtemp",
+  7777: "iChat", 8000: "HTTP Alt", 8008: "HTTP Alt", 8009: "AJP",
+  8010: "XMPP File", 8020: "Splunk Web", 8040: "AJA", 8069: "Odoo",
+  8070: "Odoo Alt", 8080: "HTTP Proxy", 8081: "HTTP Proxy Alt", 8082: "HTTP Alt",
+  8083: "Veeam", 8086: "InfluxDB", 8087: "JIRA", 8088: "HTTP Alt",
+  8089: "Splunk Mgmt", 8090: "HTTP Alt", 8091: "Couchbase", 8092: "Couchbase Alt",
+  8100: "Puppet", 8111: "Jenkins Alt", 8112: "PAC Manager",
+  8123: "Polipo", 8140: "Puppet SSL", 8161: "ActiveMQ", 8181: "GlassFish Alt",
+  8200: "VMware VCenter", 8222: "VMware", 8243: "HTTPS Alt", 8280: "HTTP Alt",
+  8300: "Consul", 8332: "Bitcoin", 8333: "Bitcoin Testnet",
+  8400: "Commvault", 8443: "HTTPS Alt", 8500: "Consul UI", 8530: "DLS",
+  8545: "Ethereum", 8580: "HTTP Alt", 8649: "Ganglia", 8686: "SAP",
+  8750: "SAP Alt", 8765: "Ceph", 8800: "HTTP Alt", 8834: "Nessus",
+  8843: "HTTPS Alt", 8880: "HTTP Alt", 8883: "MQTT SSL", 8888: "HTTP Alt",
+  8889: "HTTP Alt", 8890: "SAP", 8910: "SAP", 8983: "Solr",
+  8990: "SAP", 8991: "SAP SSL", 9000: "HTTP Alt", 9001: "Tor Control",
+  9002: "MongoDB Alt", 9003: "MongoDB Alt", 9004: "MongoDB Alt",
+  9009: "Pichars", 9010: "SDR MSI", 9042: "Cassandra CQL", 9043: "WebSphere SSL",
+  9050: "Tor SOCKS", 9051: "Tor Control", 9060: "WebSphere", 9080: "WebSphere HTTP",
+  9092: "Kafka", 9093: "Kafka SSL", 9094: "Kafka Alt", 9095: "Kafka JMX",
+  9096: "Kafka Alt", 9097: "Kafka Alt", 9098: "Kafka Alt", 9099: "Kafka Alt",
+  9100: "HP JetDirect", 9119: "MXit", 9200: "Elasticsearch", 9210: "Elasticsearch Alt",
+  9292: "Sensu", 9300: "Elasticsearch TCP", 9312: "Sphinx", 9350: "Fujitsu",
+  9418: "Git", 9443: "HTTPS Alt", 9500: "ISM Server", 9535: "mDNS Alt",
+  9600: "OMAPI", 9632: "SAP", 9669: "SAP", 9700: "SAP",
+  9876: "SAP", 9898: "SAP", 9901: "SAP", 9997: "Splunk Forwarder",
+  9999: "HTTP Alt", 10000: "Webmin", 10001: "SCP Config", 10009: "CrossFire",
+  10050: "Zabbix Agent", 10051: "Zabbix Server", 10113: "NetIQ", 10114: "NetIQ",
+  10115: "NetIQ", 10116: "NetIQ", 10117: "NetIQ", 10161: "SNMP AgentX",
+  10162: "SNMP AgentX", 10250: "Kubelet", 10255: "Kubelet ReadOnly",
+  10256: "Kubernetes Health", 10389: "Apache Directory", 10443: "HTTPS Alt",
+  10554: "VNC Metadata", 10666: "CISCO", 10800: "SIP Alt", 10990: "Openscap",
+  11000: "SIP Alt", 11111: "RipOS", 11211: "Memcached", 11214: "Memcached SSL",
+  11215: "Memcached SSL", 11371: "OpenPGP HKP", 11433: "MSSQL Alt",
+  11434: "MSSQL Alt", 12000: "WebSphere", 12001: "WebSphere Alt",
+  12002: "SAP", 12003: "SAP", 12004: "SAP", 12005: "SAP",
+  12006: "SAP", 12007: "SAP", 12008: "SAP", 12009: "SAP",
+  12345: "NetBus", 13000: "HTTP Alt", 13337: "Viber", 13579: "Viber",
+  13720: "Symantec", 13721: "Symantec", 13722: "Symantec", 13724: "Symantec",
+  13782: "Veeam", 13783: "Veeam", 13832: "SAP", 13833: "SAP",
+  14000: "SAP", 14141: "Bochs", 14250: "SAP", 14441: "SAP",
+  14972: "SAP", 15000: "SAP", 15118: "SAP", 15119: "SAP",
+  15210: "SAP", 15345: "SAP", 15672: "RabbitMQ Mgmt", 16010: "HBase Master",
+  16020: "HBase Region", 16030: "HBase Server", 16111: "SAP",
+  16309: "SAP", 16310: "SAP", 16311: "SAP", 16384: "CISCO",
+  16509: "libvirt", 16514: "libvirt TLS", 16680: "SAP", 16681: "SAP",
+  17001: "SAP", 17219: "SAP", 17220: "SAP", 17221: "SAP",
+  17222: "SAP", 17400: "SAP", 17777: "Steam", 18080: "HTTP Alt",
+  18081: "HTTP Alt", 18082: "HTTP Alt", 18083: "HTTP Alt", 18084: "HTTP Alt",
+  18085: "HTTP Alt", 18086: "HTTP Alt", 18087: "HTTP Alt", 18088: "HTTP Alt",
+  18089: "HTTP Alt", 18090: "HTTP Alt", 18091: "HTTP Alt", 18092: "HTTP Alt",
+  18093: "HTTP Alt", 18094: "HTTP Alt", 18095: "HTTP Alt", 18096: "HTTP Alt",
+  18101: "SAP", 18102: "SAP", 18103: "SAP", 18104: "SAP",
+  18105: "SAP", 18106: "SAP", 18107: "SAP", 18108: "SAP",
+  18109: "SAP", 18110: "SAP", 18111: "SAP", 18112: "SAP",
+  18113: "SAP", 18114: "SAP", 18115: "SAP", 18116: "SAP",
+  18200: "SAP", 18300: "SAP", 18333: "Bitcoin Testnet", 18444: "Bitcoin Regtest",
+  18601: "SAP", 18602: "SAP", 18603: "SAP", 18604: "SAP",
+  18605: "SAP", 18606: "SAP", 18607: "SAP", 18608: "SAP",
+  18609: "SAP", 18610: "SAP", 18611: "SAP", 18612: "SAP",
+  19000: "JasperReports", 19150: "Gkrellm", 19283: "Kibana Alt",
+  19315: "KeyTalk", 19350: "KeyTalk", 19531: "SAP", 19532: "SAP",
+  19780: "SAP", 19801: "SAP", 19842: "SAP", 20000: "HTTP Alt",
+  20001: "SAP", 20002: "SAP", 20003: "SAP", 20004: "SAP",
+  20005: "SAP", 20006: "SAP", 20007: "SAP", 20008: "SAP",
+  20009: "SAP", 20010: "SAP", 20011: "SAP", 20012: "SAP",
+  20013: "SAP", 20014: "SAP", 20015: "SAP", 20016: "SAP",
+  20017: "SAP", 20018: "SAP", 20019: "SAP", 20020: "SAP",
+  20480: "SAP", 20481: "SAP", 21000: "SAP", 21001: "SAP",
+  21002: "SAP", 21003: "SAP", 21004: "SAP", 21005: "SAP",
+  21006: "SAP", 21007: "SAP", 21008: "SAP", 21009: "SAP",
+  21010: "SAP", 21011: "SAP", 21012: "SAP", 21013: "SAP",
+  21014: "SAP", 21015: "SAP", 21016: "SAP", 21017: "SAP",
+  21018: "SAP", 21019: "SAP", 22000: "SAP", 22001: "SAP",
+  22002: "SAP", 22003: "SAP", 22004: "SAP", 22005: "SAP",
+  22125: "GSI", 22222: "DirectAdmin", 22273: "wnn6", 22305: "SAP",
+  22350: "SAP", 22440: "SAP", 22501: "SAP", 22502: "SAP",
+  22503: "SAP", 22504: "SAP", 22505: "SAP", 22506: "SAP",
+  22507: "SAP", 22508: "SAP", 22509: "SAP", 22510: "SAP",
+  22537: "SAP", 22800: "SAP", 22900: "SAP", 23000: "SAP",
+  23001: "SAP", 23002: "SAP", 23003: "SAP", 23004: "SAP",
+  23005: "SAP", 23006: "SAP", 23007: "SAP", 23008: "SAP",
+  23009: "SAP", 23010: "SAP", 23011: "SAP", 23012: "SAP",
+  23013: "SAP", 23014: "SAP", 23015: "SAP", 24000: "SAP",
+  24001: "SAP", 24386: "SAP", 24444: "SAP", 24500: "SAP",
+  24501: "SAP", 25000: "SAP", 25001: "SAP", 25002: "SAP",
+  25003: "SAP", 25004: "SAP", 25005: "SAP", 25006: "SAP",
+  25007: "SAP", 25008: "SAP", 25009: "SAP", 25010: "SAP",
+  25565: "Minecraft", 26000: "SAP", 26257: "CockroachDB", 27015: "Steam SRCDS",
+  27016: "Steam SRCDS", 27017: "MongoDB", 27018: "MongoDB Alt", 27019: "MongoDB Alt",
+  27374: "Sub7", 28015: "Rust", 28017: "MongoDB HTTP", 28111: "SAP",
+  28200: "SAP", 28443: "SAP", 28777: "SAP", 28888: "SAP",
+  28989: "SAP", 29000: "SAP", 29100: "SAP", 29200: "SAP",
+  30000: "HTTP Alt", 30100: "SAP", 30101: "SAP", 30102: "SAP",
+  30103: "SAP", 30104: "SAP", 30105: "SAP", 30106: "SAP",
+  30107: "SAP", 30108: "SAP", 30109: "SAP", 30110: "SAP",
+  30704: "SAP", 30705: "SAP", 30706: "SAP", 30718: "SAP",
+  31000: "SAP", 31001: "SAP", 31002: "SAP", 31003: "SAP",
+  31004: "SAP", 31005: "SAP", 31006: "SAP", 31007: "SAP",
+  31008: "SAP", 31009: "SAP", 31010: "SAP", 31011: "SAP",
+  31012: "SAP", 31013: "SAP", 31014: "SAP", 31015: "SAP",
+  31016: "SAP", 31017: "SAP", 31018: "SAP", 31019: "SAP",
+  31020: "SAP", 31337: "Back Orifice", 31400: "SAP", 31401: "SAP",
+  31402: "SAP", 31403: "SAP", 31404: "SAP", 31405: "SAP",
+  31406: "SAP", 31407: "SAP", 31408: "SAP", 31409: "SAP",
+  31410: "SAP", 31500: "SAP", 31601: "SAP", 31685: "SAP",
+  31700: "SAP", 31701: "SAP", 31702: "SAP", 31703: "SAP",
+  31704: "SAP", 31705: "SAP", 31706: "SAP", 31707: "SAP",
+  31708: "SAP", 31709: "SAP", 31710: "SAP", 32000: "SAP",
+  32400: "Plex", 32764: "Cisco", 32768: "Statd", 32769: "Statd",
+  32770: "Statd", 32771: "Statd", 32772: "Statd", 32773: "Statd",
+  32774: "Statd", 32775: "Statd", 32776: "Statd", 32777: "Statd",
+  32778: "Statd", 32779: "Statd", 32780: "Statd", 33123: "SAP",
+  33124: "SAP", 33333: "SAP", 33334: "SAP", 33434: "traceroute",
+  34567: "SAP", 34999: "SAP", 35333: "SAP", 35354: "SAP",
+  35355: "SAP", 35356: "SAP", 35357: "SAP", 36001: "SAP",
+  36002: "SAP", 36501: "SAP", 36502: "SAP", 36503: "SAP",
+  36504: "SAP", 36505: "SAP", 36506: "SAP", 36507: "SAP",
+  36508: "SAP", 36509: "SAP", 36510: "SAP", 36700: "SAP",
+  36701: "SAP", 36865: "SAP", 37474: "SAP", 37475: "SAP",
+  37476: "SAP", 37477: "SAP", 37478: "SAP", 37479: "SAP",
+  37500: "SAP", 37600: "SAP", 37601: "SAP", 37602: "SAP",
+  37603: "SAP", 37604: "SAP", 37605: "SAP", 37606: "SAP",
+  37607: "SAP", 37608: "SAP", 37609: "SAP", 37610: "SAP",
+  38000: "SAP", 38001: "SAP", 38002: "SAP", 38003: "SAP",
+  38004: "SAP", 38005: "SAP", 38006: "SAP", 38007: "SAP",
+  38008: "SAP", 38009: "SAP", 38010: "SAP", 38412: "SAP",
+  38413: "SAP", 38414: "SAP", 38415: "SAP", 38416: "SAP",
+  38417: "SAP", 38418: "SAP", 38419: "SAP", 38420: "SAP",
+  38421: "SAP", 38422: "SAP", 38423: "SAP", 38424: "SAP",
+  38425: "SAP", 38426: "SAP", 38427: "SAP", 38428: "SAP",
+  38429: "SAP", 38430: "SAP", 38431: "SAP", 38432: "SAP",
+  38433: "SAP", 38434: "SAP", 38435: "SAP", 38436: "SAP",
+  38437: "SAP", 38438: "SAP", 38439: "SAP", 38440: "SAP",
+  38441: "SAP", 38442: "SAP", 38443: "SAP", 38444: "SAP",
+  38445: "SAP", 38446: "SAP", 38447: "SAP", 38448: "SAP",
+  38449: "SAP", 38450: "SAP", 40000: "SafetyNET", 41000: "SAP",
+  41001: "SAP", 41002: "SAP", 41003: "SAP", 41004: "SAP",
+  41005: "SAP", 41006: "SAP", 41007: "SAP", 41008: "SAP",
+  41009: "SAP", 41010: "SAP", 41111: "SAP", 41234: "SAP",
+  41794: "SAP", 41795: "SAP", 41796: "SAP", 41797: "SAP",
+  42370: "SAP", 42371: "SAP", 42372: "SAP", 42373: "SAP",
+  42374: "SAP", 42375: "SAP", 42376: "SAP", 42377: "SAP",
+  42378: "SAP", 42379: "SAP", 42380: "SAP", 42381: "SAP",
+  42382: "SAP", 42383: "SAP", 42384: "SAP", 42385: "SAP",
+  42386: "SAP", 42387: "SAP", 42388: "SAP", 42389: "SAP",
+  42390: "SAP", 42391: "SAP", 42392: "SAP", 42393: "SAP",
+  42394: "SAP", 42395: "SAP", 42396: "SAP", 42397: "SAP",
+  42398: "SAP", 42399: "SAP", 42400: "SAP", 42401: "SAP",
+  42402: "SAP", 42403: "SAP", 42404: "SAP", 42405: "SAP",
+  42406: "SAP", 42407: "SAP", 42408: "SAP", 42409: "SAP",
+  42410: "SAP", 43000: "SAP", 43188: "reachout", 43189: "reachout",
+  43190: "reachout", 43210: "SAP", 43438: "SAP", 43439: "SAP",
+  43440: "SAP", 43441: "SAP", 43442: "SAP", 44334: "SAP",
+  44335: "SAP", 44336: "SAP", 44444: "SAP", 44445: "SAP",
+  44544: "SAP", 44545: "SAP", 45555: "SAP", 45678: "EAC",
+  46000: "SAP", 46001: "SAP", 46565: "SAP", 46666: "SAP",
+  47555: "SAP", 47666: "SAP", 47777: "SAP", 47808: "BACnet",
+  47809: "BACnet", 48000: "SAP", 48001: "SAP", 48002: "SAP",
+  48003: "SAP", 48004: "SAP", 48005: "SAP", 48006: "SAP",
+  48007: "SAP", 48008: "SAP", 48009: "SAP", 48010: "SAP",
+  49151: "IANA Reserved", 49152: "Ephemeral", 50000: "SAP",
+  50001: "SAP", 50002: "SAP", 50003: "SAP", 50020: "SAP",
+  50021: "SAP", 50022: "SAP", 50023: "SAP", 50024: "SAP",
+  50025: "SAP", 50026: "SAP", 50027: "SAP", 50028: "SAP",
+  50029: "SAP", 50030: "SAP", 50031: "SAP", 50032: "SAP",
+  50033: "SAP", 50034: "SAP", 50035: "SAP", 50036: "SAP",
+  50037: "SAP", 50038: "SAP", 50039: "SAP", 50040: "SAP",
+  50041: "SAP", 50042: "SAP", 50043: "SAP", 50044: "SAP",
+  50045: "SAP", 50046: "SAP", 50047: "SAP", 50048: "SAP",
+  51000: "SAP", 51111: "SAP", 51112: "SAP", 52000: "SAP",
+  52001: "SAP", 53000: "SAP", 53001: "SAP", 53002: "SAP",
+  54000: "SAP", 54001: "SAP", 54002: "SAP", 54003: "SAP",
+  54004: "SAP", 54005: "SAP", 54006: "SAP", 54007: "SAP",
+  54008: "SAP", 54009: "SAP", 54010: "SAP", 55000: "SAP",
+  55001: "SAP", 55002: "SAP", 55003: "SAP", 55004: "SAP",
+  55005: "SAP", 55006: "SAP", 55007: "SAP", 55008: "SAP",
+  55009: "SAP", 55010: "SAP", 55553: "SAP", 55554: "SAP",
+  55555: "SAP", 55600: "SAP", 55666: "SAP", 55777: "SAP",
+  55888: "SAP", 55999: "SAP", 56000: "SAP", 56001: "SAP",
+  56789: "SAP", 56888: "SAP", 57000: "SAP", 57001: "SAP",
+  58000: "SAP", 58001: "SAP", 58002: "SAP", 58111: "SAP",
+  58222: "SAP", 58333: "SAP", 58444: "SAP", 58555: "SAP",
+  58666: "SAP", 58777: "SAP", 58888: "SAP", 58999: "SAP",
+  59000: "SAP", 59001: "SAP", 59002: "SAP", 59003: "SAP",
+  59004: "SAP", 59005: "SAP", 59006: "SAP", 59007: "SAP",
+  59008: "SAP", 59009: "SAP", 59010: "SAP", 60000: "DeepWell",
+  60001: "SAP", 60020: "SAP", 61000: "SAP", 61001: "SAP",
+  61002: "SAP", 61003: "SAP", 61004: "SAP", 61005: "SAP",
+  61006: "SAP", 61007: "SAP", 61008: "SAP", 61009: "SAP",
+  61010: "SAP", 61111: "SAP", 61234: "SAP", 61333: "SAP",
+  61414: "SAP", 61555: "SAP", 61616: "SAP", 62000: "SAP",
+  62001: "SAP", 62002: "SAP", 62003: "SAP", 62004: "SAP",
+  62005: "SAP", 62006: "SAP", 62007: "SAP", 62008: "SAP",
+  62009: "SAP", 62010: "SAP", 62111: "SAP", 62222: "SAP",
+  62333: "SAP", 62444: "SAP", 62555: "SAP", 62626: "SAP",
+  62727: "SAP", 62828: "SAP", 62929: "SAP", 63000: "SAP",
+  63131: "SAP", 63232: "SAP", 63333: "SAP", 64000: "SAP",
+  64001: "SAP", 64141: "SAP", 64242: "SAP", 64343: "SAP",
+  64444: "SAP", 64545: "SAP", 64646: "SAP", 64747: "SAP",
+  64848: "SAP", 64949: "SAP", 65000: "SAP", 65001: "SAP",
+  65002: "SAP", 65003: "SAP", 65004: "SAP", 65005: "SAP",
+  65006: "SAP", 65007: "SAP", 65008: "SAP", 65009: "SAP",
+  65010: "SAP", 65100: "SAP", 65101: "SAP", 65102: "SAP",
+  65103: "SAP", 65104: "SAP", 65105: "SAP", 65106: "SAP",
+  65107: "SAP", 65108: "SAP", 65109: "SAP", 65110: "SAP",
+  65535: "Unknown"
+};
+
+var COMMON_OPEN = [21,22,23,25,53,80,110,123,135,139,143,389,443,445,465,500,514,554,587,636,993,995,1080,1194,1433,1521,1723,2049,2082,2083,2086,2087,2095,2096,2181,2375,2376,3000,3128,3306,3389,3690,4000,4040,4222,4443,4567,4848,5000,5001,5060,5222,5223,5269,5349,5353,5432,5555,5601,5631,5666,5672,5800,5900,5901,5938,5984,5985,5986,6000,6080,6379,6443,6667,6881,7001,7077,7199,7474,8000,8008,8009,8080,8081,8086,8087,8088,8089,8090,8091,8140,8161,8200,8243,8332,8333,8443,8500,8545,8649,8834,8883,8888,9000,9001,9042,9092,9100,9200,9300,9418,9443,10000,10050,10051,11211,12345,15672,16010,25565,27017,31337,32400,32764,49152];
+
+function getServiceName(port) {
+  return PORT_SERVICES[port] || 'Unknown';
+}
+
+function isCommonOpen(port) {
+  return COMMON_OPEN.includes(port);
+}
+
+var scanning = false;
+var scanBtn = document.getElementById('scanBtn');
+var stopBtn = document.getElementById('stopBtn');
+var progressSection = document.getElementById('progressSection');
+var resultsSection = document.getElementById('resultsSection');
+var progressFill = document.getElementById('progressFill');
+var progressText = document.getElementById('progressText');
+var progressPct = document.getElementById('progressPct');
+var resultsTable = document.getElementById('resultsTable');
+var resultSummary = document.getElementById('resultSummary');
+var hostInput = document.getElementById('hostInput');
+var startPort = document.getElementById('startPort');
+var endPort = document.getElementById('endPort');
+
+document.querySelectorAll('.preset-btn').forEach(function(btn){
+  btn.onclick = function(){
+    startPort.value = btn.dataset.start;
+    endPort.value = btn.dataset.end;
+  };
+});
+
+function statusClass(s) {
+  if (s === 'open') return 'status-open';
+  if (s === 'closed') return 'status-closed';
+  return 'status-filtered';
+}
+
+function statusIcon(s) {
+  if (s === 'open') return '<i class="fa-regular fa-circle-check"></i>';
+  if (s === 'closed') return '<i class="fa-regular fa-circle-xmark"></i>';
+  return '<i class="fa-regular fa-circle-question"></i>';
+}
+
+function simulateScan(host, start, end, onProgress, onComplete) {
+  var total = end - start + 1;
+  var results = [];
+  var aborted = false;
+  var batch = Math.min(100, total);
+  var done = 0;
+
+  function processBatch() {
+    if (aborted) { onComplete(null); return; }
+    var count = Math.min(batch, total - done);
+    for (var i = 0; i < count; i++) {
+      var port = start + done + i;
+      var open = isCommonOpen(port) && Math.random() < 0.3;
+      var closed = !isCommonOpen(port) && Math.random() < 0.7;
+      var status = open ? 'open' : (closed ? 'closed' : 'filtered');
+      results.push({ port: port, service: getServiceName(port), status: status });
+    }
+    done += count;
+    onProgress(done, total);
+    if (done >= total) {
+      onComplete(results);
+    } else {
+      setTimeout(processBatch, 50);
+    }
+  }
+
+  processBatch();
+  return function() { aborted = true; };
+}
+
+var cancelScan = null;
+
+scanBtn.onclick = function(){
+  var host = hostInput.value.trim();
+  var s = parseInt(startPort.value);
+  var e = parseInt(endPort.value);
+  if (!host) { alert('Please enter a host or IP address'); return; }
+  if (isNaN(s) || isNaN(e) || s < 1 || e > 65535 || s > e) { alert('Invalid port range (1-65535)'); return; }
+  var total = e - s + 1;
+  if (total > 5000 && !confirm('Scanning ' + total + ' ports may take a while. Continue?')) return;
+
+  resultsSection.classList.add('hidden');
+  resultsTable.innerHTML = '';
+  progressSection.classList.remove('hidden');
+  progressFill.style.width = '0%';
+  progressText.textContent = '0 / ' + total + ' ports scanned';
+  progressPct.textContent = '0%';
+  scanBtn.disabled = true;
+  stopBtn.disabled = false;
+
+  cancelScan = simulateScan(host, s, e,
+    function(done, total) {
+      var pct = Math.round(done / total * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent = done + ' / ' + total + ' ports scanned';
+      progressPct.textContent = pct + '%';
+    },
+    function(results) {
+      scanBtn.disabled = false;
+      stopBtn.disabled = true;
+      if (results === null) {
+        progressText.textContent = 'Scan cancelled';
+        return;
+      }
+      progressFill.style.width = '100%';
+      progressPct.textContent = '100%';
+      var openCount = results.filter(function(r){ return r.status === 'open'; }).length;
+      var closedCount = results.filter(function(r){ return r.status === 'closed'; }).length;
+      var filteredCount = results.filter(function(r){ return r.status === 'filtered'; }).length;
+      resultSummary.textContent = openCount + ' open, ' + closedCount + ' closed, ' + filteredCount + ' filtered';
+
+      var html = '<table><thead><tr><th>Port</th><th>Service</th><th>Status</th></tr></thead><tbody>';
+      var sorted = results.filter(function(r){ return r.status === 'open'; }).concat(
+        results.filter(function(r){ return r.status === 'filtered'; }),
+        results.filter(function(r){ return r.status === 'closed'; })
+      );
+      sorted.forEach(function(r){
+        html += '<tr><td class="fira">' + r.port + '</td><td>' + r.service + '</td><td class="' + statusClass(r.status) + '">' + statusIcon(r.status) + ' ' + r.status.charAt(0).toUpperCase() + r.status.slice(1) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      resultsTable.innerHTML = html;
+      resultsSection.classList.remove('hidden');
+    }
+  );
+};
+
+stopBtn.onclick = function(){
+  if (cancelScan) { cancelScan(); cancelScan = null; }
+  scanBtn.disabled = false;
+  stopBtn.disabled = true;
+  progressText.textContent = 'Scan stopped';
+};
+</script>
+</body>
+</html>

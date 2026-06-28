@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLAN Calculator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.btn{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1.25rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:0.5rem}
+.btn:hover{opacity:0.9}
+.btn-outline{background:#18181b;border:1px solid #27272a;color:#d4d4d8;font-family:'Inter',sans-serif;font-size:0.875rem;padding:0.5rem 1.25rem;border-radius:0.5rem;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-outline:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.tab-btn{background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:0.5rem 1rem;border-radius:0.5rem;font-size:0.85rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.tab-btn:hover{background:#27272a;color:#e4e4e7}
+.tab-btn.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+table{width:100%;border-collapse:collapse;font-size:0.8rem}
+th{text-align:left;padding:0.5rem;border-bottom:1px solid #27272a;color:#a1a1aa;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;font-family:'Inter',sans-serif}
+td{padding:0.5rem;border-bottom:1px solid #27272a;font-family:'Fira Code',monospace;font-size:0.78rem}
+tr:hover td{background:rgba(45,212,191,0.03)}
+.vlan-vis{display:flex;flex-wrap:wrap;gap:4px}
+.vlan-block{width:2rem;height:2rem;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-family:'Fira Code',monospace;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.vlan-block.used{background:rgba(45,212,191,0.15);border-color:#2dd4bf;color:#2dd4bf}
+.vlan-block.available{background:#0f0f11;border-color:#27272a;color:#52525b}
+.vlan-block:hover{transform:scale(1.15);z-index:10}
+</style>
+</head>
+<body>
+<div class="max-w-5xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-diagram-project text-[#2dd4bf] text-2xl"></i>
+      VLAN Calculator
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Calculate VLAN ranges, subnet masks, and host capacities</p>
+  </header>
+
+  <div class="flex gap-2 mb-4">
+    <button class="tab-btn active" id="tabHosts">By Hosts per VLAN</button>
+    <button class="tab-btn" id="tabVlans">By VLAN Count</button>
+    <button class="tab-btn" id="tabNetwork">Network + VLANs</button>
+  </div>
+
+  <div id="modeHosts" class="space-y-6">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-users mr-2"></i>Hosts per VLAN</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label>Hosts per VLAN</label>
+          <input id="hostsPerVlan" class="input-field" type="number" min="1" max="16777214" value="50" placeholder="e.g. 50">
+        </div>
+        <div>
+          <label>Number of VLANs</label>
+          <input id="hostsVlanCount" class="input-field" type="number" min="1" max="4094" value="5" placeholder="e.g. 5">
+        </div>
+        <div>
+          <label>Starting VLAN ID</label>
+          <input id="hostsStartVlan" class="input-field" type="number" min="1" max="4094" value="10">
+        </div>
+      </div>
+      <button class="btn mt-3" id="calcHostsBtn"><i class="fa-solid fa-calculator"></i> Calculate</button>
+    </div>
+  </div>
+
+  <div id="modeVlans" class="space-y-6 hidden">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-layer-group mr-2"></i>VLAN Count</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label>Total VLANs Needed</label>
+          <input id="totalVlans" class="input-field" type="number" min="1" max="4094" value="10">
+        </div>
+        <div>
+          <label>Hosts per VLAN</label>
+          <input id="vlanHostsPer" class="input-field" type="number" min="1" max="16777214" value="100">
+        </div>
+        <div>
+          <label>Starting VLAN ID</label>
+          <input id="vlansStartVlan" class="input-field" type="number" min="1" max="4094" value="100">
+        </div>
+      </div>
+      <button class="btn mt-3" id="calcVlansBtn"><i class="fa-solid fa-calculator"></i> Calculate</button>
+    </div>
+  </div>
+
+  <div id="modeNetwork" class="space-y-6 hidden">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-network-wired mr-2"></i>Network + VLANs</div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div>
+          <label>Network Address</label>
+          <input id="netAddr" class="input-field" type="text" value="10.0.0.0" placeholder="e.g. 192.168.1.0">
+        </div>
+        <div>
+          <label>CIDR Prefix</label>
+          <input id="netCidr" class="input-field" type="number" min="0" max="30" value="24" placeholder="e.g. 24">
+        </div>
+        <div>
+          <label>VLAN Count</label>
+          <input id="netVlanCount" class="input-field" type="number" min="1" max="4094" value="4">
+        </div>
+        <div>
+          <label>Starting VLAN ID</label>
+          <input id="netStartVlan" class="input-field" type="number" min="1" max="4094" value="200">
+        </div>
+      </div>
+      <button class="btn mt-3" id="calcNetBtn"><i class="fa-solid fa-calculator"></i> Calculate</button>
+    </div>
+  </div>
+
+  <div id="resultsSection" class="hidden space-y-6 mt-6">
+    <div class="card">
+      <div class="card-title flex items-center justify-between">
+        <span><i class="fa-regular fa-table mr-2"></i>VLAN Allocation Table</span>
+        <span class="text-xs text-[#a1a1aa]" id="summaryLabel"></span>
+      </div>
+      <div class="overflow-x-auto"><div id="resultsTable"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-eye mr-2"></i>Visual Breakdown</div>
+      <div id="visualBreakdown" style="max-height:400px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#27272a transparent"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> VLAN Calculator</a>
+  </footer>
+</div>
+
+<script>
+var tabs = ['tabHosts','tabVlans','tabNetwork'];
+var modes = ['modeHosts','modeVlans','modeNetwork'];
+
+tabs.forEach(function(id, idx){
+  document.getElementById(id).onclick = function(){
+    tabs.forEach(function(t){ document.getElementById(t).classList.remove('active'); });
+    modes.forEach(function(m){ document.getElementById(m).classList.add('hidden'); });
+    document.getElementById(id).classList.add('active');
+    document.getElementById(modes[idx]).classList.remove('hidden');
+    document.getElementById('resultsSection').classList.add('hidden');
+  };
+});
+
+function cidrToMask(prefix) {
+  var mask = 0xFFFFFFFF << (32 - prefix);
+  return [
+    (mask >>> 24) & 0xFF,
+    (mask >>> 16) & 0xFF,
+    (mask >>> 8) & 0xFF,
+    mask & 0xFF
+  ].join('.');
+}
+
+function numHosts(prefix) {
+  if (prefix >= 31) return 2;
+  return Math.pow(2, 32 - prefix) - 2;
+}
+
+function ipToNum(ip) {
+  var parts = ip.split('.').map(Number);
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+}
+
+function numToIp(n) {
+  return [(n >>> 24) & 0xFF, (n >>> 16) & 0xFF, (n >>> 8) & 0xFF, n & 0xFF].join('.');
+}
+
+function nextPowerOf2(n) {
+  if (n <= 2) return 2;
+  var p = 1;
+  while (p < n) p <<= 1;
+  return p;
+}
+
+function calcHostsMode() {
+  var hosts = parseInt(document.getElementById('hostsPerVlan').value);
+  var count = parseInt(document.getElementById('hostsVlanCount').value);
+  var startVlan = parseInt(document.getElementById('hostsStartVlan').value);
+  if (!hosts || !count || !startVlan) return;
+  if (hosts < 1 || count < 1 || startVlan < 1 || startVlan > 4094) { alert('Invalid input values'); return; }
+  var neededSize = nextPowerOf2(hosts + 2);
+  var prefix = 32 - Math.ceil(Math.log2(neededSize));
+  if (prefix < 0) prefix = 0;
+  var mask = cidrToMask(prefix);
+  var usable = numHosts(prefix);
+  var results = [];
+  var base = ipToNum('10.0.0.0');
+  var step = neededSize;
+  for (var i = 0; i < count; i++) {
+    var net = base + (i * step);
+    var network = numToIp(net);
+    var bcast = numToIp(net + step - 1);
+    var first = numToIp(net + 1);
+    var last = numToIp(net + step - 2);
+    results.push({
+      vlanId: startVlan + i,
+      network: network + '/' + prefix,
+      mask: mask,
+      firstHost: first,
+      lastHost: last,
+      broadcast: bcast,
+      usable: usable
+    });
+  }
+  renderResults(results, 'Hosts per VLAN: ' + hosts + ', Mask: ' + mask + ', /' + prefix);
+}
+
+function calcVlansMode() {
+  var total = parseInt(document.getElementById('totalVlans').value);
+  var hosts = parseInt(document.getElementById('vlanHostsPer').value);
+  var startVlan = parseInt(document.getElementById('vlansStartVlan').value);
+  if (!total || !hosts || !startVlan) return;
+  var neededSize = nextPowerOf2(hosts + 2);
+  var prefix = 32 - Math.ceil(Math.log2(neededSize));
+  var mask = cidrToMask(prefix);
+  var usable = numHosts(prefix);
+  var results = [];
+  var base = ipToNum('10.0.0.0');
+  var step = neededSize;
+  for (var i = 0; i < total; i++) {
+    var net = base + (i * step);
+    var network = numToIp(net);
+    var bcast = numToIp(net + step - 1);
+    var first = numToIp(net + 1);
+    var last = numToIp(net + step - 2);
+    results.push({
+      vlanId: startVlan + i,
+      network: network + '/' + prefix,
+      mask: mask,
+      firstHost: first,
+      lastHost: last,
+      broadcast: bcast,
+      usable: usable
+    });
+  }
+  renderResults(results, 'VLANs: ' + total + ', Hosts per VLAN: ' + hosts + ', /' + prefix);
+}
+
+function calcNetMode() {
+  var netStr = document.getElementById('netAddr').value.trim();
+  var cidr = parseInt(document.getElementById('netCidr').value);
+  var count = parseInt(document.getElementById('netVlanCount').value);
+  var startVlan = parseInt(document.getElementById('netStartVlan').value);
+  if (!netStr || isNaN(cidr) || !count || !startVlan) return;
+  var netNum = ipToNum(netStr);
+  if (isNaN(netNum)) { alert('Invalid network address'); return; }
+  var totalHosts = numHosts(cidr);
+  var hostsPer = Math.floor(totalHosts / count);
+  if (hostsPer < 2) { alert('Not enough addresses for ' + count + ' VLANs with /' + cidr); return; }
+  var neededSize = nextPowerOf2(hostsPer + 2);
+  var subnetPrefix = 32 - Math.ceil(Math.log2(neededSize));
+  var mask = cidrToMask(subnetPrefix);
+  var usable = numHosts(subnetPrefix);
+  var step = neededSize;
+  var results = [];
+  for (var i = 0; i < count; i++) {
+    var net = netNum + (i * step);
+    var network = numToIp(net);
+    var bcast = numToIp(net + step - 1);
+    var first = numToIp(net + 1);
+    var last = numToIp(net + step - 2);
+    results.push({
+      vlanId: startVlan + i,
+      network: network + '/' + subnetPrefix,
+      mask: mask,
+      firstHost: first,
+      lastHost: last,
+      broadcast: bcast,
+      usable: usable
+    });
+  }
+  renderResults(results, 'Network: ' + netStr + '/' + cidr + ', Subnets: ' + count);
+}
+
+function renderResults(results, summary) {
+  document.getElementById('resultsSection').classList.remove('hidden');
+  document.getElementById('summaryLabel').textContent = summary;
+
+  var html = '<table><thead><tr><th>VLAN ID</th><th>Network</th><th>Mask</th><th>First Host</th><th>Last Host</th><th>Broadcast</th><th>Usable</th></tr></thead><tbody>';
+  results.forEach(function(r){
+    html += '<tr><td class="text-[#2dd4bf]">' + r.vlanId + '</td><td>' + r.network + '</td><td>' + r.mask + '</td><td>' + r.firstHost + '</td><td>' + r.lastHost + '</td><td>' + r.broadcast + '</td><td>' + r.usable + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('resultsTable').innerHTML = html;
+
+  var visHtml = '<div class="vlan-vis">';
+  results.forEach(function(r){
+    visHtml += '<div class="vlan-block used" title="VLAN ' + r.vlanId + ': ' + r.network + '">' + r.vlanId + '</div>';
+  });
+  visHtml += '</div>';
+  document.getElementById('visualBreakdown').innerHTML = visHtml;
+}
+
+document.getElementById('calcHostsBtn').onclick = calcHostsMode;
+document.getElementById('calcVlansBtn').onclick = calcVlansMode;
+document.getElementById('calcNetBtn').onclick = calcNetMode;
+
+[document.getElementById('hostsPerVlan'), document.getElementById('hostsVlanCount'), document.getElementById('hostsStartVlan')].forEach(function(el){
+  el.onkeydown = function(e){ if (e.key === 'Enter') calcHostsMode(); };
+});
+[document.getElementById('totalVlans'), document.getElementById('vlanHostsPer'), document.getElementById('vlansStartVlan')].forEach(function(el){
+  el.onkeydown = function(e){ if (e.key === 'Enter') calcVlansMode(); };
+});
+[document.getElementById('netAddr'), document.getElementById('netCidr'), document.getElementById('netVlanCount'), document.getElementById('netStartVlan')].forEach(function(el){
+  el.onkeydown = function(e){ if (e.key === 'Enter') calcNetMode(); };
+});
+
+calcHostsMode();
+</script>
+</body>
+</html>

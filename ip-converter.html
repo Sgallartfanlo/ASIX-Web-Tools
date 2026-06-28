@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP / Binary / Hex Converter</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.conv-row{display:flex;align-items:center;padding:0.75rem 0;border-bottom:1px solid #27272a}
+.conv-row:last-child{border-bottom:none}
+.conv-label{color:#a1a1aa;font-size:0.8rem;width:7rem;flex-shrink:0}
+.conv-value{font-family:'Fira Code',monospace;color:#e4e4e7;font-size:0.9rem;word-break:break-all}
+.conv-bits{display:flex;gap:2px;flex:1}
+.octet-bit{background:#0f0f11;border-radius:2px;padding:0.125rem 0.25rem;font-size:0.65rem;font-family:'Fira Code',monospace;color:#a1a1aa;text-align:center;min-width:1.4rem}
+.octet-bit.on{color:#2dd4bf}
+.octet-bit.off{color:#52525b}
+.mode-tabs{display:flex;gap:0.5rem;margin-bottom:1rem}
+.mode-tab{background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:0.375rem 0.75rem;border-radius:0.375rem;font-size:0.8rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace}
+.mode-tab:hover{background:#27272a;color:#e4e4e7}
+.mode-tab.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+</style>
+</head>
+<body>
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-code-branch text-[#2dd4bf] text-2xl"></i>
+      IP / Binary / Hex Converter
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Convert between IP, Binary, and Hexadecimal representations</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-keyboard mr-2"></i>Input</div>
+    <div class="mode-tabs" id="modeTabs">
+      <span class="mode-tab active" data-mode="ip">IP Address</span>
+      <span class="mode-tab" data-mode="bin">Binary</span>
+      <span class="mode-tab" data-mode="hex">Hex</span>
+    </div>
+    <input id="inputField" class="input-field" type="text" placeholder="e.g. 192.168.1.1" value="192.168.1.1">
+    <p class="text-xs text-[#52525b] mt-1" id="inputHint">Enter an IPv4 address</p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-diagram-binary mr-2"></i>Binary per Octet</div>
+      <div id="binaryResult" class="space-y-2"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-hashtag mr-2"></i>Hex per Octet</div>
+      <div id="hexResult" class="space-y-1"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-rectangle-list mr-2"></i>Summary</div>
+      <div id="summaryResult"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> IP / Binary / Hex Converter</a>
+  </footer>
+</div>
+
+<script>
+var modeTabs = document.getElementById('modeTabs');
+var inputField = document.getElementById('inputField');
+var inputHint = document.getElementById('inputHint');
+var binaryResult = document.getElementById('binaryResult');
+var hexResult = document.getElementById('hexResult');
+var summaryResult = document.getElementById('summaryResult');
+var currentMode = 'ip';
+
+modeTabs.querySelectorAll('.mode-tab').forEach(function(tab){
+  tab.onclick = function(){
+    modeTabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    inputField.value = '';
+    inputField.placeholder = currentMode === 'ip' ? 'e.g. 192.168.1.1' : currentMode === 'bin' ? 'e.g. 11000000.10101000.00000001.00000001' : 'e.g. C0A80101';
+    inputHint.textContent = currentMode === 'ip' ? 'Enter an IPv4 address' : currentMode === 'bin' ? 'Enter 32 binary digits (with or without dots)' : 'Enter hex (8 hex digits, with or without dots)';
+    clearResults();
+  };
+});
+
+function clearResults() {
+  binaryResult.innerHTML = '';
+  hexResult.innerHTML = '';
+  summaryResult.innerHTML = '';
+}
+
+function convert() {
+  var val = inputField.value.trim();
+  if (!val) { clearResults(); return; }
+  var octets = null;
+  if (currentMode === 'ip') {
+    octets = parseIP(val);
+  } else if (currentMode === 'bin') {
+    var clean = val.replace(/[.\s]/g,'');
+    if (/^[01]{32}$/.test(clean)) {
+      octets = [];
+      for (var i = 0; i < 32; i += 8) octets.push(parseInt(clean.substring(i,i+8),2));
+    }
+  } else if (currentMode === 'hex') {
+    var clean = val.replace(/[.\s:]/g,'');
+    if (/^[0-9a-fA-F]{8}$/.test(clean)) {
+      octets = [];
+      for (var i = 0; i < 8; i += 2) octets.push(parseInt(clean.substring(i,i+2),16));
+    }
+  }
+  if (!octets || octets.length !== 4 || octets.some(function(o){ return o < 0 || o > 255; })) {
+    clearResults();
+    return;
+  }
+  renderResults(octets);
+}
+
+function parseIP(str) {
+  var parts = str.trim().split('.');
+  if (parts.length !== 4) return null;
+  var nums = parts.map(function(p){ var n = parseInt(p,10); return isNaN(n) ? -1 : n; });
+  if (nums.some(function(n){ return n < 0 || n > 255; })) return null;
+  return nums;
+}
+
+function renderResults(octets) {
+  var binHtml = '';
+  for (var i = 0; i < 4; i++) {
+    var o = octets[i];
+    var bin = o.toString(2).padStart(8,'0');
+    var bits = '';
+    for (var b = 0; b < 8; b++) {
+      bits += '<span class="octet-bit ' + (bin[b] === '1' ? 'on' : 'off') + '">' + bin[b] + '</span>';
+    }
+    binHtml += '<div class="flex items-center gap-3"><span class="text-[#a1a1aa] text-xs w-4">' + (i+1) + '</span><div class="conv-bits">' + bits + '</div><span class="fira text-xs text-[#2dd4bf] w-16 text-right">' + o + '</span></div>';
+  }
+  binaryResult.innerHTML = binHtml;
+
+  var hexHtml = '';
+  for (var i = 0; i < 4; i++) {
+    var h = octets[i].toString(16).toUpperCase().padStart(2,'0');
+    hexHtml += '<div class="flex items-center gap-3"><span class="text-[#a1a1aa] text-xs w-4">' + (i+1) + '</span><span class="fira text-[#2dd4bf] text-lg">0x' + h + '</span><span class="text-xs text-[#52525b]">= ' + octets[i] + '</span></div>';
+  }
+  hexResult.innerHTML = hexHtml;
+
+  var ipStr = octets.join('.');
+  var hexFull = octets.map(function(o){ return o.toString(16).toUpperCase().padStart(2,'0'); }).join('');
+  var binFull = octets.map(function(o){ return o.toString(2).padStart(8,'0'); }).join(' ');
+  var dec = octets[0]*16777216 + octets[1]*65536 + octets[2]*256 + octets[3];
+  var cls = '';
+  if (octets[0] <= 126) cls = 'A';
+  else if (octets[0] <= 191) cls = 'B';
+  else if (octets[0] <= 223) cls = 'C';
+  else if (octets[0] <= 239) cls = 'D';
+  else cls = 'E';
+
+  summaryResult.innerHTML =
+    '<div class="conv-row"><span class="conv-label">IP Address</span><span class="conv-value text-[#2dd4bf]">' + ipStr + '</span></div>' +
+    '<div class="conv-row"><span class="conv-label">Hex (full)</span><span class="conv-value">0x' + hexFull + '</span></div>' +
+    '<div class="conv-row"><span class="conv-label">Binary</span><span class="conv-value" style="font-size:0.75rem">' + binFull + '</span></div>' +
+    '<div class="conv-row"><span class="conv-label">Decimal</span><span class="conv-value">' + dec.toLocaleString() + '</span></div>' +
+    '<div class="conv-row"><span class="conv-label">Class</span><span class="conv-value"><span class="bg-[#0f0f11] px-2 py-0.5 rounded text-[#2dd4bf] fira">Class ' + cls + '</span></span></div>';
+}
+
+inputField.oninput = convert;
+convert();
+</script>
+</body>
+</html>

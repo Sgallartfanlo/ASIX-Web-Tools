@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log Inspector - Analitzador de fitxers de log</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-input: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --border: #334155;
+  --success: #22c55e;
+  --warning: #eab308;
+  --error: #ef4444;
+  --info: #3b82f6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+.header {
+  text-align: center; padding: 2rem 1rem 1.5rem;
+  border-bottom: 1px solid var(--border); margin-bottom: 2rem;
+}
+.header h1 { font-size: 2rem; font-weight: 700; }
+.header h1 i { color: var(--accent); margin-right: 0.5rem; }
+.header p { color: var(--text-secondary); margin-top: 0.25rem; font-size: 0.95rem; }
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.card-title {
+  font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.card-title i { color: var(--accent); }
+textarea.log-input {
+  width: 100%; min-height: 220px; padding: 1rem;
+  background: var(--bg-input); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 0.5rem;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85rem; line-height: 1.5; resize: vertical;
+  outline: none; transition: border-color 0.2s;
+}
+textarea.log-input:focus { border-color: var(--accent); }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1rem; border: none; border-radius: 0.5rem;
+  font-size: 0.85rem; font-weight: 500; cursor: pointer;
+  transition: all 0.2s; color: white;
+}
+.btn-primary { background: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-success { background: var(--success); }
+.btn-success:hover { background: #16a34a; }
+.btn-warning { background: var(--warning); color: #000; }
+.btn-warning:hover { background: #ca8a04; }
+.btn-error { background: var(--error); }
+.btn-error:hover { background: #dc2626; }
+.btn-outline {
+  background: transparent; border: 1px solid var(--border); color: var(--text-secondary);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--text-primary); }
+.btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+.btn-group { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.stats-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem;
+}
+.stat-card {
+  background: var(--bg-input); border-radius: 0.5rem; padding: 1rem;
+  text-align: center; border: 1px solid var(--border);
+}
+.stat-card .stat-value { font-size: 1.75rem; font-weight: 700; }
+.stat-card .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+.stat-card.stat-error .stat-value { color: var(--error); }
+.stat-card.stat-warning .stat-value { color: var(--warning); }
+.stat-card.stat-success .stat-value { color: var(--success); }
+.stat-card.stat-info .stat-value { color: var(--info); }
+.split-view { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 900px) { .split-view { grid-template-columns: 1fr; } }
+.list-card { max-height: 400px; overflow-y: auto; }
+.list-card::-webkit-scrollbar { width: 6px; }
+.list-card::-webkit-scrollbar-track { background: var(--bg-primary); border-radius: 3px; }
+.list-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.list-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.list-item:last-child { border-bottom: none; }
+.list-item .badge {
+  background: var(--accent); color: white; border-radius: 999px;
+  padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600;
+  min-width: 1.8rem; text-align: center;
+}
+.list-item .badge.badge-error { background: var(--error); }
+.list-item .badge.badge-warning { background: var(--warning); color: #000; }
+.list-item .badge.badge-success { background: var(--success); }
+.log-lines-container {
+  max-height: 600px; overflow-y: auto;
+  background: #0a0f1e; border-radius: 0.5rem; padding: 0.75rem;
+  border: 1px solid var(--border); font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8rem; line-height: 1.6;
+}
+.log-lines-container::-webkit-scrollbar { width: 6px; }
+.log-lines-container::-webkit-scrollbar-track { background: var(--bg-primary); border-radius: 3px; }
+.log-lines-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.log-line {
+  padding: 0.1rem 0.4rem; border-radius: 2px; white-space: pre-wrap; word-break: break-all;
+}
+.log-line.level-error { color: var(--error); background: rgba(239,68,68,0.08); }
+.log-line.level-warning { color: var(--warning); background: rgba(234,179,8,0.08); }
+.log-line.level-info { color: var(--info); background: rgba(59,130,246,0.08); }
+.log-line.level-ok { color: var(--success); background: rgba(34,197,94,0.08); }
+.log-line .line-num {
+  display: inline-block; width: 2.8rem; text-align: right;
+  color: var(--text-secondary); margin-right: 0.75rem;
+  user-select: none; opacity: 0.6;
+}
+.toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.toolbar .spacer { flex: 1; }
+.empty-state {
+  text-align: center; padding: 3rem 1rem; color: var(--text-secondary);
+}
+.empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+.footer {
+  text-align: center; padding: 1.5rem; margin-top: 2rem;
+  border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><i class="fas fa-clipboard-list"></i>Log Inspector</h1>
+    <p>Analitzador de fitxers de log · Apache, Nginx i Syslog</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-terminal"></i> Entrada de logs</div>
+    <textarea id="logInput" class="log-input" placeholder="Enganxeu aquí els vostres logs d'Apache, Nginx o syslog..."></textarea>
+    <div class="btn-group">
+      <button class="btn btn-outline" onclick="loadSample('apache')"><i class="fas fa-server"></i> Log Apache</button>
+      <button class="btn btn-outline" onclick="loadSample('nginx')"><i class="fas fa-server"></i> Log Nginx</button>
+      <button class="btn btn-outline" onclick="loadSample('syslog')"><i class="fas fa-network-wired"></i> Syslog</button>
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn btn-primary" onclick="analyze()"><i class="fas fa-search"></i> Analitzar</button>
+      <button class="btn btn-error" onclick="clearAll()"><i class="fas fa-eraser"></i> Netejar</button>
+    </div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="card">
+      <div class="card-title"><i class="fas fa-chart-bar"></i> Estadístiques</div>
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+
+    <div class="split-view">
+      <div>
+        <div class="card list-card">
+          <div class="card-title"><i class="fas fa-globe"></i> IPs recurrents</div>
+          <div id="ipList"></div>
+        </div>
+        <div class="card list-card" style="margin-top:1.5rem">
+          <div class="card-title"><i class="fas fa-code"></i> Codis d'estat HTTP</div>
+          <div id="statusCodeList"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;gap:0.5rem">
+            <i class="fas fa-list"></i> Línies de log
+            <span style="flex:1"></span>
+            <button class="btn btn-sm btn-outline" onclick="copyLog()"><i class="fas fa-copy"></i> Copiar</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadLog()"><i class="fas fa-download"></i> Descarregar</button>
+          </div>
+          <div id="logLines" class="log-lines-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Desenvolupat per Sergi Gallart · Log Inspector
+  </div>
+</div>
+
+<script>
+const SAMPLES = {
+  apache: [
+    '192.168.1.10 - - [10/Jun/2026:14:32:15 +0200] "GET /index.html HTTP/1.1" 200 4523 "-" "Mozilla/5.0"',
+    '192.168.1.20 - - [10/Jun/2026:14:32:18 +0200] "POST /api/login HTTP/1.1" 200 128 "-" "curl/7.68"',
+    '10.0.0.5 - - [10/Jun/2026:14:32:20 +0200] "GET /images/logo.png HTTP/1.1" 304 0 "-" "Mozilla/5.0"',
+    '10.0.0.5 - - [10/Jun/2026:14:32:22 +0200] "GET /css/style.css HTTP/1.1" 200 12400 "-" "Mozilla/5.0"',
+    '192.168.1.10 - - [10/Jun/2026:14:33:01 +0200] "GET /admin HTTP/1.1" 403 562 "-" "Mozilla/5.0"',
+    '192.168.1.30 - - [10/Jun/2026:14:33:05 +0200] "POST /api/login HTTP/1.1" 401 64 "-" "python-requests/2.25"',
+    '192.168.1.30 - - [10/Jun/2026:14:33:06 +0200] "POST /api/login HTTP/1.1" 401 64 "-" "python-requests/2.25"',
+    '192.168.1.30 - - [10/Jun/2026:14:33:07 +0200] "POST /api/login HTTP/1.1" 401 64 "-" "python-requests/2.25"',
+    '10.0.0.10 - - [10/Jun/2026:14:33:10 +0200] "GET /api/users HTTP/1.1" 500 235 "-" "Mozilla/5.0"',
+    '10.0.0.10 - - [10/Jun/2026:14:33:12 +0200] "GET /api/users HTTP/1.1" 500 235 "-" "Mozilla/5.0"',
+    '192.168.1.40 - - [10/Jun/2026:14:33:15 +0200] "GET /favicon.ico HTTP/1.1" 404 189 "-" "Mozilla/5.0"',
+    '192.168.1.10 - - [10/Jun/2026:14:34:00 +0200] "GET /dashboard HTTP/1.1" 200 8450 "-" "Mozilla/5.0"',
+    '192.168.1.10 - - [10/Jun/2026:14:34:02 +0200] "GET /api/data HTTP/1.1" 200 3200 "-" "Mozilla/5.0"',
+    '203.0.113.50 - - [10/Jun/2026:14:35:00 +0200] "GET /wp-login.php HTTP/1.1" 404 789 "-" "Mozilla/4.0"',
+    '203.0.113.50 - - [10/Jun/2026:14:35:01 +0200] "GET /wp-login.php HTTP/1.1" 404 789 "-" "Mozilla/4.0"',
+    '203.0.113.50 - - [10/Jun/2026:14:35:02 +0200] "GET /wp-login.php HTTP/1.1" 404 789 "-" "Mozilla/4.0"',
+    '192.168.1.10 - - [10/Jun/2026:14:35:30 +0200] "POST /api/logout HTTP/1.1" 200 42 "-" "Mozilla/5.0"'
+  ].join('\n'),
+  nginx: [
+    '192.168.1.10 - - [10/Jun/2026:15:10:22 +0200] "GET / HTTP/1.1" 200 6128 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"',
+    '192.168.1.20 - - [10/Jun/2026:15:10:25 +0200] "GET /assets/js/app.js HTTP/1.1" 200 45200 "https://example.com/" "Mozilla/5.0"',
+    '10.0.0.5 - - [10/Jun/2026:15:11:00 +0200] "GET /api/health HTTP/1.1" 200 16 "-" "kube-probe/1.25"',
+    '10.0.0.5 - - [10/Jun/2026:15:11:01 +0200] "GET /api/health HTTP/1.1" 200 16 "-" "kube-probe/1.25"',
+    '192.168.1.10 - - [10/Jun/2026:15:11:30 +0200] "POST /api/checkout HTTP/2.0" 502 182 "-" "Mozilla/5.0"',
+    '192.168.1.10 - - [10/Jun/2026:15:11:31 +0200] "POST /api/checkout HTTP/2.0" 502 182 "-" "Mozilla/5.0"',
+    '192.168.1.30 - - [10/Jun/2026:15:12:00 +0200] "GET /search?q=test HTTP/1.1" 200 12500 "-" "Mozilla/5.0"',
+    '203.0.113.99 - - [10/Jun/2026:15:12:30 +0200] "GET /.env HTTP/1.1" 404 153 "-" "python-requests/2.26"',
+    '203.0.113.99 - - [10/Jun/2026:15:12:31 +0200] "GET /wp-admin HTTP/1.1" 404 162 "-" "python-requests/2.26"',
+    '192.168.1.40 - - [10/Jun/2026:15:13:00 +0200] "GET /images/banner.jpg HTTP/1.1" 200 245000 "https://example.com/" "Mozilla/5.0"',
+    '10.0.0.15 - - [10/Jun/2026:15:14:00 +0200] "PUT /api/cache/flush HTTP/1.1" 204 0 "-" "internal-monitor/1.0"',
+    '192.168.1.10 - - [10/Jun/2026:15:15:00 +0200] "GET /account/settings HTTP/1.1" 200 8300 "-" "Mozilla/5.0"',
+    '192.168.1.50 - - [10/Jun/2026:15:16:00 +0200] "DELETE /api/session HTTP/1.1" 200 42 "-" "Mozilla/5.0"'
+  ].join('\n'),
+  syslog: [
+    'Jun 10 14:30:15 webserver sshd[1234]: Failed password for root from 203.0.113.50 port 22 ssh2',
+    'Jun 10 14:30:20 webserver sshd[1234]: Connection closed by authenticating user root 203.0.113.50 port 22',
+    'Jun 10 14:31:00 webserver kernel: [UFW BLOCK] IN=eth0 OUT= MAC=... SRC=203.0.113.50 DST=10.0.0.1 PROTO=TCP',
+    'Jun 10 14:31:05 webserver kernel: [UFW BLOCK] IN=eth0 OUT= MAC=... SRC=203.0.113.50 DST=10.0.0.1 PROTO=TCP',
+    'Jun 10 14:32:00 webserver nginx[2345]: 192.168.1.10 - - "GET / HTTP/1.1" 200 6128',
+    'Jun 10 14:32:15 webserver nginx[2345]: 192.168.1.10 - - "GET /css/main.css HTTP/1.1" 200 12400',
+    'Jun 10 14:33:00 webserver postfix/smtpd[3456]: connect from unknown[203.0.113.100]',
+    'Jun 10 14:33:05 webserver postfix/smtpd[3456]: lost connection after CONNECT from unknown[203.0.113.100]',
+    'Jun 10 14:33:06 webserver postfix/smtpd[3456]: disconnect from unknown[203.0.113.100]',
+    'Jun 10 14:34:00 webserver sshd[4567]: Accepted publickey for sergi from 192.168.1.10 port 55432 ssh2: RSA SHA256:...',
+    'Jun 10 14:34:30 webserver sudo:  sergi : TTY=pts/0 ; PWD=/home/sergi ; USER=root ; COMMAND=/bin/systemctl restart nginx',
+    'Jun 10 14:35:00 webserver kernel: OOM killer invoked for process mysql (pid=5678)',
+    'Jun 10 14:35:01 webserver kernel: Out of memory: Killed process 5678 (mysqld) total-vm:1456789kB, anon-rss:1234567kB',
+    'Jun 10 14:35:05 webserver mysqld[5678]: Fatal error: Out of memory. Check system resources.',
+    'Jun 10 14:36:00 webserver cron[6789]: (root) CMD ( /usr/bin/backup.sh > /dev/null 2>&1 )',
+    'Jun 10 14:37:00 webserver sshd[7890]: Failed password for invalid user admin from 10.0.0.99 port 22 ssh2',
+    'Jun 10 14:37:01 webserver sshd[7890]: Failed password for invalid user admin from 10.0.0.99 port 22 ssh2',
+    'Jun 10 14:37:02 webserver sshd[7890]: Failed password for invalid user admin from 10.0.0.99 port 22 ssh2',
+    'Jun 10 14:38:00 webserver nginx[2345]: 10.0.0.5 - - "POST /api/report HTTP/1.1" 500 235'
+  ].join('\n')
+};
+
+function loadSample(type) {
+  document.getElementById('logInput').value = SAMPLES[type] || '';
+}
+
+function clearAll() {
+  document.getElementById('logInput').value = '';
+  document.getElementById('results').style.display = 'none';
+}
+
+function analyze() {
+  const raw = document.getElementById('logInput').value;
+  if (!raw.trim()) { clearAll(); return; }
+  const lines = raw.split('\n').filter(l => l.trim());
+  const result = parseLines(lines);
+  renderStats(result);
+  renderIps(result.ips);
+  renderStatusCodes(result.statusCodes);
+  renderLogLines(result.entries);
+  document.getElementById('results').style.display = 'block';
+}
+
+function parseLines(lines) {
+  let entries = [];
+  let ipCounts = {};
+  let statusCounts = {};
+  let stats = { total: 0, errors: 0, warnings: 0, info: 0 };
+
+  lines.forEach((line, idx) => {
+    stats.total++;
+    let ip = null, status = null, level = 'info';
+    let entry = { line, index: idx };
+
+    // Apache / Nginx combined format
+    let m = line.match(/^(\S+)\s+\S+\s+\S+\s+\[[^\]]+\]\s+"[^"]*"\s+(\d{3})/);
+    if (m) {
+      ip = m[1];
+      status = parseInt(m[2], 10);
+      entry.ip = ip;
+      entry.statusCode = status;
+      if (status >= 500) level = 'error';
+      else if (status >= 400) level = 'warning';
+      else if (status >= 300) level = 'info';
+      else level = 'ok';
+    }
+
+    // Syslog with nginx embedded line
+    if (!m) {
+      m = line.match(/^[A-Z][a-z]{2}\s+\d+\s+\d{2}:\d{2}:\d{2}\s+\S+/);
+      if (m) {
+        level = 'info';
+        // Try to extract IP
+        let ipMatch = line.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+        if (ipMatch) ip = ipMatch[0];
+        // Try to extract HTTP status
+        let stMatch = line.match(/"\s*(\d{3})\s*\d/);
+        if (stMatch) {
+          status = parseInt(stMatch[1], 10);
+          entry.statusCode = status;
+          if (status >= 500) level = 'error';
+          else if (status >= 400) level = 'warning';
+          else if (status >= 300) level = 'info';
+          else level = 'ok';
+        } else {
+          // syslog-level heuristics
+          if (/failed|error|oom|killed|fatal|reject|block/i.test(line)) level = 'error';
+          else if (/warn|denied|invalid|lost/i.test(line)) level = 'warning';
+          else level = 'info';
+        }
+        entry.ip = ip;
+      }
+    }
+
+    // If no format matched, do basic heuristic
+    if (!m) {
+      // Try to extract any IP
+      let ipMatch = line.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+      if (ipMatch) { ip = ipMatch[0]; entry.ip = ip; }
+      if (/error|fatal|critical|exception|traceback|oom|killed/i.test(line)) level = 'error';
+      else if (/warn|deprecat|timeout|denied|invalid/i.test(line)) level = 'warning';
+      else level = 'info';
+    }
+
+    entry.level = level;
+    if (level === 'error') stats.errors++;
+    else if (level === 'warning') stats.warnings++;
+    else stats.info++;
+
+    entries.push(entry);
+
+    if (ip) ipCounts[ip] = (ipCounts[ip] || 0) + 1;
+    if (status !== null) statusCounts[status] = (statusCounts[status] || 0) + 1;
+  });
+
+  let sortedIps = Object.entries(ipCounts).sort((a,b) => b[1] - a[1]);
+  let sortedStatuses = Object.entries(statusCounts).sort((a,b) => b[1] - a[1]);
+
+  return { entries, stats, ips: sortedIps, statusCodes: sortedStatuses };
+}
+
+function renderStats(result) {
+  const s = result.stats;
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card stat-info">
+      <div class="stat-value">${s.total}</div>
+      <div class="stat-label"><i class="fas fa-list"></i> Total línies</div>
+    </div>
+    <div class="stat-card stat-error">
+      <div class="stat-value">${s.errors}</div>
+      <div class="stat-label"><i class="fas fa-times-circle"></i> Errors</div>
+    </div>
+    <div class="stat-card stat-warning">
+      <div class="stat-value">${s.warnings}</div>
+      <div class="stat-label"><i class="fas fa-exclamation-triangle"></i> Warnings</div>
+    </div>
+    <div class="stat-card stat-success">
+      <div class="stat-value">${s.info}</div>
+      <div class="stat-label"><i class="fas fa-check-circle"></i> OK / Info</div>
+    </div>
+  `;
+}
+
+function renderIps(ips) {
+  const el = document.getElementById('ipList');
+  if (!ips.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-globe"></i><p>No s\'han detectat IPs</p></div>';
+    return;
+  }
+  el.innerHTML = ips.map(([ip, count]) => {
+    let badgeClass = count >= 5 ? 'badge-error' : count >= 3 ? 'badge-warning' : 'badge-success';
+    return `<div class="list-item"><span><i class="fas fa-network-wired" style="color:var(--text-secondary);width:1.2rem"></i>${ip}</span><span class="badge ${badgeClass}">${count}</span></div>`;
+  }).join('');
+}
+
+function renderStatusCodes(codes) {
+  const el = document.getElementById('statusCodeList');
+  if (!codes.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-code"></i><p>No s\'han detectat codis HTTP</p></div>';
+    return;
+  }
+  el.innerHTML = codes.map(([code, count]) => {
+    const c = parseInt(code, 10);
+    let badgeClass = c >= 500 ? 'badge-error' : c >= 400 ? 'badge-warning' : 'badge-success';
+    let color = c >= 500 ? 'var(--error)' : c >= 400 ? 'var(--warning)' : 'var(--success)';
+    return `<div class="list-item"><span><span style="display:inline-block;width:0.6rem;height:0.6rem;border-radius:50%;background:${color};margin-right:0.5rem"></span>${code}</span><span class="badge ${badgeClass}">${count}</span></div>`;
+  }).join('');
+}
+
+function renderLogLines(entries) {
+  const el = document.getElementById('logLines');
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>No hi ha línies per mostrar</p></div>';
+    return;
+  }
+  el.innerHTML = entries.map(e => {
+    return `<div class="log-line level-${e.level}"><span class="line-num">${e.index + 1}</span>${escHtml(e.line)}</div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function copyLog() {
+  const raw = document.getElementById('logInput').value;
+  if (!raw.trim()) return;
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = document.querySelector('.card-title .btn-outline:first-of-type');
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copiat';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = raw; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+function downloadLog() {
+  const raw = document.getElementById('logInput').value;
+  if (!raw.trim()) return;
+  const blob = new Blob([raw], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'log-inspector-export.txt';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>

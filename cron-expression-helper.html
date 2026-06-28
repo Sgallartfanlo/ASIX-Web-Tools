@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cron Expression Helper - Creador i explicador d'expressions cron</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.cron-display{font-family:'Fira Code',monospace;font-size:2.25rem;font-weight:700;letter-spacing:0.1em;background:linear-gradient(135deg,#2dd4bf,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.input-cron{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:1.125rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s;text-align:center}
+.input-cron:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-cron:hover{border-color:#3f3f46}
+.input-cron.invalid{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,0.15)}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.preset-btn{background:#18181b;border:1px solid #27272a;color:#d4d4d8;font-family:'Fira Code',monospace;font-size:0.75rem;padding:0.375rem 0.75rem;border-radius:0.375rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.preset-btn:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.preset-btn.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.tip-item{padding:0.5rem 0;border-bottom:1px solid #27272a}
+.tip-item:last-child{border-bottom:none}
+.tip-code{font-family:'Fira Code',monospace;color:#2dd4bf;font-size:0.8125rem;font-weight:600}
+.tip-desc{color:#a1a1aa;font-size:0.8125rem;margin-top:0.125rem}
+.terminal-border{border-left:3px solid #2dd4bf}
+.run-time-item{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #27272a;font-family:'Fira Code',monospace;font-size:0.8125rem}
+.run-time-item:last-child{border-bottom:none}
+.run-time-item .idx{color:#52525b;width:1.5rem}
+.run-time-item .time{color:#e4e4e7}
+.run-time-item .relative{color:#a1a1aa;font-size:0.75rem}
+.copy-btn{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.625rem 1.5rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.copy-btn:hover{opacity:0.9}
+.copy-btn:active{opacity:0.8}
+select.input-cron{appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.5rem center;background-repeat:no-repeat;background-size:1.25rem;padding-right:2rem;text-align:left}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.section-header{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#52525b;margin-bottom:0.75rem}
+</style>
+</head>
+<body>
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-regular fa-clock text-[#2dd4bf] text-2xl"></i>
+      Cron Expression Helper
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Creador i explicador d'expressions cron</p>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-sliders mr-2"></i>Constructor visual</div>
+        <div class="grid grid-cols-5 gap-3 mb-4">
+          <div>
+            <label for="minut">Minut</label>
+            <input id="minut" class="input-cron" type="number" min="0" max="59" value="0" placeholder="0-59">
+          </div>
+          <div>
+            <label for="hora">Hora</label>
+            <input id="hora" class="input-cron" type="number" min="0" max="23" value="0" placeholder="0-23">
+          </div>
+          <div>
+            <label for="dia_mes">Dia del mes</label>
+            <input id="dia_mes" class="input-cron" type="number" min="1" max="31" value="*" placeholder="1-31">
+          </div>
+          <div>
+            <label for="mes">Mes</label>
+            <input id="mes" class="input-cron" type="number" min="1" max="12" value="*" placeholder="1-12">
+          </div>
+          <div>
+            <label for="dia_setmana">Dia setmana</label>
+            <input id="dia_setmana" class="input-cron" type="number" min="0" max="7" value="*" placeholder="0-7">
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5">
+          <button class="preset-btn" data-preset="* * * * *">Cada minut</button>
+          <button class="preset-btn" data-preset="*/5 * * * *">Cada 5 min</button>
+          <button class="preset-btn" data-preset="0 * * * *">Cada hora</button>
+          <button class="preset-btn" data-preset="0 */6 * * *">Cada 6 h</button>
+          <button class="preset-btn" data-preset="0 0 * * *">Cada dia 00:00</button>
+          <button class="preset-btn" data-preset="0 6 * * 1-5">Feiners 6AM</button>
+          <button class="preset-btn" data-preset="0 0 * * 0">Diumenges</button>
+          <button class="preset-btn" data-preset="0 0 1 * *">Primer de mes</button>
+          <button class="preset-btn" data-preset="@reboot">@reboot</button>
+          <button class="preset-btn" data-preset="@daily">@daily</button>
+          <button class="preset-btn" data-preset="@weekly">@weekly</button>
+          <button class="preset-btn" data-preset="@monthly">@monthly</button>
+        </div>
+      </div>
+
+      <div class="card text-center">
+        <div class="card-title">Expressió cron</div>
+        <div class="cron-display mb-3" id="cronDisplay">0 0 * * *</div>
+        <button class="copy-btn" id="copyBtn"><i class="fa-regular fa-copy mr-2"></i>Copiar expressió</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-circle-info mr-2"></i>Explicació</div>
+        <p id="explanation" class="text-sm text-[#d4d4d8] leading-relaxed">S'executa cada dia a mitjanit (00:00).</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-calendar-clock mr-2"></i>Pròximes 5 execucions</div>
+        <div id="runTimes"><div class="text-sm text-[#a1a1aa]">Ajusta els valors per veure les pròximes execucions.</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex items-center gap-2">
+          <i class="fa-regular fa-lightbulb mr-1"></i>Consells sobre sintaxi cron
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+          <div class="tip-item"><div class="tip-code">*</div><div class="tip-desc">Qualsevol valor: coincideix amb tots els valors possibles</div></div>
+          <div class="tip-item"><div class="tip-code">*/n</div><div class="tip-desc">Cada n interval: p.ex. */5 cada 5 minuts</div></div>
+          <div class="tip-item"><div class="tip-code">a-b</div><div class="tip-desc">Rang: del valor a al b (p.ex. 1-5 = de dilluns a divendres)</div></div>
+          <div class="tip-item"><div class="tip-code">a,b,c</div><div class="tip-desc">Llista: valors separats per comes (p.ex. 0,30 = en punt i mitja)</div></div>
+          <div class="tip-item"><div class="tip-code">@reboot</div><div class="tip-desc">S'executa una vegada en iniciar el sistema</div></div>
+          <div class="tip-item"><div class="tip-code">@daily</div><div class="tip-desc">Equivalent a 0 0 * * * (cada dia a mitjanit)</div></div>
+          <div class="tip-item"><div class="tip-code">@weekly</div><div class="tip-desc">Equivalent a 0 0 * * 0 (cada diumenge a mitjanit)</div></div>
+          <div class="tip-item"><div class="tip-code">@monthly</div><div class="tip-desc">Equivalent a 0 0 1 * * (cada 1 del mes a mitjanit)</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="lg:col-span-1">
+      <div class="card terminal-border" style="height:fit-content">
+        <div class="card-title flex items-center gap-2">
+          <i class="fa-solid fa-terminal text-[#2dd4bf]"></i>Referència crontab
+        </div>
+        <div class="space-y-3 text-xs fira">
+          <div>
+            <div class="text-[#52525b] mb-1">Format:</div>
+            <div class="bg-[#0f0f11] rounded p-2 text-[#2dd4bf]">
+              <span class="text-[#a78bfa]">min</span> <span class="text-[#34d399]">hour</span> <span class="text-[#fbbf24]">day</span> <span class="text-[#f472b6]">mon</span> <span class="text-[#60a5fa]">dow</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-[#52525b] mb-1">Camps:</div>
+            <table class="w-full text-left">
+              <tr><td class="text-[#a78bfa] pr-3">min</td><td class="text-[#a1a1aa]">Minut (0-59)</td></tr>
+              <tr><td class="text-[#34d399] pr-3">hour</td><td class="text-[#a1a1aa]">Hora (0-23)</td></tr>
+              <tr><td class="text-[#fbbf24] pr-3">day</td><td class="text-[#a1a1aa]">Dia del mes (1-31)</td></tr>
+              <tr><td class="text-[#f472b6] pr-3">mon</td><td class="text-[#a1a1aa]">Mes (1-12)</td></tr>
+              <tr><td class="text-[#60a5fa] pr-3">dow</td><td class="text-[#a1a1aa]">Dia setmana (0-7, 0=diu)</td></tr>
+            </table>
+          </div>
+          <div>
+            <div class="text-[#52525b] mb-1">Operadors:</div>
+            <table class="w-full text-left">
+              <tr><td class="text-[#2dd4bf] pr-3">*</td><td class="text-[#a1a1aa]">Tots els valors</td></tr>
+              <tr><td class="text-[#2dd4bf] pr-3">*/n</td><td class="text-[#a1a1aa]">Cada n valors</td></tr>
+              <tr><td class="text-[#2dd4bf] pr-3">a-b</td><td class="text-[#a1a1aa]">Rang a-b</td></tr>
+              <tr><td class="text-[#2dd4bf] pr-3">a,b,c</td><td class="text-[#a1a1aa]">Llista de valors</td></tr>
+            </table>
+          </div>
+          <div>
+            <div class="text-[#52525b] mb-1">Exemples:</div>
+            <div class="space-y-1.5">
+              <div class="bg-[#0f0f11] rounded p-1.5 text-[#e4e4e7]"><span class="text-[#2dd4bf]">0 6 * * 1-5</span> <span class="text-[#52525b] text-[10px]">Feiners 6AM</span></div>
+              <div class="bg-[#0f0f11] rounded p-1.5 text-[#e4e4e7]"><span class="text-[#2dd4bf]">*/15 * * * *</span> <span class="text-[#52525b] text-[10px]">Cada 15 min</span></div>
+              <div class="bg-[#0f0f11] rounded p-1.5 text-[#e4e4e7]"><span class="text-[#2dd4bf]">0 0 1 1 *</span> <span class="text-[#52525b] text-[10px]">Any nou</span></div>
+              <div class="bg-[#0f0f11] rounded p-1.5 text-[#e4e4e7]"><span class="text-[#2dd4bf]">@reboot</span> <span class="text-[#52525b] text-[10px]">En iniciar</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i>Desenvolupat per Sergi Gallart · Cron Expression Helper</a>
+  </footer>
+</div>
+
+<script>
+const SPECIAL = { '@reboot': [null,null,null,null,null], '@daily': [0,0,'*','*','*'], '@weekly': [0,0,'*','*',0], '@monthly': [0,0,1,'*','*'] };
+const SPECIAL_NAMES = { '@reboot': 'Al reiniciar el sistema', '@daily': 'Cada dia a mitjanit (00:00)', '@weekly': 'Cada diumenge a mitjanit', '@monthly': 'Cada 1 del mes a mitjanit' };
+
+const fields = ['minut','hora','dia_mes','mes','dia_setmana'];
+const parts = ['minut','hora','dia del mes','mes','dia de la setmana'];
+const limits = [[0,59],[0,23],[1,31],[1,12],[0,7]];
+const names = { 0:'diumenge',1:'dilluns',2:'dimarts',3:'dimecres',4:'dijous',5:'divendres',6:'dissabte' };
+const months = { 1:'gener',2:'febrer',3:'març',4:'abril',5:'maig',6:'juny',7:'juliol',8:'agost',9:'setembre',10:'octubre',11:'novembre',12:'desembre' };
+
+function getVal(id) { const el = document.getElementById(id); return el.type === 'number' && el.value === '' ? '*' : el.value; }
+function setVal(id, v) { const el = document.getElementById(id); if (v === '*') { el.value = '*'; } else { el.value = v; } }
+function isWild(v) { return v === '*' || v === ''; }
+
+function buildExpression() {
+  const v = fields.map(getVal);
+  return v.join(' ');
+}
+
+function explanation(parts, raw) {
+  const exp = raw.join(' ');
+  if (SPECIAL_NAMES[exp]) return SPECIAL_NAMES[exp];
+
+  let m = raw[0], h = raw[1], dom = raw[2], mon = raw[3], dow = raw[4];
+  let parts2 = [];
+
+  if (dow !== '*' && dow !== '?' && (dom === '*' || dom === '?')) {
+    const dows = expandField(dow, 0, 7).map(d => names[d] || 'domingo');
+    parts2.push('el' + (dows.length === 1 ? ' ' : 's ') + dows.join(', '));
+  } else if (dom !== '*' && dom !== '?') {
+    const doms = expandField(dom, 1, 31);
+    parts2.push('el' + (doms.length === 1 ? ' dia ' : 's dies ') + doms.join(', '));
+  } else {
+    parts2.push('cada dia');
+  }
+
+  if (mon !== '*' && mon !== '?') {
+    const mons = expandField(mon, 1, 12).map(v => months[parseInt(v)] || v);
+    parts2.push('de ' + (mons.length === 1 ? '' : '') + mons.join(', '));
+  }
+
+  if (h !== '*' && h !== '?' && m !== '*' && m !== '?') {
+    const hs = expandField(h, 0, 23);
+    const ms = expandField(m, 0, 59);
+    if (hs.length === 1 && ms.length === 1) {
+      parts2.push('a les ' + String(hs[0]).padStart(2,'0') + ':' + String(ms[0]).padStart(2,'0'));
+    } else {
+      parts2.push('als minuts ' + ms.join(',') + ' de les ' + hs.join(',') + ' h');
+    }
+  } else if (h !== '*' && h !== '?') {
+    const hs = expandField(h, 0, 23);
+    parts2.push('a les ' + hs.join(', ') + ' h');
+  } else if (m !== '*' && m !== '?') {
+    const ms = expandField(m, 0, 59);
+    parts2.push('al minut ' + ms.join(', '));
+  }
+
+  return 'S\'executa ' + parts2.join(' ') + '.';
+}
+
+function expandField(f, min, max) {
+  if (f === '*' || f === '' || f === null) return [f];
+  const result = [];
+  const items = String(f).split(',');
+  for (const item of items) {
+    if (item.includes('/')) {
+      const [range, step] = item.split('/');
+      const stepN = parseInt(step);
+      let start = min, end = max;
+      if (range !== '*') {
+        if (range.includes('-')) { const [a,b] = range.split('-'); start = parseInt(a); end = parseInt(b); }
+        else start = end = parseInt(range);
+      }
+      for (let i = start; i <= end; i += stepN) result.push(i);
+    } else if (item.includes('-')) {
+      const [a,b] = item.split('-').map(Number);
+      for (let i = a; i <= b; i++) result.push(i);
+    } else if (item === '*') {
+      for (let i = min; i <= max; i++) result.push(i);
+    } else {
+      result.push(parseInt(item));
+    }
+  }
+  return result;
+}
+
+function parseCron(expr) {
+  const e = expr.trim();
+  if (SPECIAL[e]) return { parts: SPECIAL[e], raw: e.split(' ') };
+  const p = e.split(/\s+/);
+  while (p.length < 5) p.push('*');
+  return { parts: p.slice(0,5), raw: p.slice(0,5) };
+}
+
+function nextRunTimes(expr, count = 5) {
+  if (expr === '@reboot') return [];
+  const now = new Date();
+  const times = [];
+  let cursor = new Date(now);
+  cursor.setSeconds(0, 0);
+  let maxIter = 525600;
+  while (times.length < count && maxIter > 0) {
+    maxIter--;
+    cursor.setMinutes(cursor.getMinutes() + 1);
+    if (matches(cursor, expr)) times.push(new Date(cursor));
+  }
+  return times;
+}
+
+function matches(date, expr) {
+  const p = expr.split(/\s+/);
+  if (p.length < 5) return false;
+  const m = date.getMinutes(), h = date.getHours(), dom = date.getDate(), mon = date.getMonth() + 1, dow = date.getDay();
+  const checks = [m, h, dom, mon, dow];
+  const fieldMins = [[0,59],[0,23],[1,31],[1,12],[0,7]];
+  for (let i = 0; i < 5; i++) {
+    if (!fieldMatches(checks[i], String(p[i]), fieldMins[i][0], fieldMins[i][1])) return false;
+  }
+  return true;
+}
+
+function fieldMatches(val, pattern, min, max) {
+  if (pattern === '*') return true;
+  const items = pattern.split(',');
+  for (const item of items) {
+    if (item.includes('/')) {
+      const [range, step] = item.split('/');
+      const stepN = parseInt(step);
+      let start = min, end = max;
+      if (range !== '*') {
+        if (range.includes('-')) { const [a,b] = range.split('-'); start = parseInt(a); end = parseInt(b); }
+        else start = end = parseInt(range);
+      }
+      if (val >= start && val <= end && (val - start) % stepN === 0) return true;
+    } else if (item.includes('-')) {
+      const [a,b] = item.split('-').map(Number);
+      if (val >= a && val <= b) return true;
+    } else if (parseInt(item) === val) return true;
+  }
+  return false;
+}
+
+function relativeTime(d) {
+  const diff = d - new Date();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `en ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  const rm = mins % 60;
+  if (hrs < 24) return rm ? `en ${hrs}h ${rm}min` : `en ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  return `en ${days} dia${days > 1 ? 's' : ''}`;
+}
+
+function updateAll() {
+  const raw = fields.map(getVal);
+  const expr = raw.join(' ');
+
+  document.getElementById('cronDisplay').textContent = expr.replace(/\*/g, '\u2217');
+  if (expr === '@reboot') {
+    document.getElementById('explanation').textContent = 'S\'executa una vegada en iniciar el sistema.';
+    document.getElementById('runTimes').innerHTML = '<div class="text-sm text-[#a1a1aa]">@reboot s\'executa en iniciar el sistema; no es pot calcular el moment exacte.</div>';
+    return;
+  }
+
+  document.getElementById('explanation').textContent = explanation(parts, raw);
+
+  const runs = nextRunTimes(expr);
+  if (runs.length === 0) {
+    document.getElementById('runTimes').innerHTML = '<div class="text-sm text-[#a1a1aa]">No s\'han trobat pròximes execucions. Revisa l\'expressió.</div>';
+  } else {
+    const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
+    document.getElementById('runTimes').innerHTML = runs.map((d,i) =>
+      `<div class="run-time-item"><span class="idx">#${i+1}</span><span class="time">${d.toLocaleDateString('ca-ES', opts)}</span><span class="relative">${relativeTime(d)}</span></div>`
+    ).join('');
+  }
+}
+
+function setPreset(expr) {
+  const parsed = parseCron(expr);
+  parsed.parts.forEach((v, i) => setVal(fields[i], v));
+  updateAll();
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setPreset(btn.dataset.preset);
+  });
+});
+
+fields.forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    updateAll();
+  });
+  el.addEventListener('blur', () => {
+    const idx = fields.indexOf(id);
+    const [min, max] = limits[idx];
+    const v = el.value;
+    if (v !== '*' && v !== '' && v !== '?') {
+      const n = parseInt(v);
+      if (isNaN(n) || n < min || n > max) { el.classList.add('invalid'); } else { el.classList.remove('invalid'); }
+    } else {
+      el.classList.remove('invalid');
+    }
+  });
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const expr = fields.map(getVal).join(' ');
+  navigator.clipboard.writeText(expr).then(() => {
+    const btn = document.getElementById('copyBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-regular fa-check mr-2"></i>Copiat!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = expr;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+});
+
+updateAll();
+</script>
+</body>
+</html>

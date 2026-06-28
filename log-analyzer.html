@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apache / Nginx Log Analyzer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#52525b;padding:0.5rem 0.75rem;border-bottom:1px solid #27272a}
+td{padding:0.5rem 0.75rem;font-size:0.85rem;border-bottom:1px solid #27272a}
+tr:hover td{background:rgba(255,255,255,0.02)}
+tr:last-child td{border-bottom:none}
+.bar-bg{background:#27272a;border-radius:4px;height:1rem;overflow:hidden;position:relative}
+.bar-fill{background:#2dd4bf;height:100%;border-radius:4px;transition:width .6s ease;position:relative}
+.bar-fill.narrow{height:0.625rem}
+.bar-fill.susp{background:#ef4444}
+.bar-fill.susp-2{background:#f59e0b}
+.stat-card{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:1rem;text-align:center}
+.stat-card .num{font-family:'Fira Code',monospace;font-size:1.75rem;font-weight:700;color:#2dd4bf}
+.stat-card .lbl{font-size:0.7rem;color:#52525b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem}
+.susp-item{background:#0f0f11;border-left:3px solid #ef4444;padding:0.6rem 0.75rem;border-radius:0.375rem;margin-bottom:0.5rem;font-size:0.85rem}
+.susp-item .ip{color:#ef4444;font-family:'Fira Code',monospace}
+.susp-item .detail{color:#a1a1aa;font-size:0.75rem}
+.tag{display:inline-block;background:#0f0f11;border:1px solid #27272a;border-radius:0.25rem;padding:0.125rem 0.5rem;font-size:0.7rem;font-family:'Fira Code',monospace;color:#a1a1aa}
+#hourChart{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:6rem;margin-top:0.5rem}
+#hourChart .bar-wrap{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
+#hourChart .bar-col{width:100%;background:#2dd4bf;border-radius:2px 2px 0 0;min-height:2px;transition:height .6s ease}
+#hourChart .hour-label{font-size:0.5rem;color:#52525b;margin-top:2px;font-family:'Fira Code',monospace}
+</style>
+</head>
+<body>
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-chart-simple text-[#2dd4bf] text-2xl"></i>
+      Apache / Nginx Log Analyzer
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Paste access logs to analyze traffic, status codes, and detect threats</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-file-lines mr-2"></i>Log Input</div>
+    <textarea id="logInput" class="input-field" rows="10" placeholder="Paste Apache/Nginx access logs here (one per line)..."></textarea>
+    <div class="flex gap-3 mt-3">
+      <button id="analyzeBtn" class="bg-[#2dd4bf] text-[#0f0f11] font-semibold px-5 py-2 rounded-lg text-sm hover:opacity-90 transition flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass"></i> Analyze
+      </button>
+      <button id="clearBtn" class="bg-transparent border border-[#27272a] text-[#a1a1aa] px-5 py-2 rounded-lg text-sm hover:border-[#3f3f46] transition flex items-center gap-2">
+        <i class="fa-regular fa-trash-can"></i> Clear
+      </button>
+      <button id="sampleBtn" class="bg-transparent border border-[#27272a] text-[#a1a1aa] px-5 py-2 rounded-lg text-sm hover:border-[#3f3f46] transition flex items-center gap-2">
+        <i class="fa-regular fa-rotate-right"></i> Load Sample
+      </button>
+    </div>
+  </div>
+
+  <div id="resultsArea" class="space-y-5 hidden"></div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> Apache / Nginx Log Analyzer</a>
+  </footer>
+</div>
+
+<script>
+var SAMPLE_LOGS = [
+  '192.168.1.10 - - [28/Jun/2026:08:15:23 +0000] "GET /index.php HTTP/1.1" 200 1234 "https://example.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"',
+  '192.168.1.10 - - [28/Jun/2026:08:16:01 +0000] "GET /wp-admin/admin-ajax.php HTTP/1.1" 200 567 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:08:17:45 +0000] "GET /images/logo.png HTTP/1.1" 304 0 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:08:18:12 +0000] "GET /css/style.css HTTP/1.1" 200 8912 "https://example.com/" "Mozilla/5.0"',
+  '203.0.113.42 - - [28/Jun/2026:08:22:33 +0000] "POST /wp-login.php HTTP/1.1" 404 3456 "-" "python-requests/2.28"',
+  '203.0.113.42 - - [28/Jun/2026:08:23:10 +0000] "GET /wp-admin HTTP/1.1" 404 2345 "-" "python-requests/2.28"',
+  '203.0.113.42 - - [28/Jun/2026:08:24:05 +0000] "GET /wp-content/plugins/akismet/akismet.php HTTP/1.1" 404 1890 "-" "python-requests/2.28"',
+  '203.0.113.42 - - [28/Jun/2026:08:25:00 +0000] "POST /xmlrpc.php HTTP/1.1" 404 2100 "-" "python-requests/2.28"',
+  '198.51.100.7 - - [28/Jun/2026:09:05:30 +0000] "GET /index.php HTTP/1.1" 200 4300 "https://example.com/blog" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"',
+  '198.51.100.7 - - [28/Jun/2026:09:06:15 +0000] "GET /about HTTP/1.1" 200 5600 "https://example.com/" "Mozilla/5.0"',
+  '198.51.100.7 - - [28/Jun/2026:09:07:22 +0000] "GET /contact HTTP/1.1" 200 1200 "https://example.com/about" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:09:10:45 +0000] "GET /api/users HTTP/1.1" 200 890 "https://example.com/" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:09:11:30 +0000] "GET /api/products HTTP/1.1" 200 1200 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:09:15:00 +0000] "GET /favicon.ico HTTP/1.1" 200 5430 "-" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:09:20:10 +0000] "GET /index.php HTTP/1.1" 200 4300 "https://example.com/" "Mozilla/5.0"',
+  '203.0.113.42 - - [28/Jun/2026:09:30:00 +0000] "GET /wp-includes/wlwmanifest.xml HTTP/1.1" 404 1500 "-" "python-requests/2.28"',
+  '203.0.113.42 - - [28/Jun/2026:09:31:00 +0000] "GET /wp-content/plugins/hello.php HTTP/1.1" 404 1200 "-" "python-requests/2.28"',
+  '198.51.100.7 - - [28/Jun/2026:10:00:00 +0000] "GET /blog/post-1 HTTP/1.1" 200 8900 "https://example.com/" "Mozilla/5.0"',
+  '198.51.100.7 - - [28/Jun/2026:10:01:30 +0000] "GET /blog/post-2 HTTP/1.1" 200 7200 "https://example.com/blog" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:10:05:00 +0000] "GET /index.php HTTP/1.1" 200 4300 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:10:10:00 +0000] "GET /js/app.js HTTP/1.1" 200 34000 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:10:10:15 +0000] "GET /css/main.css HTTP/1.1" 200 12400 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:10:10:30 +0000] "GET /images/banner.jpg HTTP/1.1" 200 45000 "https://example.com/" "Mozilla/5.0"',
+  '198.51.100.7 - - [28/Jun/2026:11:15:00 +0000] "GET /products HTTP/1.1" 301 0 "-" "Mozilla/5.0"',
+  '198.51.100.7 - - [28/Jun/2026:11:15:05 +0000] "GET /products/ HTTP/1.1" 200 12500 "https://example.com/" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:11:20:00 +0000] "POST /api/checkout HTTP/1.1" 500 230 "-" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:11:20:01 +0000] "POST /api/checkout HTTP/1.1" 500 230 "-" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:11:20:02 +0000] "POST /api/checkout HTTP/1.1" 200 890 "-" "Mozilla/5.0"',
+  '185.220.101.34 - - [28/Jun/2026:11:30:00 +0000] "GET /index.php?q=1%27%20UNION%20SELECT%20null,username,password%20FROM%20users-- HTTP/1.1" 404 120 "-" "sqlmap/1.7"',
+  '185.220.101.34 - - [28/Jun/2026:11:30:01 +0000] "GET /index.php?q=1%27%20AND%201=1-- HTTP/1.1" 404 110 "-" "sqlmap/1.7"',
+  '185.220.101.34 - - [28/Jun/2026:11:30:02 +0000] "GET /index.php?q=1%27%20AND%201=2-- HTTP/1.1" 404 115 "-" "sqlmap/1.7"',
+  '185.220.101.34 - - [28/Jun/2026:11:30:03 +0000] "SELECT%20*%20FROM%20users HTTP/1.1" 400 0 "-" "sqlmap/1.7"',
+  '203.0.113.42 - - [28/Jun/2026:12:00:00 +0000] "GET /wp-content/uploads/../../etc/passwd HTTP/1.1" 404 800 "-" "python-requests/2.28"',
+  '203.0.113.42 - - [28/Jun/2026:12:01:00 +0000] "GET /wp-admin/admin-ajax.php?action=revslider_show_image&img=../wp-config.php HTTP/1.1" 404 950 "-" "python-requests/2.28"',
+  '198.51.100.7 - - [28/Jun/2026:12:30:00 +0000] "GET / HTTP/1.1" 200 5400 "https://google.com/" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:13:00:00 +0000] "GET /index.php HTTP/1.1" 200 4300 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:13:05:00 +0000] "GET /api/status HTTP/1.1" 200 45 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:13:05:01 +0000] "GET /api/status HTTP/1.1" 200 45 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:13:05:02 +0000] "GET /api/status HTTP/1.1" 200 45 "https://example.com/" "Mozilla/5.0"',
+  '198.51.100.7 - - [28/Jun/2026:14:00:00 +0000] "GET /search?q=hello+world HTTP/1.1" 200 3200 "https://example.com/" "Mozilla/5.0"',
+  '192.168.1.10 - - [28/Jun/2026:14:30:00 +0000] "GET /index.php HTTP/1.1" 200 4300 "https://example.com/" "Mozilla/5.0"',
+  '10.0.0.5 - - [28/Jun/2026:15:00:00 +0000] "GET /cdn-cgi/trace HTTP/1.1" 200 120 "-" "curl/7.88"',
+  '10.0.0.5 - - [28/Jun/2026:16:00:00 +0000] "GET /robots.txt HTTP/1.1" 200 340 "-" "Mozilla/5.0"',
+  '198.51.100.7 - - [28/Jun/2026:16:30:00 +0000] "GET /sitemap.xml HTTP/1.1" 200 8900 "-" "Mozilla/5.0"'
+];
+
+var logInput = document.getElementById('logInput');
+var analyzeBtn = document.getElementById('analyzeBtn');
+var clearBtn = document.getElementById('clearBtn');
+var sampleBtn = document.getElementById('sampleBtn');
+var resultsArea = document.getElementById('resultsArea');
+
+function analyzeLogs() {
+  var raw = logInput.value.trim();
+  if (!raw) { resultsArea.classList.add('hidden'); return; }
+  var lines = raw.split(/\n/).filter(function(l){ return l.trim(); });
+  var entries = [];
+  var regex = /^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]*)" (\d+) (\d+|-) "([^"]*)" "([^"]*)"/;
+  for (var i = 0; i < lines.length; i++) {
+    var m = lines[i].match(regex);
+    if (m) {
+      var datePart = m[2];
+      var hour = 0;
+      var hourMatch = datePart.match(/:(\d{2}):/);
+      if (hourMatch) hour = parseInt(hourMatch[1], 10);
+      var reqParts = m[3].split(' ');
+      var method = reqParts[0] || '-';
+      var url = reqParts[1] || '-';
+      var entry = {
+        ip: m[1],
+        date: m[2],
+        request: m[3],
+        method: method,
+        url: url,
+        status: parseInt(m[4], 10),
+        bytes: m[5],
+        referrer: m[6],
+        ua: m[7],
+        hour: hour
+      };
+      entries.push(entry);
+    }
+  }
+  if (entries.length === 0) {
+    resultsArea.innerHTML = '<div class="card"><p class="text-[#a1a1aa] text-sm">No valid log entries found. Make sure each line uses the standard Combined Log Format.</p></div>';
+    resultsArea.classList.remove('hidden');
+    return;
+  }
+  renderResults(entries);
+}
+
+function renderResults(entries) {
+  var total = entries.length;
+  var ipCount = {};
+  var statusCount = {};
+  var urlCount = {};
+  var hourCount = {};
+  for (var i = 0; i < 24; i++) hourCount[i] = 0;
+  var ipStatus404 = {};
+
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    ipCount[e.ip] = (ipCount[e.ip] || 0) + 1;
+    var sc = e.status;
+    var scKey = sc >= 200 && sc < 300 ? '2xx' : sc >= 300 && sc < 400 ? '3xx' : sc >= 400 && sc < 500 ? '4xx' : '5xx';
+    statusCount[sc] = (statusCount[sc] || 0) + 1;
+    urlCount[e.url] = (urlCount[e.url] || 0) + 1;
+    if (e.hour >= 0 && e.hour <= 23) hourCount[e.hour]++;
+    if (e.status === 404) ipStatus404[e.ip] = (ipStatus404[e.ip] || 0) + 1;
+  }
+
+  var topIPs = Object.keys(ipCount).sort(function(a,b){ return ipCount[b] - ipCount[a]; }).slice(0, 10);
+  var topURLs = Object.keys(urlCount).sort(function(a,b){ return urlCount[b] - urlCount[a]; }).slice(0, 10);
+  var maxIP = topIPs.length ? ipCount[topIPs[0]] : 1;
+  var maxURL = topURLs.length ? urlCount[topURLs[0]] : 1;
+  var minHour = Infinity, maxHour = -Infinity;
+  for (var i = 0; i < 24; i++) { if (hourCount[i] < minHour) minHour = hourCount[i]; if (hourCount[i] > maxHour) maxHour = hourCount[i]; }
+  var hourRange = maxHour - minHour || 1;
+  var sortedStatuses = Object.keys(statusCount).sort(function(a,b){ return a - b; });
+
+  var suspiciousIPs = [];
+  var suspiciousSQLi = [];
+  for (var ip in ipStatus404) {
+    if (ipStatus404[ip] >= 4) {
+      suspiciousIPs.push({ ip: ip, count: ipStatus404[ip] });
+    }
+  }
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var u = decodeURIComponent(e.url).toUpperCase();
+    if (/SELECT\b.*\bFROM\b/.test(u) || /\bUNION\b/.test(u) || /\bAND\s+1=1\b/.test(u) || /\bAND\s+1=2\b/.test(u) || /--/.test(u) || /'/.test(u)) {
+      suspiciousSQLi.push({ ip: e.ip, url: e.url, method: e.method });
+    }
+  }
+  var suspiciousPathTraversal = [];
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var u = e.url.toLowerCase();
+    if (/\.\.\//.test(u) || /\.\.\\/.test(u) || /etc\/passwd/.test(u) || /wp-config\.php/.test(u)) {
+      suspiciousPathTraversal.push({ ip: e.ip, url: e.url, status: e.status });
+    }
+  }
+
+  var html = '';
+
+  html += '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">';
+  html += '<div class="stat-card"><div class="num">' + total + '</div><div class="lbl">Total Requests</div></div>';
+  html += '<div class="stat-card"><div class="num">' + Object.keys(ipCount).length + '</div><div class="lbl">Unique IPs</div></div>';
+  html += '<div class="stat-card"><div class="num">' + Object.keys(urlCount).length + '</div><div class="lbl">Unique URLs</div></div>';
+  var errCount = 0;
+  for (var sc in statusCount) { if (parseInt(sc,10) >= 400) errCount += statusCount[sc]; }
+  html += '<div class="stat-card"><div class="num">' + errCount + '</div><div class="lbl">Errors (4xx/5xx)</div></div>';
+  html += '</div>';
+
+  html += '<div class="card">';
+  html += '<div class="card-title"><i class="fa-regular fa-ranking-star mr-2"></i>Top 10 IPs</div>';
+  html += '<table><thead><tr><th>#</th><th>IP Address</th><th>Requests</th><th>%</th></tr></thead><tbody>';
+  for (var i = 0; i < topIPs.length; i++) {
+    var ip = topIPs[i];
+    var cnt = ipCount[ip];
+    var pct = (cnt / total * 100).toFixed(1);
+    var barW = (cnt / maxIP * 100).toFixed(1);
+    html += '<tr><td class="text-[#52525b] text-xs">' + (i+1) + '</td><td class="fira text-[#e4e4e7]">' + ip + '</td><td class="fira">' + cnt + '</td>';
+    html += '<td style="min-width:100px"><div class="bar-bg"><div class="bar-fill" style="width:' + barW + '%"></div></div><span class="text-xs text-[#52525b] ml-1">' + pct + '%</span></td></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  html += '<div class="card">';
+  html += '<div class="card-title"><i class="fa-regular fa-chart-bar mr-2"></i>Status Code Distribution</div>';
+  html += '<table><thead><tr><th>Status</th><th>Count</th><th style="width:55%">Distribution</th></tr></thead><tbody>';
+  var maxStatus = 0;
+  for (var sc in statusCount) { if (statusCount[sc] > maxStatus) maxStatus = statusCount[sc]; }
+  for (var i = 0; i < sortedStatuses.length; i++) {
+    var sc = sortedStatuses[i];
+    var cnt = statusCount[sc];
+    var pct = (cnt / total * 100).toFixed(1);
+    var barW = (cnt / maxStatus * 100).toFixed(1);
+    var colorClass = 'bar-fill';
+    if (sc >= 500) colorClass = 'bar-fill susp';
+    else if (sc >= 400) colorClass = 'bar-fill susp-2';
+    html += '<tr><td><span class="tag">' + sc + '</span></td><td class="fira">' + cnt + '</td>';
+    html += '<td><div class="bar-bg"><div class="' + colorClass + '" style="width:' + barW + '%"></div></div><span class="text-xs text-[#52525b] ml-1">' + pct + '%</span></td></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  html += '<div class="card">';
+  html += '<div class="card-title"><i class="fa-regular fa-link mr-2"></i>Top 10 URLs</div>';
+  html += '<table><thead><tr><th>#</th><th>Path</th><th>Requests</th><th>%</th></tr></thead><tbody>';
+  for (var i = 0; i < topURLs.length; i++) {
+    var u = topURLs[i];
+    var cnt = urlCount[u];
+    var pct = (cnt / total * 100).toFixed(1);
+    var barW = (cnt / maxURL * 100).toFixed(1);
+    var display = u.length > 50 ? u.substring(0, 50) + '...' : u;
+    html += '<tr><td class="text-[#52525b] text-xs">' + (i+1) + '</td><td class="fira text-xs" title="' + u.replace(/"/g,'&quot;') + '">' + display + '</td><td class="fira">' + cnt + '</td>';
+    html += '<td style="min-width:100px"><div class="bar-bg"><div class="bar-fill" style="width:' + barW + '%"></div></div><span class="text-xs text-[#52525b] ml-1">' + pct + '%</span></td></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  html += '<div class="card">';
+  html += '<div class="card-title"><i class="fa-regular fa-clock mr-2"></i>Requests per Hour</div>';
+  html += '<div id="hourChart">';
+  for (var i = 0; i < 24; i++) {
+    var h = hourCount[i];
+    var pct = maxHour > 0 ? (h / maxHour * 100) : 0;
+    var label = i.toString().padStart(2, '0');
+    html += '<div class="bar-wrap"><div class="bar-col" style="height:' + pct + '%" title="' + label + ':00 - ' + h + ' requests"></div><span class="hour-label">' + label + '</span></div>';
+  }
+  html += '</div></div>';
+
+  var hasSusp = suspiciousIPs.length > 0 || suspiciousSQLi.length > 0 || suspiciousPathTraversal.length > 0;
+  if (hasSusp) {
+    html += '<div class="card">';
+    html += '<div class="card-title"><i class="fa-solid fa-triangle-exclamation text-[#ef4444] mr-2"></i>Suspicious Activity Detected</div>';
+    if (suspiciousIPs.length > 0) {
+      html += '<p class="text-xs text-[#a1a1aa] mb-2 font-semibold">Multiple 404 Errors from Same IP</p>';
+      for (var i = 0; i < suspiciousIPs.length; i++) {
+        var s = suspiciousIPs[i];
+        html += '<div class="susp-item"><span class="ip">' + s.ip + '</span> <span class="detail">— ' + s.count + ' x 404 errors</span></div>';
+      }
+    }
+    if (suspiciousSQLi.length > 0) {
+      html += '<p class="text-xs text-[#a1a1aa] mb-2 mt-3 font-semibold">SQL Injection Attempts</p>';
+      var seenSQLi = {};
+      for (var i = 0; i < suspiciousSQLi.length; i++) {
+        var s = suspiciousSQLi[i];
+        var key = s.ip + s.url;
+        if (!seenSQLi[key]) {
+          seenSQLi[key] = true;
+          var display = s.url.length > 60 ? s.url.substring(0, 60) + '...' : s.url;
+          html += '<div class="susp-item"><span class="ip">' + s.ip + '</span> <span class="detail fira text-[#a1a1aa]">' + display + '</span></div>';
+        }
+      }
+    }
+    if (suspiciousPathTraversal.length > 0) {
+      html += '<p class="text-xs text-[#a1a1aa] mb-2 mt-3 font-semibold">Path Traversal / File Inclusion Attempts</p>';
+      var seenPT = {};
+      for (var i = 0; i < suspiciousPathTraversal.length; i++) {
+        var s = suspiciousPathTraversal[i];
+        var key = s.ip + s.url;
+        if (!seenPT[key]) {
+          seenPT[key] = true;
+          var display = s.url.length > 60 ? s.url.substring(0, 60) + '...' : s.url;
+          html += '<div class="susp-item" style="border-left-color:#f59e0b"><span class="ip" style="color:#f59e0b">' + s.ip + '</span> <span class="detail fira text-[#a1a1aa]">' + display + '</span></div>';
+        }
+      }
+    }
+    html += '</div>';
+  }
+
+  resultsArea.innerHTML = html;
+  resultsArea.classList.remove('hidden');
+}
+
+function loadSample() {
+  logInput.value = SAMPLE_LOGS.join('\n');
+  analyzeLogs();
+}
+
+function clearAll() {
+  logInput.value = '';
+  resultsArea.classList.add('hidden');
+}
+
+analyzeBtn.onclick = analyzeLogs;
+clearBtn.onclick = clearAll;
+sampleBtn.onclick = loadSample;
+
+loadSample();
+</script>
+</body>
+</html>

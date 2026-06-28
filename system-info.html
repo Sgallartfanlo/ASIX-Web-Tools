@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Info Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:0.625rem 0;border-bottom:1px solid #27272a;font-size:0.875rem}
+.info-row:last-child{border-bottom:none}
+.info-label{color:#a1a1aa;display:flex;align-items:center;gap:0.5rem}
+.info-label i{color:#52525b;width:1rem}
+.info-value{font-family:'Fira Code',monospace;color:#e4e4e7;text-align:right;max-width:60%;word-break:break-all}
+.badge{display:inline-block;padding:0.125rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:600;text-transform:uppercase}
+.badge-yes{background:rgba(45,212,191,0.15);color:#2dd4bf}
+.badge-no{background:rgba(239,68,68,0.15);color:#ef4444}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}
+.stat-card{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:1rem;text-align:center}
+.stat-value{font-size:1.5rem;font-weight:700;font-family:'Fira Code',monospace;color:#2dd4bf}
+.stat-label{font-size:0.7rem;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem}
+</style>
+</head>
+<body>
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-desktop text-[#2dd4bf] text-2xl"></i>
+      System Info Dashboard
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Real-time browser and system information</p>
+  </header>
+
+  <div class="grid grid-cols-1 gap-6">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-value" id="srInfo">--</div><div class="stat-label">Screen Resolution</div></div>
+      <div class="stat-card"><div class="stat-value" id="vpInfo">--</div><div class="stat-label">Viewport Size</div></div>
+      <div class="stat-card"><div class="stat-value" id="loadTime">--</div><div class="stat-label">Load Time</div></div>
+      <div class="stat-card"><div class="stat-value" id="onlineStatus">--</div><div class="stat-label">Online</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-circle-info mr-2"></i>Browser & System</div>
+      <div id="browserInfo"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-rectangle-ad mr-2"></i>Network & Page</div>
+      <div id="networkInfo"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> System Info Dashboard</a>
+  </footer>
+</div>
+
+<script>
+function getBrowserInfo() {
+  const ua = navigator.userAgent;
+  let browserName = 'Unknown', browserVersion = 'Unknown';
+  if (ua.includes('Firefox/')) { browserName = 'Firefox'; browserVersion = ua.match(/Firefox\/([\d.]+)/)[1]; }
+  else if (ua.includes('Edg/')) { browserName = 'Edge'; browserVersion = ua.match(/Edg\/([\d.]+)/)[1]; }
+  else if (ua.includes('Chrome/') && !ua.includes('Edg/')) { browserName = 'Chrome'; browserVersion = ua.match(/Chrome\/([\d.]+)/)[1]; }
+  else if (ua.includes('Safari/') && !ua.includes('Chrome/')) { browserName = 'Safari'; browserVersion = ua.match(/Version\/([\d.]+)/) ? ua.match(/Version\/([\d.]+)/)[1] : 'Unknown'; }
+  else if (ua.includes('OPR/') || ua.includes('Opera/')) { browserName = 'Opera'; browserVersion = ua.match(/(?:OPR|Opera)\/([\d.]+)/)[1]; }
+  return { name: browserName, version: browserVersion };
+}
+
+function getOS() {
+  const ua = navigator.userAgent;
+  if (ua.includes('Windows NT 11.0')) return 'Windows 11';
+  if (ua.includes('Windows NT 10.0')) return 'Windows 10';
+  if (ua.includes('Windows NT 6.3')) return 'Windows 8.1';
+  if (ua.includes('Windows NT 6.2')) return 'Windows 8';
+  if (ua.includes('Windows NT 6.1')) return 'Windows 7';
+  if (ua.includes('Mac OS X')) {
+    const m = ua.match(/Mac OS X ([\d_]+)/);
+    return m ? 'macOS ' + m[1].replace(/_/g,'.') : 'macOS';
+  }
+  if (ua.includes('Linux')) return 'Linux';
+  if (ua.includes('Android')) return 'Android';
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+  return 'Unknown';
+}
+
+function buildInfoRow(label, value, icon) {
+  return '<div class="info-row"><span class="info-label"><i class="fa-regular fa-' + icon + '"></i>' + label + '</span><span class="info-value">' + value + '</span></div>';
+}
+
+function render() {
+  const browser = getBrowserInfo();
+  const os = getOS();
+  const lang = navigator.language || navigator.userLanguage || 'Unknown';
+  const cookies = navigator.cookieEnabled;
+  const online = navigator.onLine;
+  const url = window.location.href;
+  const sr = screen.width + ' x ' + screen.height;
+  const vp = window.innerWidth + ' x ' + window.innerHeight;
+
+  document.getElementById('srInfo').textContent = sr;
+  document.getElementById('vpInfo').textContent = vp;
+
+  const perf = performance.timing || {};
+  const load = perf.loadEventEnd && perf.navigationStart ? (perf.loadEventEnd - perf.navigationStart) + 'ms' : 'N/A';
+  document.getElementById('loadTime').textContent = load;
+
+  const onlineEl = document.getElementById('onlineStatus');
+  onlineEl.textContent = online ? 'Yes' : 'No';
+  onlineEl.style.color = online ? '#2dd4bf' : '#ef4444';
+
+  document.getElementById('browserInfo').innerHTML =
+    buildInfoRow('Browser Name', browser.name, 'window-maximize') +
+    buildInfoRow('Browser Version', browser.version, 'hashtag') +
+    buildInfoRow('Operating System', os, 'gear') +
+    buildInfoRow('Language', lang, 'globe') +
+    buildInfoRow('User Agent', '<span style="font-size:0.65rem">' + ua + '</span>', 'code');
+
+  document.getElementById('networkInfo').innerHTML =
+    buildInfoRow('Online Status', '<span class="badge ' + (online ? 'badge-yes' : 'badge-no') + '">' + (online ? 'Online' : 'Offline') + '</span>', 'wifi') +
+    buildInfoRow('Cookies Enabled', '<span class="badge ' + (cookies ? 'badge-yes' : 'badge-no') + '">' + (cookies ? 'Yes' : 'No') + '</span>', 'cookie-bite') +
+    buildInfoRow('Current URL', url, 'link') +
+    buildInfoRow('Page Load Time', load, 'clock');
+}
+
+const ua = navigator.userAgent;
+render();
+
+window.addEventListener('resize', function() {
+  document.getElementById('vpInfo').textContent = window.innerWidth + ' x ' + window.innerHeight;
+});
+
+window.addEventListener('online', function() { document.getElementById('onlineStatus').textContent = 'Yes'; });
+window.addEventListener('offline', function() { document.getElementById('onlineStatus').textContent = 'No'; });
+</script>
+</body>
+</html>

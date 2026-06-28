@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Port Reference - Consulta de ports de xarxa</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.input-search{background:#141417;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:1rem;padding:0.75rem 1rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-search:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.fira{font-family:'Fira Code',monospace}
+.port-row{background:#141417;border:1px solid #27272a;border-radius:0.375rem;padding:0.625rem 1rem;display:flex;align-items:center;gap:1rem;transition:all .15s;font-size:0.875rem}
+.port-row:hover{border-color:#3f3f46}
+.port-row .port-num{font-family:'Fira Code',monospace;font-weight:700;color:#2dd4bf;min-width:4rem;font-size:1rem}
+.port-row .port-proto{font-size:0.65rem;padding:0.125rem 0.375rem;border-radius:0.25rem;background:#27272a;color:#52525b;font-weight:600;min-width:2rem;text-align:center;text-transform:uppercase}
+.port-row .port-proto.tcp{color:#2dd4bf;background:rgba(45,212,191,0.1)}
+.port-row .port-proto.udp{color:#fbbf24;background:rgba(251,191,36,0.1)}
+.port-row .port-proto.both{color:#a855f7;background:rgba(168,85,247,0.1)}
+.port-row .port-service{font-weight:600;min-width:8rem}
+.port-row .port-desc{color:#a1a1aa;font-size:0.8125rem;flex:1}
+.port-tag{display:inline-block;font-size:0.6rem;padding:0.125rem 0.375rem;border-radius:0.25rem;background:#27272a;color:#52525b;margin-right:0.25rem}
+.port-tag.well-known{background:rgba(45,212,191,0.1);color:#2dd4bf}
+.port-tag.registered{background:rgba(251,191,36,0.1);color:#fbbf24}
+.port-tag.dynamic{background:rgba(239,68,68,0.1);color:#ef4444}
+.btn-filter{background:#27272a;border:1px solid #3f3f46;color:#a1a1aa;font-size:0.75rem;padding:0.375rem 0.75rem;border-radius:0.375rem;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.btn-filter:hover{background:#3f3f46;border-color:#2dd4bf;color:#2dd4bf}
+.btn-filter.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.stat-box{background:#141417;border-radius:0.5rem;padding:0.75rem 1rem;text-align:center;flex:1}
+.stat-box .num{font-family:'Fira Code',monospace;font-size:1.25rem;font-weight:700;color:#2dd4bf}
+.stat-box .lbl{font-size:0.65rem;color:#52525b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.125rem}
+</style>
+</head>
+<body>
+
+<div class="max-w-5xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-plug text-[#2dd4bf] text-2xl"></i>
+      Port Reference
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Consulta de ports de xarxa, protocols i serveis</p>
+  </header>
+
+  <div class="space-y-4">
+    <div class="card">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1">
+          <input type="text" id="searchInput" class="input-search" placeholder="Cerca per port, servei o protocol (ex: 80, HTTP, SSH, DNS...)" autofocus>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-filter active" onclick="filterCat('all')" id="catAll">Tots</button>
+          <button class="btn-filter" onclick="filterCat('well-known')" id="catWell">Well-Known</button>
+          <button class="btn-filter" onclick="filterCat('registered')" id="catReg">Registered</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3" id="statsRow">
+      <div class="stat-box"><div class="num" id="totalPorts">0</div><div class="lbl">Ports</div></div>
+      <div class="stat-box"><div class="num text-[#2dd4bf]" id="tcpCount">0</div><div class="lbl">TCP</div></div>
+      <div class="stat-box"><div class="num text-[#fbbf24]" id="udpCount">0</div><div class="lbl">UDP</div></div>
+      <div class="stat-box"><div class="num text-[#a855f7]" id="bothCount">0</div><div class="lbl">TCP+UDP</div></div>
+    </div>
+
+    <div class="card">
+      <div id="portsList" class="space-y-1.5"></div>
+      <div id="noResults" class="hidden text-center py-8 text-[#52525b]">
+        <i class="fa-solid fa-search text-3xl mb-2 block opacity-30"></i>
+        <p>No s'han trobat ports amb aquesta cerca</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-8 pt-6 border-t border-[#27272a]">
+    <a href="/" class="footer-link text-sm"><i class="fa-solid fa-arrow-left mr-1"></i> Tornar al portfolio</a>
+    <p class="text-[#52525b] text-xs mt-2">Port Reference &mdash; Basat en IANA Service Name Registry</p>
+  </footer>
+</div>
+
+<script>
+const PORTS = [
+  {port:20,proto:'both',svc:'FTP Data',desc:"Protocol de transfer\xe8ncia de fitxers (dades)"},
+  {port:21,proto:'tcp',svc:'FTP',desc:"Protocol de transfer\xe8ncia de fitxers (control)"},
+  {port:22,proto:'tcp',svc:'SSH',desc:"Shell segur - connexi\xf3 remota xifrada"},
+  {port:23,proto:'tcp',svc:'Telnet',desc:"Connexi\xf3 remota sense xifrar"},
+  {port:25,proto:'tcp',svc:'SMTP',desc:"Protocol de correu electr\xf2nic (enviament)"},
+  {port:53,proto:'both',svc:'DNS',desc:"Resoluci\xf3 de noms de domini"},
+  {port:67,proto:'udp',svc:'DHCP Server',desc:"Assignaci\xf3 din\xe0mica d'adreces IP (servidor)"},
+  {port:68,proto:'udp',svc:'DHCP Client',desc:"Assignaci\xf3 din\xe0mica d'adreces IP (client)"},
+  {port:69,proto:'udp',svc:'TFTP',desc:"Protocol de transfer\xe8ncia de fitxers trivial"},
+  {port:80,proto:'tcp',svc:'HTTP',desc:"Protocol de transfer\xe8ncia d'hipertext"},
+  {port:81,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per a servidors web"},
+  {port:88,proto:'tcp',svc:'Kerberos',desc:"Protocol d'autenticaci\xf3 de xarxa"},
+  {port:102,proto:'tcp',svc:'MS Exchange',desc:"Microsoft Exchange"},
+  {port:110,proto:'tcp',svc:'POP3',desc:"Protocol de correu electr\xf2nic (recepci\xf3)"},
+  {port:111,proto:'both',svc:'RPC Portmap',desc:"Portmapper per a RPC"},
+  {port:113,proto:'tcp',svc:'Ident',desc:"Protocol d'identificaci\xf3"},
+  {port:119,proto:'tcp',svc:'NNTP',desc:"Network News Transfer Protocol"},
+  {port:123,proto:'udp',svc:'NTP',desc:"Protocol de sincronitzaci\xf3 de temps"},
+  {port:135,proto:'both',svc:'RPC',desc:"Crida a procediment remot de Microsoft"},
+  {port:137,proto:'udp',svc:'NetBIOS NS',desc:"NetBIOS Name Service"},
+  {port:138,proto:'udp',svc:'NetBIOS DS',desc:"NetBIOS Datagram Service"},
+  {port:139,proto:'tcp',svc:'NetBIOS SS',desc:"NetBIOS Session Service"},
+  {port:143,proto:'tcp',svc:'IMAP',desc:"Protocol de correu electr\xf2nic (recepci\xf3)"},
+  {port:161,proto:'udp',svc:'SNMP',desc:"Protocol de gesti\xf3 de xarxa"},
+  {port:162,proto:'udp',svc:'SNMP Trap',desc:"Trampes SNMP"},
+  {port:179,proto:'tcp',svc:'BGP',desc:"Border Gateway Protocol"},
+  {port:194,proto:'tcp',svc:'IRC',desc:"Internet Relay Chat"},
+  {port:389,proto:'both',svc:'LDAP',desc:"Protocol d'acc\xe9s a directoris"},
+  {port:443,proto:'tcp',svc:'HTTPS',desc:"HTTP sobre TLS/SSL"},
+  {port:445,proto:'tcp',svc:'SMB',desc:"Server Message Block (compartici\xf3 de fitxers)"},
+  {port:464,proto:'both',svc:'Kerberos PW',desc:"Canvi de contrasenya Kerberos"},
+  {port:465,proto:'tcp',svc:'SMTPS',desc:"SMTP sobre SSL"},
+  {port:500,proto:'both',svc:'IPsec IKE',desc:"Intercanvi de claus IPsec"},
+  {port:514,proto:'udp',svc:'Syslog',desc:"Registre de missatges del sistema"},
+  {port:515,proto:'tcp',svc:'LPD',desc:"Line Printer Daemon"},
+  {port:520,proto:'udp',svc:'RIP',desc:"Routing Information Protocol"},
+  {port:521,proto:'udp',svc:'RIPng',desc:"RIP per IPv6"},
+  {port:546,proto:'both',svc:'DHCPv6 Client',desc:"DHCP versi\xf3 6 (client)"},
+  {port:547,proto:'both',svc:'DHCPv6 Server',desc:"DHCP versi\xf3 6 (servidor)"},
+  {port:554,proto:'both',svc:'RTSP',desc:"Real Time Streaming Protocol"},
+  {port:587,proto:'tcp',svc:'SMTP Submission',desc:"Enviament de correu SMTP"},
+  {port:631,proto:'both',svc:'IPP',desc:"Internet Printing Protocol"},
+  {port:636,proto:'tcp',svc:'LDAPS',desc:"LDAP sobre SSL"},
+  {port:989,proto:'tcp',svc:'FTPS Data',desc:"FTP sobre SSL/TLS (dades)"},
+  {port:990,proto:'tcp',svc:'FTPS Ctrl',desc:"FTP sobre SSL/TLS (control)"},
+  {port:992,proto:'tcp',svc:'TelnetS',desc:"Telnet sobre SSL"},
+  {port:993,proto:'tcp',svc:'IMAPS',desc:"IMAP sobre SSL"},
+  {port:995,proto:'tcp',svc:'POP3S',desc:"POP3 sobre SSL"},
+  {port:1024,proto:'tcp',svc:'X11',desc:"Sistema de finestres X11"},
+  {port:1080,proto:'tcp',svc:'SOCKS',desc:"SOCKS proxy"},
+  {port:1194,proto:'both',svc:'OpenVPN',desc:"VPN de codi obert"},
+  {port:1433,proto:'tcp',svc:'MSSQL',desc:"Microsoft SQL Server"},
+  {port:1521,proto:'tcp',svc:'Oracle DB',desc:"Base de dades Oracle"},
+  {port:1701,proto:'udp',svc:'L2TP',desc:"Layer 2 Tunneling Protocol"},
+  {port:1723,proto:'tcp',svc:'PPTP',desc:"Point-to-Point Tunneling Protocol"},
+  {port:1812,proto:'udp',svc:'RADIUS Auth',desc:"Autenticaci\xf3 RADIUS"},
+  {port:1813,proto:'udp',svc:'RADIUS Acct',desc:"Comptabilitat RADIUS"},
+  {port:1863,proto:'tcp',svc:'MSNP',desc:"Microsoft Notification Protocol"},
+  {port:2049,proto:'both',svc:'NFS',desc:"Network File System"},
+  {port:2082,proto:'tcp',svc:'cPanel',desc:"cPanel (port per defecte)"},
+  {port:2083,proto:'tcp',svc:'cPanel SSL',desc:"cPanel sobre SSL"},
+  {port:2086,proto:'tcp',svc:'WHM',desc:"WebHost Manager"},
+  {port:2087,proto:'tcp',svc:'WHM SSL',desc:"WHM sobre SSL"},
+  {port:2095,proto:'tcp',svc:'cPanel Webmail',desc:"cPanel Webmail"},
+  {port:2096,proto:'tcp',svc:'cPanel Webmail SSL',desc:"cPanel Webmail sobre SSL"},
+  {port:2181,proto:'tcp',svc:'ZooKeeper',desc:"Apache ZooKeeper"},
+  {port:2222,proto:'tcp',svc:'DirectAdmin',desc:"DirectAdmin"},
+  {port:2375,proto:'tcp',svc:'Docker API',desc:"API de Docker (sense xifrar)"},
+  {port:2376,proto:'tcp',svc:'Docker API SSL',desc:"API de Docker (xifrada)"},
+  {port:3000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament (Node, Rails, etc)"},
+  {port:3128,proto:'tcp',svc:'Squid Proxy',desc:"Proxy Squid"},
+  {port:3306,proto:'tcp',svc:'MySQL',desc:"Base de dades MySQL/MariaDB"},
+  {port:3389,proto:'both',svc:'RDP',desc:"Remote Desktop Protocol"},
+  {port:3690,proto:'tcp',svc:'SVN',desc:"Apache Subversion"},
+  {port:4000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament alternatiu"},
+  {port:4222,proto:'tcp',svc:'NATS',desc:"NATS messaging system"},
+  {port:4333,proto:'tcp',svc:'MySQL Alt',desc:"Port alternatiu per MySQL"},
+  {port:4444,proto:'tcp',svc:'Metasploit',desc:"Metasploit listener"},
+  {port:4500,proto:'both',svc:'IPsec NAT-T',desc:"IPsec NAT Traversal"},
+  {port:4567,proto:'tcp',svc:'Sinatra',desc:"Servidor web Sinatra"},
+  {port:4569,proto:'udp',svc:'IAX2',desc:"Asterisk IAX2"},
+  {port:4848,proto:'tcp',svc:'GlassFish',desc:"Servidor GlassFish"},
+  {port:5000,proto:'tcp',svc:'Flask Dev',desc:"Servidor de desenvolupament Flask"},
+  {port:5001,proto:'tcp',svc:'Synology DSM',desc:"Synology DiskStation Manager"},
+  {port:5004,proto:'both',svc:'RTP',desc:"Real-time Transport Protocol"},
+  {port:5005,proto:'both',svc:'RTP Ctrl',desc:"RTP Control Protocol"},
+  {port:5038,proto:'tcp',svc:'Asterisk AMI',desc:"Asterisk Manager Interface"},
+  {port:5060,proto:'both',svc:'SIP',desc:"Session Initiation Protocol (VoIP)"},
+  {port:5061,proto:'tcp',svc:'SIPS',desc:"SIP sobre TLS"},
+  {port:5222,proto:'tcp',svc:'XMPP',desc:"Extensible Messaging and Presence Protocol"},
+  {port:5269,proto:'tcp',svc:'XMPP Server',desc:"XMPP Server-to-Server"},
+  {port:5432,proto:'tcp',svc:'PostgreSQL',desc:"Base de dades PostgreSQL"},
+  {port:5500,proto:'tcp',svc:'VNC Server',desc:"Servidor VNC (port alt)"},
+  {port:5555,proto:'tcp',svc:'ADB',desc:"Android Debug Bridge"},
+  {port:5601,proto:'tcp',svc:'Kibana',desc:"Kibana (Elasticsearch)"},
+  {port:5666,proto:'tcp',svc:'NRPE',desc:"Nagios Remote Plugin Executor"},
+  {port:5667,proto:'tcp',svc:'NSCA',desc:"Nagios Service Check Acceptor"},
+  {port:5800,proto:'tcp',svc:'VNC HTTP',desc:"VNC via HTTP"},
+  {port:5900,proto:'tcp',svc:'VNC',desc:"Virtual Network Computing"},
+  {port:5901,proto:'tcp',svc:'VNC :1',desc:"VNC display 1"},
+  {port:5984,proto:'tcp',svc:'CouchDB',desc:"Base de dades CouchDB"},
+  {port:5985,proto:'tcp',svc:'WinRM HTTP',desc:"Windows Remote Management (HTTP)"},
+  {port:5986,proto:'tcp',svc:'WinRM HTTPS',desc:"Windows Remote Management (HTTPS)"},
+  {port:6000,proto:'tcp',svc:'X11 Display 0',desc:"X Window System display 0"},
+  {port:6001,proto:'tcp',svc:'X11 Display 1',desc:"X Window System display 1"},
+  {port:6379,proto:'tcp',svc:'Redis',desc:"Base de dades Redis"},
+  {port:6443,proto:'tcp',svc:'K8s API',desc:"Kubernetes API Server"},
+  {port:6588,proto:'tcp',svc:'AnalogX',desc:"AnalogX proxy"},
+  {port:6660,proto:'tcp',svc:'IRC',desc:"Internet Relay Chat (alt)"},
+  {port:6667,proto:'tcp',svc:'IRC',desc:"Internet Relay Chat"},
+  {port:6881,proto:'both',svc:'BitTorrent',desc:"BitTorrent tracker"},
+  {port:6969,proto:'tcp',svc:'BitTorrent Tracker',desc:"BitTorrent tracker"},
+  {port:7001,proto:'tcp',svc:'WebLogic',desc:"Oracle WebLogic"},
+  {port:7070,proto:'tcp',svc:'RealServer',desc:"RealNetworks RealServer"},
+  {port:7077,proto:'tcp',svc:'Spark Master',desc:"Apache Spark Master"},
+  {port:8000,proto:'tcp',svc:'Web Dev',desc:"Servidor web alternatiu (Python, Rails, etc)"},
+  {port:8005,proto:'tcp',svc:'Tomcat Shutdown',desc:"Apache Tomcat (port d'apagat)"},
+  {port:8008,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per HTTP"},
+  {port:8009,proto:'tcp',svc:'AJP',desc:"Apache JServ Protocol"},
+  {port:8080,proto:'tcp',svc:'HTTP Proxy',desc:"Servidor web / proxy alternatiu"},
+  {port:8081,proto:'tcp',svc:'HTTP Proxy Alt',desc:"Port alternatiu per proxy"},
+  {port:8082,proto:'tcp',svc:'HTTP Alt 2',desc:"Port alternatiu per HTTP"},
+  {port:8083,proto:'tcp',svc:'HTTP Alt 3',desc:"Port alternatiu per HTTP"},
+  {port:8084,proto:'tcp',svc:'HTTP Alt 4',desc:"Port alternatiu per HTTP"},
+  {port:8085,proto:'tcp',svc:'HTTP Alt 5',desc:"Port alternatiu per HTTP"},
+  {port:8086,proto:'tcp',svc:'InfluxDB',desc:"Base de dades InfluxDB"},
+  {port:8087,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per HTTP"},
+  {port:8088,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per HTTP"},
+  {port:8089,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per HTTP"},
+  {port:8090,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per HTTP"},
+  {port:8096,proto:'tcp',svc:'Jellyfin',desc:"Jellyfin media server"},
+  {port:8123,proto:'tcp',svc:'Home Assistant',desc:"Home Assistant"},
+  {port:8161,proto:'tcp',svc:'ActiveMQ',desc:"Apache ActiveMQ"},
+  {port:8200,proto:'tcp',svc:'Vault',desc:"HashiCorp Vault"},
+  {port:8300,proto:'tcp',svc:'Consul',desc:"HashiCorp Consul"},
+  {port:8400,proto:'tcp',svc:'CommServer',desc:"Servidor de comunicacions"},
+  {port:8443,proto:'tcp',svc:'HTTPS Alt',desc:"HTTPS alternatiu (Tomcat, WebLogic, etc)"},
+  {port:8500,proto:'tcp',svc:'Consul DNS',desc:"Consul DNS"},
+  {port:8530,proto:'tcp',svc:'WSUS',desc:"Windows Server Update Services (HTTP)"},
+  {port:8531,proto:'tcp',svc:'WSUS SSL',desc:"Windows Server Update Services (HTTPS)"},
+  {port:8600,proto:'tcp',svc:'Consul HTTP',desc:"Consul HTTP"},
+  {port:8649,proto:'tcp',svc:'Ganglia',desc:"Ganglia monitoring"},
+  {port:8880,proto:'tcp',svc:'HTTP Alt',desc:"Port alternatiu per HTTP"},
+  {port:8883,proto:'tcp',svc:'MQTT SSL',desc:"MQTT sobre SSL"},
+  {port:8888,proto:'tcp',svc:'Jupyter',desc:"Jupyter Notebook"},
+  {port:8889,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:9000,proto:'tcp',svc:'PHP-FPM',desc:"PHP FastCGI Process Manager"},
+  {port:9001,proto:'tcp',svc:'Supervisor',desc:"Supervisor web interface"},
+  {port:9009,proto:'tcp',svc:'Plex',desc:"Plex Media Server"},
+  {port:9042,proto:'tcp',svc:'Cassandra',desc:"Apache Cassandra"},
+  {port:9043,proto:'tcp',svc:'WebSphere',desc:"IBM WebSphere admin"},
+  {port:9050,proto:'tcp',svc:'Tor SOCKS',desc:"Tor SOCKS proxy"},
+  {port:9090,proto:'tcp',svc:'Prometheus',desc:"Prometheus monitoring"},
+  {port:9092,proto:'tcp',svc:'Kafka',desc:"Apache Kafka"},
+  {port:9100,proto:'tcp',svc:'Node Exporter',desc:"Prometheus Node Exporter"},
+  {port:9117,proto:'tcp',svc:'Jackett',desc:"Jackett"},
+  {port:9200,proto:'tcp',svc:'Elasticsearch',desc:"Elasticsearch HTTP"},
+  {port:9300,proto:'tcp',svc:'Elasticsearch',desc:"Elasticsearch intern"},
+  {port:9418,proto:'tcp',svc:'Git',desc:"Git protocol"},
+  {port:9443,proto:'tcp',svc:'HTTPS Alt',desc:"HTTPS alternatiu"},
+  {port:9600,proto:'tcp',svc:'Logstash',desc:"Logstash monitoring"},
+  {port:9876,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:9999,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:10000,proto:'tcp',svc:'Webmin',desc:"Webmin (administraci\xf3 web)"},
+  {port:10050,proto:'tcp',svc:'Zabbix Agent',desc:"Zabbix agent"},
+  {port:10051,proto:'tcp',svc:'Zabbix Server',desc:"Zabbix server"},
+  {port:10161,proto:'tcp',svc:'SNMP AgentX',desc:"SNMP AgentX"},
+  {port:11211,proto:'both',svc:'Memcached',desc:"Sistema de cau en mem\xf2ria"},
+  {port:11214,proto:'tcp',svc:'Memcached SSL',desc:"Memcached sobre SSL"},
+  {port:11434,proto:'tcp',svc:'Ollama',desc:"Ollama LLM server"},
+  {port:12000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:12345,proto:'tcp',svc:'NetBus',desc:"Troi\xe0 de control remot"},
+  {port:13777,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:16010,proto:'tcp',svc:'HBase',desc:"Apache HBase"},
+  {port:16379,proto:'tcp',svc:'Redis Cluster',desc:"Redis cluster bus"},
+  {port:17000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:18080,proto:'tcp',svc:'HTTP Alt',desc:"Port HTTP alternatiu"},
+  {port:18180,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:18200,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:19000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:19100,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:20000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:21000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:22000,proto:'tcp',svc:'Syncthing',desc:"Syncthing"},
+  {port:22122,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:23000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:23456,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:24444,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:25565,proto:'tcp',svc:'Minecraft',desc:"Servidor de Minecraft"},
+  {port:26000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:27015,proto:'both',svc:'Steam',desc:"Steam / Half-Life"},
+  {port:27017,proto:'tcp',svc:'MongoDB',desc:"Base de dades MongoDB"},
+  {port:27018,proto:'tcp',svc:'MongoDB Shard',desc:"MongoDB shard server"},
+  {port:27019,proto:'tcp',svc:'MongoDB Config',desc:"MongoDB config server"},
+  {port:27345,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:28015,proto:'tcp',svc:'RethinkDB',desc:"RethinkDB"},
+  {port:28017,proto:'tcp',svc:'MongoDB HTTP',desc:"MongoDB web interface"},
+  {port:28777,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:29015,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:30000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:31337,proto:'tcp',svc:'Back Orifice',desc:"Troi\xe0 de control remot"},
+  {port:32400,proto:'tcp',svc:'Plex',desc:"Plex Media Server"},
+  {port:32764,proto:'tcp',svc:'Router Backdoor',desc:"Backdoor en alguns routers"},
+  {port:33434,proto:'both',svc:'Traceroute',desc:"Traceroute"},
+  {port:34000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:35000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:35500,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:37777,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:40000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:41000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:42000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:43000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:44000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:44333,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:45000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:45555,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:45678,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:46000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:47000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:48000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:49000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:49152,proto:'both',svc:'Dynamic',desc:"Inici de ports din\xe0mics/ef\xedmers (49152-65535)"},
+  {port:50000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:50070,proto:'tcp',svc:'HDFS',desc:"Hadoop HDFS namenode"},
+  {port:50075,proto:'tcp',svc:'HDFS DataNode',desc:"Hadoop HDFS datanode"},
+  {port:50090,proto:'tcp',svc:'HDFS Secondary',desc:"Hadoop HDFS secondary namenode"},
+  {port:51000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:52000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:53000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:54000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:55000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:55553,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:56000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:57000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:58000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:59000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:60000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:61000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:62000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:63000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:64000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:65000,proto:'tcp',svc:'Dev Server',desc:"Servidor de desenvolupament"},
+  {port:65535,proto:'both',svc:'Reserved',desc:"Fi del rang de ports"},
+];
+
+let currentFilter = 'all';
+
+function renderPorts() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = document.getElementById('portsList');
+  const noRes = document.getElementById('noResults');
+
+  let filtered = PORTS;
+  if (currentFilter === 'well-known') filtered = filtered.filter(p => p.port < 1024);
+  else if (currentFilter === 'registered') filtered = filtered.filter(p => p.port >= 1024 && p.port < 49152);
+
+  if (q) {
+    filtered = filtered.filter(p =>
+      String(p.port).includes(q) ||
+      p.svc.toLowerCase().includes(q) ||
+      p.desc.toLowerCase().includes(q) ||
+      p.proto.includes(q.replace(/^(tcp|udp)$/, ''))
+    );
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    noRes.classList.remove('hidden');
+    updateStats([]);
+    return;
+  }
+  noRes.classList.add('hidden');
+
+  list.innerHTML = filtered.map(p => {
+    const isWellKnown = p.port < 1024;
+    const isRegistered = p.port >= 1024 && p.port < 49152;
+    const tag = isWellKnown ? '<span class="port-tag well-known">Well-Known</span>' : (isRegistered ? '<span class="port-tag registered">Registered</span>' : '');
+    const protoCls = p.proto === 'both' ? 'both' : p.proto;
+    const protoLabel = p.proto === 'both' ? 'TCP+UDP' : p.proto.toUpperCase();
+    return `<div class="port-row">
+      <span class="port-num">${p.port}</span>
+      <span class="port-proto ${protoCls}">${protoLabel}</span>
+      <span class="port-service">${p.svc}</span>
+      <span class="port-desc">${p.desc}</span>
+      ${tag ? `<span>${tag}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  updateStats(filtered);
+}
+
+function updateStats(filtered) {
+  document.getElementById('totalPorts').textContent = filtered.length;
+  document.getElementById('tcpCount').textContent = filtered.filter(p => p.proto === 'tcp' || p.proto === 'both').length;
+  document.getElementById('udpCount').textContent = filtered.filter(p => p.proto === 'udp' || p.proto === 'both').length;
+  document.getElementById('bothCount').textContent = filtered.filter(p => p.proto === 'both').length;
+}
+
+function filterCat(cat) {
+  currentFilter = cat;
+  ['all','well-known','registered'].forEach(c => {
+    document.getElementById('cat' + c.charAt(0).toUpperCase() + c.slice(1)).classList.toggle('active', c === cat);
+  });
+  renderPorts();
+}
+
+document.getElementById('searchInput').addEventListener('input', renderPorts);
+
+renderPorts();
+</script>
+</body>
+</html>

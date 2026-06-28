@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Network Topology Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+    :root { --bg: #050816; --panel: rgba(15,23,42,0.78); --border: rgba(148,163,184,0.18); --accent: #38bdf8; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.16), transparent 34%), radial-gradient(circle at top right, rgba(139,92,246,0.14), transparent 32%), linear-gradient(135deg,#020617 0%,#0f172a 55%,#020617 100%);
+      color: #e5e7eb; min-height: 100vh;
+    }
+    .glass { background: var(--panel); border:1px solid var(--border); backdrop-filter:blur(18px); box-shadow:0 20px 45px rgba(0,0,0,0.25); }
+    .btn-soft { background:rgba(30,41,59,.92); border:1px solid rgba(148,163,184,.18); transition:all .2s ease; }
+    .btn-soft:hover { background:rgba(51,65,85,.95); }
+    #canvas { cursor: crosshair; display: block; }
+    .toast { transform:translateY(120px); opacity:0; transition:all .3s ease; }
+    .toast.show { transform:translateY(0); opacity:1; }
+  </style>
+</head>
+<body>
+  <main class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+    <header class="mb-8">
+      <div class="glass rounded-3xl p-6 md:p-8">
+        <p class="text-orange-400 font-semibold mb-2"><i class="fa-solid fa-diagram-project mr-2"></i>Network Topology Studio</p>
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">Dissenyador de topologies de xarxa</h1>
+        <p class="text-slate-400 mt-3">Arrossega dispositius al canvas, connecta'ls i exporta el diagrama.</p>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <aside class="xl:col-span-2 space-y-3">
+        <div class="glass rounded-2xl p-4">
+          <h2 class="text-sm font-bold mb-3 text-slate-300">Dispositius</h2>
+          <div class="space-y-2">
+            <button onclick="addNode('router')" class="btn-soft w-full p-2 rounded-xl text-sm flex items-center gap-2"><i class="fa-solid fa-route text-sky-400"></i> Router</button>
+            <button onclick="addNode('switch')" class="btn-soft w-full p-2 rounded-xl text-sm flex items-center gap-2"><i class="fa-solid fa-code-branch text-blue-400"></i> Switch</button>
+            <button onclick="addNode('server')" class="btn-soft w-full p-2 rounded-xl text-sm flex items-center gap-2"><i class="fa-solid fa-server text-green-400"></i> Servidor</button>
+            <button onclick="addNode('firewall')" class="btn-soft w-full p-2 rounded-xl text-sm flex items-center gap-2"><i class="fa-solid fa-shield-halved text-red-400"></i> Firewall</button>
+            <button onclick="addNode('pc')" class="btn-soft w-full p-2 rounded-xl text-sm flex items-center gap-2"><i class="fa-solid fa-desktop text-violet-400"></i> PC</button>
+            <button onclick="addNode('cloud')" class="btn-soft w-full p-2 rounded-xl text-sm flex items-center gap-2"><i class="fa-solid fa-cloud text-sky-400"></i> Cloud</button>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <button onclick="clearCanvas()" class="btn-soft w-full p-2 rounded-xl text-sm"><i class="fa-solid fa-trash mr-1"></i> Netejar</button>
+        </div>
+      </aside>
+
+      <section class="xl:col-span-7">
+        <div class="glass rounded-3xl overflow-hidden">
+          <canvas id="canvas" width="900" height="600" class="w-full" style="background:#020617;"></canvas>
+        </div>
+      </section>
+
+      <aside class="xl:col-span-3 space-y-3">
+        <div class="glass rounded-2xl p-4">
+          <h2 class="text-sm font-bold mb-3 text-slate-300">Propietats</h2>
+          <div id="propsPanel" class="text-sm text-slate-500 space-y-3">
+            <p>Selecciona un node per editar-lo.</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <h2 class="text-sm font-bold mb-3 text-slate-300">Accions</h2>
+          <div class="space-y-2">
+            <button onclick="canvasToImage()" class="btn-soft w-full p-2 rounded-xl text-sm"><i class="fa-solid fa-image mr-1"></i> Exportar PNG</button>
+            <button onclick="toggleConnect()" class="btn-soft w-full p-2 rounded-xl text-sm"><i class="fa-solid fa-link mr-1"></i> Connectar nodes</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <footer class="text-center text-slate-500 text-sm mt-10">Desenvolupat per Sergi Gallart &middot; Network Topology Studio</footer>
+  </main>
+  <div id="toast" class="toast fixed bottom-6 right-6 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+    <i class="fa-solid fa-check-circle"></i><span id="toastText">Fet</span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let nodes = [];
+    let edges = [];
+    let selectedNode = null;
+    let connectMode = false;
+    let connectSource = null;
+    let dragNode = null;
+    let offsetX, offsetY;
+
+    const nodeColors = { router:'#38bdf8', switch:'#60a5fa', server:'#4ade80', firewall:'#ef4444', pc:'#8b5cf6', cloud:'#38bdf8' };
+    const nodeIcons = { router:'\uf1fe', switch:'\uf126', server:'\uf233', firewall:'\uf132', pc:'\uf109', cloud:'\uf0c2' };
+
+    function addNode(type) {
+      const x = 100 + Math.random() * 500;
+      const y = 100 + Math.random() * 300;
+      const id = Date.now() + Math.random();
+      nodes.push({ id, type, x, y, label: type.charAt(0).toUpperCase() + type.slice(1), ip: '192.168.1.' + (nodes.length+1) });
+      selectedNode = nodes[nodes.length-1];
+      drawCanvas();
+      showProps();
+      showToast(`${type} afegit`);
+    }
+
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      edges.forEach(e => {
+        const a = nodes.find(n => n.id === e.from);
+        const b = nodes.find(n => n.id === e.to);
+        if (!a || !b) return;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = 'rgba(148,163,184,0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      nodes.forEach(n => {
+        const r = 35;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = nodeColors[n.type] + '33';
+        ctx.fill();
+        ctx.strokeStyle = selectedNode && selectedNode.id === n.id ? '#38bdf8' : nodeColors[n.type];
+        ctx.lineWidth = selectedNode && selectedNode.id === n.id ? 3 : 2;
+        ctx.stroke();
+
+        ctx.font = '16px "Font Awesome 6 Free"';
+        ctx.fillStyle = nodeColors[n.type];
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\uf233', n.x, n.y - 2);
+
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(n.label, n.x, n.y + 24);
+
+        if (connectSource && connectSource.id === n.id) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, r+5, 0, Math.PI*2);
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4,4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      });
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+
+      const clicked = [...nodes].reverse().find(n => Math.hypot(mx - n.x, my - n.y) < 35);
+
+      if (connectMode) {
+        if (clicked) {
+          if (connectSource) {
+            if (connectSource.id !== clicked.id) {
+              edges.push({ from: connectSource.id, to: clicked.id });
+              showToast('Nodes connectats');
+            }
+            connectSource = null;
+            connectMode = false;
+          } else {
+            connectSource = clicked;
+            showToast('Selecciona el node destí');
+          }
+          drawCanvas();
+        }
+        return;
+      }
+
+      if (clicked) {
+        selectedNode = clicked;
+        dragNode = clicked;
+        offsetX = mx - clicked.x;
+        offsetY = my - clicked.y;
+        showProps();
+        drawCanvas();
+      } else {
+        selectedNode = null;
+        showProps();
+        drawCanvas();
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragNode) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      dragNode.x = (e.clientX - rect.left) * scaleX - offsetX;
+      dragNode.y = (e.clientY - rect.top) * scaleY - offsetY;
+      drawCanvas();
+    });
+
+    canvas.addEventListener('mouseup', () => { dragNode = null; });
+
+    function showProps() {
+      const panel = document.getElementById('propsPanel');
+      if (!selectedNode) {
+        panel.innerHTML = `<p>Selecciona un node per editar-lo.</p>`;
+        return;
+      }
+      panel.innerHTML = `
+        <div>
+          <label class="text-xs text-slate-400">Nom</label>
+          <input value="${selectedNode.label}" oninput="selectedNode.label=this.value;drawCanvas();" class="w-full bg-slate-900/80 rounded-lg p-2 text-sm text-white border border-slate-700 mt-1">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400">Tipus</label>
+          <p class="text-sm text-white capitalize">${selectedNode.type}</p>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400">IP</label>
+          <input value="${selectedNode.ip}" oninput="selectedNode.ip=this.value" class="w-full bg-slate-900/80 rounded-lg p-2 text-sm text-white border border-slate-700 mt-1">
+        </div>
+        <button onclick="deleteNode()" class="text-red-400 text-sm mt-2"><i class="fa-solid fa-trash mr-1"></i> Eliminar node</button>
+      `;
+    }
+
+    function deleteNode() {
+      if (!selectedNode) return;
+      nodes = nodes.filter(n => n.id !== selectedNode.id);
+      edges = edges.filter(e => e.from !== selectedNode.id && e.to !== selectedNode.id);
+      selectedNode = null;
+      drawCanvas();
+      showProps();
+      showToast('Node eliminat');
+    }
+
+    function toggleConnect() {
+      connectMode = !connectMode;
+      connectSource = null;
+      showToast(connectMode ? 'Mode connexió: selecciona origen' : 'Mode connexió desactivat');
+    }
+
+    function clearCanvas() {
+      nodes = []; edges = []; selectedNode = null; connectSource = null;
+      drawCanvas();
+      showProps();
+      showToast('Canvas netejat');
+    }
+
+    function canvasToImage() {
+      const link = document.createElement('a');
+      link.download = 'topologia-xarxa.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('PNG exportat');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastText').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    init();
+    function init() { drawCanvas(); }
+  </script>
+</body>
+</html>

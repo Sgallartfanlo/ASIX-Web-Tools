@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Planner (LVM / RAID)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.input-field-sm{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.8rem;padding:0.4rem 0.5rem;border-radius:0.375rem;width:100%;transition:all .2s}
+.input-field-sm:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.btn-primary{background:rgba(45,212,191,0.1);border:1px solid #2dd4bf;color:#2dd4bf;font-size:0.8rem;padding:0.4rem 0.75rem;border-radius:0.375rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{background:rgba(45,212,191,0.2)}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid #ef4444;color:#ef4444;font-size:0.8rem;padding:0.25rem 0.5rem;border-radius:0.375rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.stat-value{font-family:'Fira Code',monospace;font-size:1.25rem;font-weight:600;color:#e4e4e7}
+.stat-label{font-size:0.7rem;color:#52525b;text-transform:uppercase;letter-spacing:0.04em;font-weight:500}
+.stat-card{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem 1rem;text-align:center}
+.disk-unit{background:#18181b;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem 0.5rem;text-align:center;cursor:default;transition:all .2s;position:relative;user-select:none}
+.disk-unit:hover{border-color:#3f3f46}
+.disk-unit .disk-bar{height:6px;border-radius:3px;margin-bottom:0.5rem;transition:background .3s}
+.disk-unit .disk-bar.data{background:#22c55e}
+.disk-unit .disk-bar.parity{background:#f59e0b}
+.disk-unit .disk-bar.failed{background:#ef4444}
+.disk-unit.fail-click{cursor:pointer}
+.disk-unit.fail-click:hover{border-color:#2dd4bf;box-shadow:0 0 0 2px rgba(45,212,191,0.2)}
+.disk-unit.fail-click .disk-unit-hit{position:absolute;inset:0;border-radius:0.5rem}
+.disk-label{font-size:0.7rem;color:#a1a1aa;margin-top:0.15rem}
+.disk-label.disk-label-name{font-size:0.75rem;color:#e4e4e7;font-weight:500}
+.pv-bar{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem;margin-bottom:0.5rem}
+.pv-bar:last-child{margin-bottom:0}
+.pv-bar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem}
+.pv-bar-name{font-size:0.8rem;font-weight:500;color:#e4e4e7}
+.pv-bar-size{font-size:0.75rem;color:#52525b;font-family:'Fira Code',monospace}
+.pv-bar-track{display:flex;height:1.5rem;border-radius:0.375rem;overflow:hidden;background:#27272a}
+.pv-segment{height:100%;transition:width .3s;position:relative}
+.pv-segment.free{background:#27272a}
+.pv-segment:first-child{border-radius:0.375rem 0 0 0.375rem}
+.pv-segment:last-child{border-radius:0 0.375rem 0.375rem 0}
+.pv-segment:only-child{border-radius:0.375rem}
+.pv-segment-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-family:'Fira Code',monospace;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 0.25rem}
+.raid-disk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:0.5rem}
+.lv-item{display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;border-bottom:1px solid #27272a;font-size:0.85rem}
+.lv-item:last-child{border-bottom:none}
+.lv-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.toggle-pill{display:inline-flex;align-items:center;gap:0.5rem;background:#0f0f11;border:1px solid #27272a;border-radius:9999px;padding:0.375rem 0.75rem 0.375rem 0.5rem;cursor:pointer;transition:all .2s;font-size:0.8rem;color:#a1a1aa;font-family:'Inter',sans-serif}
+.toggle-pill.active{border-color:#2dd4bf;color:#2dd4bf;background:rgba(45,212,191,0.05)}
+.toggle-pill .toggle-dot{width:10px;height:10px;border-radius:50%;background:#52525b;transition:all .3s}
+.toggle-pill.active .toggle-dot{background:#2dd4bf;box-shadow:0 0 6px rgba(45,212,191,0.4)}
+.survival-badge{display:inline-block;border-radius:9999px;padding:0.3rem 0.75rem;font-size:0.8rem;font-weight:500}
+.survival-badge.alive{background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.3)}
+.survival-badge.dead{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)}
+.group-label{font-size:0.65rem;color:#52525b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;font-weight:500}
+.lvm-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-top:0.75rem}
+.sub-title{font-size:0.8rem;font-weight:600;color:#a1a1aa;margin-bottom:0.5rem;margin-top:1rem}
+.sub-title:first-child{margin-top:0}
+.warning-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.8rem;color:#ef4444;margin-top:0.5rem}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+select{cursor:pointer}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-hard-drive text-[#2dd4bf] text-2xl"></i>
+      Storage Planner (LVM / RAID)
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Plan RAID arrays, LVM volumes, and estimate storage costs</p>
+  </header>
+
+  <!-- RAID Calculator -->
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-solid fa-server mr-2"></i>RAID Calculator</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div>
+        <label>RAID Level</label>
+        <select id="raidLevel" class="input-field">
+          <option value="0">RAID 0 (Striping)</option>
+          <option value="1">RAID 1 (Mirroring)</option>
+          <option value="5" selected>RAID 5 (Distributed Parity)</option>
+          <option value="6">RAID 6 (Double Parity)</option>
+          <option value="10">RAID 10 (Stripe of Mirrors)</option>
+          <option value="50">RAID 50 (Stripe of RAID 5)</option>
+          <option value="60">RAID 60 (Stripe of RAID 6)</option>
+        </select>
+      </div>
+      <div>
+        <label>Number of Disks</label>
+        <input id="numDisks" class="input-field" type="number" min="2" max="32" value="4">
+      </div>
+      <div>
+        <label>Capacity per Disk</label>
+        <input id="diskCapacity" class="input-field" type="number" min="1" step="any" value="1">
+      </div>
+      <div>
+        <label>Unit</label>
+        <select id="capacityUnit" class="input-field">
+          <option value="GB">GB</option>
+          <option value="TB" selected>TB</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4" id="raidStats">
+      <div class="stat-card"><div class="stat-value" id="rawCapacity">4.00 TB</div><div class="stat-label">Raw Capacity</div></div>
+      <div class="stat-card"><div class="stat-value text-[#2dd4bf]" id="usableCapacity">3.00 TB</div><div class="stat-label">Usable Capacity</div></div>
+      <div class="stat-card"><div class="stat-value text-[#f59e0b]" id="capacityLoss">1.00 TB</div><div class="stat-label">Capacity Loss</div></div>
+      <div class="stat-card"><div class="stat-value" id="faultTolerance">1</div><div class="stat-label">Fault Tolerance</div></div>
+      <div class="stat-card"><div class="stat-value" id="storageEfficiency">75.0%</div><div class="stat-label">Storage Efficiency</div></div>
+    </div>
+
+    <div class="sub-title"><i class="fa-regular fa-diagram-sankey mr-1"></i>Disk Layout</div>
+    <div id="raidVisual" class="raid-disk-grid mb-3"></div>
+
+    <div class="flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center gap-3">
+        <span class="toggle-pill" id="failureToggle"><span class="toggle-dot"></span> Disk Failure Simulator</span>
+      </div>
+      <div id="raidSurvival"></div>
+    </div>
+    <div class="flex items-center gap-4 mt-2 text-xs text-[#52525b]" id="raidLegend"></div>
+  </div>
+
+  <!-- LVM Visual Planner -->
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-solid fa-layer-group mr-2"></i>LVM Visual Planner</div>
+
+    <div class="sub-title flex items-center gap-2"><i class="fa-regular fa-circle-plus text-[#2dd4bf]"></i>Add Physical Volume</div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-3">
+      <div><label>Name</label><input id="pvName" class="input-field-sm" type="text" placeholder="e.g. sda1"></div>
+      <div><label>Size (GB)</label><input id="pvSize" class="input-field-sm" type="number" min="1" step="any" value="1000"></div>
+      <div><label>Disk Path</label><input id="pvPath" class="input-field-sm" type="text" placeholder="/dev/sda1"></div>
+      <div class="flex items-end"><button id="addPvBtn" class="btn-primary w-full"><i class="fa-regular fa-plus mr-1"></i>Add PV</button></div>
+    </div>
+
+    <div class="sub-title flex items-center gap-2"><i class="fa-regular fa-cubes text-[#2dd4bf]"></i>Physical Volumes</div>
+    <div id="pvTable" class="mb-3"></div>
+
+    <div class="sub-title"><i class="fa-regular fa-object-group text-[#2dd4bf]"></i>Volume Group</div>
+    <div class="mb-3">
+      <input id="vgName" class="input-field-sm" type="text" value="vg_main" style="max-width:300px">
+    </div>
+
+    <div class="sub-title flex items-center gap-2"><i class="fa-regular fa-plus text-[#2dd4bf]"></i>Add Logical Volume</div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-3">
+      <div><label>Name</label><input id="lvName" class="input-field-sm" type="text" placeholder="lv_root"></div>
+      <div><label>Size (GB)</label><input id="lvSize" class="input-field-sm" type="number" min="1" step="any" value="200"></div>
+      <div><label>Mount Point</label><input id="lvMount" class="input-field-sm" type="text" placeholder="/"></div>
+      <div class="flex items-end"><button id="addLvBtn" class="btn-primary w-full"><i class="fa-regular fa-plus mr-1"></i>Add LV</button></div>
+    </div>
+
+    <div class="sub-title flex items-center gap-2"><i class="fa-regular fa-list text-[#2dd4bf]"></i>Logical Volumes</div>
+    <div id="lvTable" class="mb-3"></div>
+
+    <div class="sub-title"><i class="fa-regular fa-chart-scatter text-[#2dd4bf]"></i>PV Space Allocation</div>
+    <div id="lvmVisual"></div>
+
+    <div id="lvmWarnings"></div>
+
+    <div id="lvmStats" class="lvm-summary-grid"></div>
+  </div>
+
+  <!-- Storage Summary -->
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-solid fa-chart-simple mr-2"></i>Storage Summary</div>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div class="stat-card"><div class="stat-value" id="summaryRaw">4.00 TB</div><div class="stat-label">Total Raw Capacity</div></div>
+      <div class="stat-card"><div class="stat-value text-[#2dd4bf]" id="summaryUsable">3.00 TB</div><div class="stat-label">Usable Capacity</div></div>
+      <div class="stat-card"><div class="stat-value" id="summaryRedundancy">RAID 5</div><div class="stat-label">Redundancy</div></div>
+      <div class="stat-card"><div class="stat-value" id="summaryFault">1</div><div class="stat-label">Fault Tolerance</div></div>
+      <div class="stat-card">
+        <div class="flex items-center gap-1 mb-1">
+          <span class="text-xs text-[#52525b]">$</span>
+          <input id="costPerGb" class="input-field-sm text-center" type="number" min="0" step="0.001" value="0.05" style="max-width:5rem">
+          <span class="text-xs text-[#52525b]">/GB</span>
+        </div>
+        <div class="stat-value text-[#f59e0b]" id="summaryCost">$0.00</div>
+        <div class="stat-label">Total Cost</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-6 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> Storage Planner (LVM / RAID)</a>
+  </footer>
+</div>
+
+<script>
+var raidLevelEl = document.getElementById('raidLevel');
+var numDisksEl = document.getElementById('numDisks');
+var diskCapacityEl = document.getElementById('diskCapacity');
+var capacityUnitEl = document.getElementById('capacityUnit');
+var rawCapacityEl = document.getElementById('rawCapacity');
+var usableCapacityEl = document.getElementById('usableCapacity');
+var capacityLossEl = document.getElementById('capacityLoss');
+var faultToleranceEl = document.getElementById('faultTolerance');
+var storageEfficiencyEl = document.getElementById('storageEfficiency');
+var raidVisualEl = document.getElementById('raidVisual');
+var failureToggleEl = document.getElementById('failureToggle');
+var raidSurvivalEl = document.getElementById('raidSurvival');
+var raidLegendEl = document.getElementById('raidLegend');
+var pvNameEl = document.getElementById('pvName');
+var pvSizeEl = document.getElementById('pvSize');
+var pvPathEl = document.getElementById('pvPath');
+var addPvBtnEl = document.getElementById('addPvBtn');
+var pvTableEl = document.getElementById('pvTable');
+var vgNameEl = document.getElementById('vgName');
+var lvNameEl = document.getElementById('lvName');
+var lvSizeEl = document.getElementById('lvSize');
+var lvMountEl = document.getElementById('lvMount');
+var addLvBtnEl = document.getElementById('addLvBtn');
+var lvTableEl = document.getElementById('lvTable');
+var lvmVisualEl = document.getElementById('lvmVisual');
+var lvmWarningsEl = document.getElementById('lvmWarnings');
+var lvmStatsEl = document.getElementById('lvmStats');
+var summaryRawEl = document.getElementById('summaryRaw');
+var summaryUsableEl = document.getElementById('summaryUsable');
+var summaryRedundancyEl = document.getElementById('summaryRedundancy');
+var summaryFaultEl = document.getElementById('summaryFault');
+var summaryCostEl = document.getElementById('summaryCost');
+var costPerGbEl = document.getElementById('costPerGb');
+
+var failureSimActive = false;
+var diskStates = [];
+var pvs = [];
+var lvs = [];
+var lvColorIdx = 0;
+var lvColors = ['#2dd4bf','#f59e0b','#8b5cf6','#ec4899','#3b82f6','#f97316','#10b981','#ef4444','#06b6d4','#a855f7'];
+var lvColorMap = {};
+
+function getRaidLevel() { return parseInt(raidLevelEl.value); }
+function getNumDisks() { return parseInt(numDisksEl.value) || 2; }
+function getDiskCapacityGb() {
+  var val = parseFloat(diskCapacityEl.value) || 0;
+  if (capacityUnitEl.value === 'TB') return val * 1000;
+  return val;
+}
+function getUnitLabel() { return capacityUnitEl.value; }
+
+function fmtSize(gb) {
+  if (gb >= 1000) return (gb / 1000).toFixed(2) + ' TB';
+  return gb.toFixed(1) + ' GB';
+}
+
+function fmtSizeShort(gb) {
+  if (gb >= 1000) return (gb / 1000).toFixed(2) + ' TB';
+  return Math.round(gb) + ' GB';
+}
+
+function getRaidLabel(level) {
+  var map = {0:'RAID 0',1:'RAID 1',5:'RAID 5',6:'RAID 6',10:'RAID 10',50:'RAID 50',60:'RAID 60'};
+  return map[level] || 'RAID ' + level;
+}
+
+function calcRaid() {
+  var level = getRaidLevel();
+  var n = getNumDisks();
+  var capGb = getDiskCapacityGb();
+  var unit = getUnitLabel();
+  var rawGb = n * capGb;
+  var usableGb = 0, lossGb = 0, ft = 0, eff = 0;
+  var valid = true;
+
+  if (level === 0) {
+    if (n < 2) valid = false;
+    usableGb = rawGb; lossGb = 0; ft = 0; eff = 100;
+  } else if (level === 1) {
+    if (n < 2) valid = false;
+    usableGb = capGb; lossGb = rawGb - capGb; ft = n - 1; eff = (1 / n) * 100;
+  } else if (level === 5) {
+    if (n < 3) valid = false;
+    usableGb = (n - 1) * capGb; lossGb = capGb; ft = 1; eff = ((n - 1) / n) * 100;
+  } else if (level === 6) {
+    if (n < 4) valid = false;
+    usableGb = (n - 2) * capGb; lossGb = 2 * capGb; ft = 2; eff = ((n - 2) / n) * 100;
+  } else if (level === 10) {
+    if (n < 4 || n % 2 !== 0) valid = false;
+    usableGb = (n / 2) * capGb; lossGb = (n / 2) * capGb; ft = '(1/pair) ' + (n / 2) + ' max'; eff = 50;
+  } else if (level === 50) {
+    if (n < 6 || n % 3 !== 0) valid = false;
+    var groups50 = n / 3;
+    usableGb = groups50 * 2 * capGb; lossGb = groups50 * capGb; ft = groups50 + ' (1/group)'; eff = (2 / 3) * 100;
+  } else if (level === 60) {
+    if (n < 8 || n % 4 !== 0) valid = false;
+    var groups60 = n / 4;
+    usableGb = groups60 * 2 * capGb; lossGb = groups60 * 2 * capGb; ft = (groups60 * 2) + ' (2/group)'; eff = 50;
+  }
+
+  if (!valid || capGb <= 0) {
+    rawCapacityEl.textContent = '—';
+    usableCapacityEl.textContent = '—';
+    capacityLossEl.textContent = '—';
+    faultToleranceEl.textContent = '—';
+    storageEfficiencyEl.textContent = '—';
+    raidVisualEl.innerHTML = '<div class="text-[#52525b] text-sm">Invalid configuration. Check disk count requirements.</div>';
+    raidSurvivalEl.innerHTML = '';
+    raidLegendEl.innerHTML = '';
+    return;
+  }
+
+  var unitLabel = unit === 'TB' ? 'TB' : 'GB';
+  var divisor = unit === 'TB' ? 1000 : 1;
+  rawCapacityEl.textContent = fmtSize(rawGb);
+  usableCapacityEl.textContent = fmtSize(usableGb);
+  capacityLossEl.textContent = fmtSize(lossGb);
+  faultToleranceEl.textContent = ft;
+  storageEfficiencyEl.textContent = eff.toFixed(1) + '%';
+
+  renderRaidDisks(level, n, capGb, unit);
+  updateSummary(rawGb, usableGb, level, ft);
+}
+
+function getRaidDiskRoles(level, n) {
+  var roles = [];
+  if (level === 0) {
+    for (var i = 0; i < n; i++) roles.push('data');
+  } else if (level === 1) {
+    for (var i = 0; i < n; i++) roles.push('mirror');
+  } else if (level === 5) {
+    for (var i = 0; i < n; i++) roles.push('parity');
+  } else if (level === 6) {
+    for (var i = 0; i < n; i++) roles.push('parity');
+  } else if (level === 10) {
+    for (var i = 0; i < n; i++) roles.push('mirror');
+  } else if (level === 50) {
+    for (var i = 0; i < n; i++) {
+      var g = Math.floor(i / 3);
+      var pos = i % 3;
+      roles.push(pos === 2 ? 'parity' : 'data');
+    }
+  } else if (level === 60) {
+    for (var i = 0; i < n; i++) {
+      var g = Math.floor(i / 4);
+      var pos = i % 4;
+      roles.push(pos >= 2 ? 'parity' : 'data');
+    }
+  }
+  return roles;
+}
+
+function checkSurvival(level, n, states) {
+  if (!failureSimActive) return null;
+  var alive = 0;
+  for (var i = 0; i < states.length; i++) if (states[i]) alive++;
+  var totalFailed = states.length - alive;
+  if (totalFailed === 0) return true;
+
+  if (level === 0) return alive === n;
+  if (level === 1) return alive >= 1;
+  if (level === 5) return totalFailed <= 1;
+  if (level === 6) return totalFailed <= 2;
+  if (level === 10) {
+    var pairs = n / 2;
+    for (var p = 0; p < pairs; p++) {
+      if (!states[p * 2] && !states[p * 2 + 1]) return false;
+    }
+    return true;
+  }
+  if (level === 50) {
+    var g50 = n / 3;
+    for (var g = 0; g < g50; g++) {
+      var failedInGroup = 0;
+      for (var d = 0; d < 3; d++) if (!states[g * 3 + d]) failedInGroup++;
+      if (failedInGroup > 1) return false;
+    }
+    return true;
+  }
+  if (level === 60) {
+    var g60 = n / 4;
+    for (var g = 0; g < g60; g++) {
+      var failedInGroup = 0;
+      for (var d = 0; d < 4; d++) if (!states[g * 4 + d]) failedInGroup++;
+      if (failedInGroup > 2) return false;
+    }
+    return true;
+  }
+  return true;
+}
+
+function renderRaidDisks(level, n, capGb, unit) {
+  var unitLabel = unit === 'TB' ? 'TB' : 'GB';
+  var divisor = unit === 'TB' ? 1000 : 1;
+  var roles = getRaidDiskRoles(level, n);
+
+  if (diskStates.length !== n) {
+    diskStates = [];
+    for (var i = 0; i < n; i++) diskStates.push(true);
+  }
+
+  var html = '';
+  var groups = [];
+  if (level === 50) {
+    for (var g = 0; g < n / 3; g++) groups.push({start: g * 3, end: g * 3 + 3});
+  } else if (level === 60) {
+    for (var g = 0; g < n / 4; g++) groups.push({start: g * 4, end: g * 4 + 4});
+  } else if (level === 10) {
+    for (var g = 0; g < n / 2; g++) groups.push({start: g * 2, end: g * 2 + 2});
+  }
+
+  if (groups.length > 0) {
+    for (var gi = 0; gi < groups.length; gi++) {
+      var grp = groups[gi];
+      html += '<div class="mb-2">';
+      html += '<div class="group-label">Group ' + (gi + 1) + '</div>';
+      html += '<div class="raid-disk-grid">';
+      for (var di = grp.start; di < grp.end; di++) {
+        html += makeDiskHtml(di, n, roles, capGb, unit);
+      }
+      html += '</div></div>';
+    }
+  } else {
+    html += '<div class="raid-disk-grid">';
+    for (var i = 0; i < n; i++) {
+      html += makeDiskHtml(i, n, roles, capGb, unit);
+    }
+    html += '</div>';
+  }
+
+  raidVisualEl.innerHTML = html;
+
+  if (failureSimActive) {
+    var diskEls = raidVisualEl.querySelectorAll('.disk-unit');
+    for (var i = 0; i < diskEls.length; i++) {
+      diskEls[i].classList.add('fail-click');
+      (function(idx){
+        diskEls[idx].onclick = function(e) {
+          if (e.target.closest('.disk-unit')) toggleDisk(idx);
+        };
+      })(i);
+    }
+  }
+
+  var survival = checkSurvival(level, n, diskStates);
+  if (failureSimActive) {
+    if (survival === null) {
+      raidSurvivalEl.innerHTML = '';
+    } else if (survival) {
+      raidSurvivalEl.innerHTML = '<span class="survival-badge alive"><i class="fa-regular fa-shield-check mr-1"></i>Array Survives</span>';
+    } else {
+      raidSurvivalEl.innerHTML = '<span class="survival-badge dead"><i class="fa-regular fa-circle-exclamation mr-1"></i>Array Failed</span>';
+    }
+  } else {
+    raidSurvivalEl.innerHTML = '';
+  }
+
+  raidLegendEl.innerHTML =
+    '<span><span class="inline-block w-2 h-2 rounded-full bg-[#22c55e] mr-1"></span>Data</span>' +
+    '<span><span class="inline-block w-2 h-2 rounded-full bg-[#f59e0b] mr-1"></span>Parity</span>' +
+    '<span><span class="inline-block w-2 h-2 rounded-full bg-[#ef4444] mr-1"></span>Failed</span>';
+}
+
+function makeDiskHtml(index, total, roles, capGb, unit) {
+  var role = roles[index] || 'data';
+  var healthy = diskStates[index];
+  var barClass = 'data';
+  var roleLabel = 'Data';
+  if (role === 'parity') { barClass = 'parity'; roleLabel = 'Parity'; }
+  if (role === 'mirror') { barClass = 'data'; roleLabel = 'Mirror'; }
+  if (!healthy) { barClass = 'failed'; roleLabel = 'Failed'; }
+
+  var capVal = unit === 'TB' ? (capGb / 1000) : capGb;
+  var capLabel = capVal.toFixed(unit === 'TB' ? 2 : 0) + ' ' + unit;
+
+  return '<div class="disk-unit">' +
+    '<div class="disk-bar ' + barClass + '"></div>' +
+    '<div class="disk-label disk-label-name">Disk ' + (index + 1) + '</div>' +
+    '<div class="disk-label">' + capLabel + '</div>' +
+    '<div class="disk-label" style="color:' + (healthy ? (role === 'parity' ? '#f59e0b' : '#22c55e') : '#ef4444') + '">' + roleLabel + '</div>' +
+    '</div>';
+}
+
+function toggleDisk(idx) {
+  diskStates[idx] = !diskStates[idx];
+  calcRaid();
+}
+
+failureToggleEl.onclick = function() {
+  failureSimActive = !failureSimActive;
+  failureToggleEl.classList.toggle('active');
+  var level = getRaidLevel();
+  var n = getNumDisks();
+  if (!failureSimActive) {
+    for (var i = 0; i < diskStates.length; i++) diskStates[i] = true;
+  }
+  calcRaid();
+};
+
+function updateSummary(rawGb, usableGb, level, ft) {
+  summaryRawEl.textContent = fmtSize(rawGb);
+  summaryUsableEl.textContent = fmtSize(usableGb);
+  summaryRedundancyEl.textContent = getRaidLabel(level);
+  summaryFaultEl.textContent = ft;
+  updateCost();
+}
+
+function updateCost() {
+  var usableText = summaryUsableEl.textContent;
+  var usableGb = 0;
+  if (usableText.indexOf('TB') > -1) usableGb = parseFloat(usableText) * 1000;
+  else usableGb = parseFloat(usableText);
+  var costPerGb = parseFloat(costPerGbEl.value) || 0;
+  var total = usableGb * costPerGb;
+  summaryCostEl.textContent = '$' + total.toFixed(2);
+}
+
+// --- LVM ---
+
+function addPv() {
+  var name = pvNameEl.value.trim();
+  var size = parseFloat(pvSizeEl.value);
+  var path = pvPathEl.value.trim();
+  if (!name || !size || size <= 0) return;
+  if (!path) path = '/dev/' + name;
+  pvs.push({name: name, size: size, path: path});
+  pvNameEl.value = '';
+  pvSizeEl.value = '1000';
+  pvPathEl.value = '';
+  renderLvm();
+}
+
+function removePv(idx) {
+  pvs.splice(idx, 1);
+  renderLvm();
+}
+
+function addLv() {
+  var name = lvNameEl.value.trim();
+  var size = parseFloat(lvSizeEl.value);
+  var mount = lvMountEl.value.trim();
+  if (!name || !size || size <= 0) return;
+  if (!mount) mount = '/mnt/' + name;
+  if (!lvColorMap[name]) {
+    lvColorMap[name] = lvColors[lvColorIdx % lvColors.length];
+    lvColorIdx++;
+  }
+  lvs.push({name: name, size: size, mount: mount, color: lvColorMap[name]});
+  lvNameEl.value = '';
+  lvSizeEl.value = '200';
+  lvMountEl.value = '';
+  renderLvm();
+}
+
+function removeLv(idx) {
+  lvs.splice(idx, 1);
+  renderLvm();
+}
+
+function renderLvm() {
+  renderPvTable();
+  renderLvTable();
+  renderLvmBars();
+  calcLvmStats();
+}
+
+function renderPvTable() {
+  if (pvs.length === 0) {
+    pvTableEl.innerHTML = '<div class="text-[#52525b] text-sm py-2">No physical volumes added yet.</div>';
+    return;
+  }
+  var html = '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-[#52525b] text-xs uppercase tracking-wider"><th class="text-left py-1 pr-2">Name</th><th class="text-left py-1 pr-2">Path</th><th class="text-right py-1 pr-2">Size</th><th class="text-right py-1" style="width:50px"></th></tr></thead><tbody>';
+  for (var i = 0; i < pvs.length; i++) {
+    var pv = pvs[i];
+    html += '<tr class="border-t border-[#27272a]"><td class="py-1.5 pr-2 text-[#e4e4e7]">' + escHtml(pv.name) + '</td><td class="py-1.5 pr-2 text-[#a1a1aa] fira text-xs">' + escHtml(pv.path) + '</td><td class="py-1.5 pr-2 text-right fira">' + fmtSizeShort(pv.size) + '</td><td class="py-1.5 text-right"><button class="btn-danger text-xs" onclick="removePv(' + i + ')"><i class="fa-regular fa-trash-can"></i></button></td></tr>';
+  }
+  html += '</tbody></table></div>';
+  pvTableEl.innerHTML = html;
+}
+
+function renderLvTable() {
+  if (lvs.length === 0) {
+    lvTableEl.innerHTML = '<div class="text-[#52525b] text-sm py-2">No logical volumes added yet.</div>';
+    return;
+  }
+  var html = '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-[#52525b] text-xs uppercase tracking-wider"><th class="text-left py-1 pr-2"></th><th class="text-left py-1 pr-2">Name</th><th class="text-left py-1 pr-2">Mount</th><th class="text-right py-1 pr-2">Size</th><th class="text-right py-1" style="width:50px"></th></tr></thead><tbody>';
+  for (var i = 0; i < lvs.length; i++) {
+    var lv = lvs[i];
+    html += '<tr class="border-t border-[#27272a]"><td class="py-1.5 pr-2"><span class="lv-dot" style="background:' + lv.color + '"></span></td><td class="py-1.5 pr-2 text-[#e4e4e7]">' + escHtml(lv.name) + '</td><td class="py-1.5 pr-2 text-[#a1a1aa] fira text-xs">' + escHtml(lv.mount) + '</td><td class="py-1.5 pr-2 text-right fira">' + fmtSizeShort(lv.size) + '</td><td class="py-1.5 text-right"><button class="btn-danger text-xs" onclick="removeLv(' + i + ')"><i class="fa-regular fa-trash-can"></i></button></td></tr>';
+  }
+  html += '</tbody></table></div>';
+  lvTableEl.innerHTML = html;
+}
+
+function allocLvsOnPvs() {
+  var remaining = {};
+  for (var i = 0; i < lvs.length; i++) remaining[lvs[i].name] = lvs[i].size;
+  var result = [];
+  for (var pi = 0; pi < pvs.length; pi++) {
+    var pv = pvs[pi];
+    var pvFree = pv.size;
+    var segments = [];
+    for (var li = 0; li < lvs.length; li++) {
+      var lv = lvs[li];
+      if (remaining[lv.name] > 0 && pvFree > 0.001) {
+        var alloc = Math.min(remaining[lv.name], pvFree);
+        if (alloc > 0.001) {
+          segments.push({type: 'lv', name: lv.name, size: alloc, color: lv.color});
+          remaining[lv.name] -= alloc;
+          pvFree -= alloc;
+        }
+      }
+    }
+    if (pvFree > 0.001) {
+      segments.push({type: 'free', name: 'Free', size: pvFree, color: null});
+    }
+    result.push({pv: pv, segments: segments});
+  }
+  return result;
+}
+
+function renderLvmBars() {
+  if (pvs.length === 0) {
+    lvmVisualEl.innerHTML = '<div class="text-[#52525b] text-sm py-2">Add PVs and LVs to see allocation.</div>';
+    return;
+  }
+  var allocation = allocLvsOnPvs();
+  var html = '';
+  for (var pi = 0; pi < allocation.length; pi++) {
+    var item = allocation[pi];
+    var pv = item.pv;
+    var segments = item.segments;
+    var totalSize = pv.size;
+    html += '<div class="pv-bar"><div class="pv-bar-header"><span class="pv-bar-name">' + escHtml(pv.name) + '</span><span class="pv-bar-size">' + escHtml(pv.path) + ' &middot; ' + fmtSizeShort(totalSize) + '</span></div><div class="pv-bar-track">';
+    for (var si = 0; si < segments.length; si++) {
+      var seg = segments[si];
+      var pct = Math.max((seg.size / totalSize) * 100, 1);
+      var bgColor = seg.type === 'free' ? '#27272a' : seg.color;
+      html += '<div class="pv-segment" style="flex-basis:' + pct + '%;background:' + bgColor + '">';
+      if (pct > 12) {
+        html += '<span class="pv-segment-label">' + (seg.type === 'free' ? '' : seg.name) + '</span>';
+      }
+      html += '</div>';
+    }
+    html += '</div></div>';
+  }
+  lvmVisualEl.innerHTML = html;
+}
+
+function calcLvmStats() {
+  var totalPv = 0;
+  for (var i = 0; i < pvs.length; i++) totalPv += pvs[i].size;
+  var totalLv = 0;
+  for (var i = 0; i < lvs.length; i++) totalLv += lvs[i].size;
+  var free = totalPv - totalLv;
+  var over = totalLv > totalPv;
+
+  var html = '';
+  html += '<div class="stat-card"><div class="stat-value">' + fmtSizeShort(totalPv) + '</div><div class="stat-label">Total PV Size</div></div>';
+  html += '<div class="stat-card"><div class="stat-value text-[#2dd4bf]">' + fmtSizeShort(totalLv) + '</div><div class="stat-label">Allocated (LVs)</div></div>';
+  html += '<div class="stat-card"><div class="stat-value" style="color:' + (free >= 0 ? '#e4e4e7' : '#ef4444') + '">' + fmtSizeShort(Math.max(free, 0)) + '</div><div class="stat-label">Free Space</div></div>';
+  html += '<div class="stat-card"><div class="stat-value">' + escHtml(vgNameEl.value || '—') + '</div><div class="stat-label">Volume Group</div></div>';
+  lvmStatsEl.innerHTML = html;
+
+  if (over) {
+    lvmWarningsEl.innerHTML = '<div class="warning-box"><i class="fa-regular fa-triangle-exclamation mr-1"></i>Warning: LVs exceed available PV space by ' + fmtSizeShort(totalLv - totalPv) + '!</div>';
+  } else {
+    lvmWarningsEl.innerHTML = '';
+  }
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(s));
+  return d.innerHTML;
+}
+
+// --- Init Sample Data ---
+function initSample() {
+  pvs = [
+    {name: 'sda', size: 1000, path: '/dev/sda'},
+    {name: 'sdb', size: 1000, path: '/dev/sdb'},
+    {name: 'sdc', size: 1000, path: '/dev/sdc'},
+    {name: 'sdd', size: 1000, path: '/dev/sdd'}
+  ];
+  lvs = [];
+  lvColorMap = {};
+  lvColorIdx = 0;
+  addLvData('lv_root', 200, '/');
+  addLvData('lv_home', 500, '/home');
+  addLvData('lv_swap', 16, 'swap');
+  addLvData('lv_var', 100, '/var');
+}
+
+function addLvData(name, size, mount) {
+  if (!lvColorMap[name]) {
+    lvColorMap[name] = lvColors[lvColorIdx % lvColors.length];
+    lvColorIdx++;
+  }
+  lvs.push({name: name, size: size, mount: mount, color: lvColorMap[name]});
+}
+
+// --- Events ---
+raidLevelEl.onchange = calcRaid;
+numDisksEl.oninput = calcRaid;
+diskCapacityEl.oninput = calcRaid;
+capacityUnitEl.onchange = calcRaid;
+costPerGbEl.oninput = updateCost;
+addPvBtnEl.onclick = addPv;
+addLvBtnEl.onclick = addLv;
+pvNameEl.onkeydown = function(e) { if (e.key === 'Enter') addPv(); };
+pvSizeEl.onkeydown = function(e) { if (e.key === 'Enter') addPv(); };
+pvPathEl.onkeydown = function(e) { if (e.key === 'Enter') addPv(); };
+lvNameEl.onkeydown = function(e) { if (e.key === 'Enter') addLv(); };
+lvSizeEl.onkeydown = function(e) { if (e.key === 'Enter') addLv(); };
+lvMountEl.onkeydown = function(e) { if (e.key === 'Enter') addLv(); };
+vgNameEl.oninput = function() { renderLvm(); };
+
+initSample();
+calcRaid();
+renderLvm();
+</script>
+</body>
+</html>

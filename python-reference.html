@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Reference</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.mode-tabs{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.mode-tab{background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:0.375rem 0.75rem;border-radius:0.375rem;font-size:0.8rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace}
+.mode-tab:hover{background:#27272a;color:#e4e4e7}
+.mode-tab.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.code-block{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem;font-family:'Fira Code',monospace;font-size:0.8rem;color:#2dd4bf;overflow-x:auto;white-space:pre;position:relative;margin-top:0.5rem;line-height:1.5}
+.collapsible{overflow:hidden;transition:max-height 0.3s ease}
+.section-header{cursor:pointer;user-select:none;display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0}
+.section-header i.fa-chevron-right{transition:transform 0.2s;font-size:0.7rem}
+.section-header.open i.fa-chevron-right{transform:rotate(90deg)}
+.copy-btn{position:absolute;top:0.5rem;right:0.5rem;background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:0.2rem 0.5rem;border-radius:0.25rem;font-size:0.7rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.copy-btn:hover{background:#27272a;color:#2dd4bf}
+.lib-item{padding:0.5rem 0;border-bottom:1px solid #27272a;cursor:pointer;transition:background .2s;border-radius:0.25rem;padding-left:0.5rem;padding-right:0.5rem}
+.lib-item:hover{background:#27272a}
+.lib-item:last-child{border-bottom:none}
+.lib-name{font-family:'Fira Code',monospace;color:#2dd4bf;font-size:0.85rem;font-weight:600}
+.lib-desc{color:#a1a1aa;font-size:0.78rem;margin-top:0.15rem}
+.lib-cat{font-size:0.65rem;color:#52525b;text-transform:uppercase;letter-spacing:0.05em;margin-top:1rem;margin-bottom:0.25rem;font-weight:600}
+.lib-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:50;align-items:center;justify-content:center;padding:1rem}
+.lib-modal.open{display:flex}
+.lib-modal-content{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.5rem;max-width:36rem;width:100%;max-height:80vh;overflow-y:auto}
+.lib-modal-close{float:right;cursor:pointer;color:#a1a1aa;font-size:1.2rem}
+.lib-modal-close:hover{color:#e4e4e7}
+.cheatsheet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:0.75rem}
+.cheatsheet-card{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem}
+.cheatsheet-card h4{font-size:0.75rem;font-weight:600;color:#2dd4bf;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em}
+.cheatsheet-card .cs-line{font-family:'Fira Code',monospace;font-size:0.72rem;color:#e4e4e7;line-height:1.6;white-space:pre-wrap}
+.cheatsheet-card .cs-comment{color:#52525b}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-brands fa-python text-[#2dd4bf] text-2xl"></i>
+      Python Reference
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Python basics, standard library browser &amp; cheatsheet</p>
+  </header>
+
+  <div class="mode-tabs" id="tabTabs">
+    <span class="mode-tab active" data-tab="basics"><i class="fa-solid fa-book mr-1"></i> Basics</span>
+    <span class="mode-tab" data-tab="libraries"><i class="fa-solid fa-cubes mr-1"></i> Libraries</span>
+    <span class="mode-tab" data-tab="cheatsheet"><i class="fa-solid fa-list-check mr-1"></i> Cheatsheet</span>
+  </div>
+
+  <div id="tabBasics">
+    <div class="card mb-4">
+      <div class="card-title"><i class="fa-solid fa-code mr-2"></i>Python Syntax Basics</div>
+      <p class="text-[#a1a1aa] text-sm mb-3">Click any section to expand/collapse. Click <i class="fa-regular fa-copy"></i> to copy code.</p>
+
+      <div class="space-y-1" id="basicsContainer">
+      </div>
+    </div>
+  </div>
+
+  <div id="tabLibraries" style="display:none">
+    <div class="card mb-4">
+      <div class="card-title"><i class="fa-solid fa-cubes mr-2"></i>Standard Library Browser</div>
+      <input id="libSearch" class="input-field mb-3" type="text" placeholder="Search modules...">
+      <div id="libCategoryFilters" class="flex gap-2 flex-wrap mb-3"></div>
+      <div id="libList"></div>
+    </div>
+  </div>
+
+  <div id="tabCheatsheet" style="display:none">
+    <div class="card mb-4">
+      <div class="card-title"><i class="fa-solid fa-list-check mr-2"></i>Python Cheatsheet</div>
+      <div id="cheatsheetContent"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> Python Reference</a>
+  </footer>
+</div>
+
+<div class="lib-modal" id="libModal">
+  <div class="lib-modal-content">
+    <span class="lib-modal-close" id="libModalClose">&times;</span>
+    <h3 class="text-lg font-bold mb-2" id="libModalTitle"></h3>
+    <p class="text-[#a1a1aa] text-sm mb-3" id="libModalDesc"></p>
+    <div class="card-title text-xs">Code Example</div>
+    <div class="code-block" id="libModalCode"><span class="text-[#52525b]">// loading...</span></div>
+    <div class="mt-3">
+      <a id="libModalDocs" href="#" target="_blank" class="text-[#2dd4bf] text-sm hover:underline"><i class="fa-solid fa-external-link-alt mr-1"></i>Official Documentation</a>
+    </div>
+  </div>
+</div>
+
+<script>
+var basicsData = [
+  {
+    title: "Variables &amp; Types",
+    icon: "fa-solid fa-box",
+    code: '# Python has dynamic typing\nname = "Alice"          # str\nage = 30                # int\nheight = 5.6            # float\nis_student = True       # bool\nhobbies = ["reading","code"]  # list\ncoords = (10,20)        # tuple\nperson = {"name":"Bob","age":25} # dict\nunique = {1,2,3}        # set\nvalue = None            # NoneType\n\n# Type checking\nprint(type(name))       # <class \'str\'>\nprint(isinstance(age,int)) # True\n\n# Type conversion\ns = str(100)            # "100"\nn = int("42")           # 42\nf = float("3.14")       # 3.14'
+  },
+  {
+    title: "Strings",
+    icon: "fa-solid fa-font",
+    code: 'text = "Hello, Python!"\n\n# Slicing\nprint(text[0:5])        # Hello\nprint(text[7:])         # Python!\nprint(text[::-1])       # !nohtyP ,olleH\n\n# Methods\nprint(text.upper())     # HELLO, PYTHON!\nprint(text.lower())     # hello, python!\nprint("  hi  ".strip()) # hi\nwords = "a,b,c".split(",")  # ["a","b","c"]\nprint("-".join(words))  # a-b-c\nprint(text.replace("Python","World")) # Hello, World!\n\n# f-strings (Python 3.6+)\nx = 42\nprint(f"The answer is {x}")  # The answer is 42\nprint(f"{x:04b}")       # 101010 (binary)\nprint(f"{x:.2f}")       # 42.00\n\n# Multi-line strings\nmulti = """Line one\nLine two\nLine three"""'
+  },
+  {
+    title: "Lists",
+    icon: "fa-solid fa-list",
+    code: 'nums = [1, 2, 3, 4, 5]\n\n# Access & modify\nprint(nums[0])          # 1\nnums[0] = 10\n\n# Methods\nnums.append(6)          # [10,2,3,4,5,6]\nnums.insert(0,0)        # [0,10,2,3,4,5,6]\nnums.pop()              # removes & returns 6\nnums.pop(0)             # removes & returns 0\nnums.remove(3)          # removes first 3\nnums.sort()             # ascending\nnums.reverse()          # reverse\n\n# Slicing\nprint(nums[1:3])        # elements at index 1-2\nprint(nums[::2])        # every other\n\n# List comprehension\nsquares = [x*x for x in nums]\nevens = [x for x in nums if x%2==0]'
+  },
+  {
+    title: "Control Flow",
+    icon: "fa-solid fa-route",
+    code: '# if / elif / else\nx = 10\nif x > 0:\n    print("positive")\nelif x == 0:\n    print("zero")\nelse:\n    print("negative")\n\n# Ternary\ntype = "even" if x%2==0 else "odd"\n\n# for loop\nfor i in range(5):      # 0,1,2,3,4\n    print(i)\nfor fruit in ["apple","banana"]:\n    print(fruit)\n\n# enumerate\nfor i,val in enumerate(["a","b","c"]):\n    print(i,val)\n\n# while loop\ni = 0\nwhile i < 5:\n    i += 1\n\n# break / continue\nfor i in range(10):\n    if i == 3: continue  # skip 3\n    if i == 7: break     # stop at 7\n    print(i)\n\n# range(start, stop, step)\nlist(range(0,10,2))    # [0,2,4,6,8]'
+  },
+  {
+    title: "Functions",
+    icon: "fa-solid fa-function",
+    code: '# Define\ndef greet(name):\n    """Say hello"""   # docstring\n    return f"Hello, {name}!"\n\n# Default args\ndef power(base, exp=2):\n    return base ** exp\n\n# *args (variable positional)\ndef sum_all(*args):\n    return sum(args)\n\n# **kwargs (variable keyword)\ndef print_kwargs(**kwargs):\n    for k,v in kwargs.items():\n        print(f"{k}={v}")\n\n# Lambda (anonymous)\nsquare = lambda x: x * x\nnums = [1,2,3]\ndoubled = list(map(lambda x: x*2, nums))\n\n# Type hints (Python 3.5+)\ndef add(a: int, b: int) -> int:\n    return a + b\n\n# Nested functions & closures\ndef outer(x):\n    def inner(y):\n        return x + y\n    return inner'
+  },
+  {
+    title: "Classes &amp; OOP",
+    icon: "fa-solid fa-cubes",
+    code: 'class Dog:\n    species = "Canis familiaris"  # class attr\n\n    def __init__(self, name, age):  # constructor\n        self.name = name          # instance attr\n        self.age = age\n\n    def bark(self):\n        return f"{self.name} says woof!"\n\n    @classmethod\n    def from_birth_year(cls, name, year):\n        return cls(name, 2024 - year)\n\n    @staticmethod\n    def is_adult(age):\n        return age >= 2\n\n# Inheritance\nclass Puppy(Dog):\n    def bark(self):\n        return f"{self.name} says yip!"  # override\n\n    def __str__(self):\n        return f"Puppy:{self.name}"\n\n# Usage\nd = Dog("Rex", 3)\nprint(d.bark())\np = Puppy.from_birth_year("Spot", 2023)\n\n# Magic methods: __str__, __repr__, __len__, __eq__'
+  },
+  {
+    title: "File I/O",
+    icon: "fa-solid fa-file",
+    code: '# Write (overwrite)\nwith open("file.txt", "w") as f:\n    f.write("Hello World\\n")\n    f.writelines(["line1\\n","line2\\n"])\n\n# Read\nwith open("file.txt", "r") as f:\n    content = f.read()        # entire file\n    line = f.readline()       # one line\n    lines = f.readlines()     # list of lines\n\n# Append\nwith open("file.txt", "a") as f:\n    f.write("more data\\n")\n\n# Binary mode\nwith open("image.jpg", "rb") as f:\n    data = f.read()\n\n# Auto-close (with statement)\n# Modes: r(ead), w(rite), a(ppend), r+(read/write)\n#        b(inary), t(text, default), x(exclusive create)\n\n# Check existence\nimport os\nif os.path.exists("file.txt"):\n    print("exists")'
+  },
+  {
+    title: "Exception Handling",
+    icon: "fa-solid fa-shield",
+    code: 'try:\n    x = int(input("Enter a number: "))\n    result = 10 / x\n    print(result)\nexcept ValueError:\n    print("That is not a number!")\nexcept ZeroDivisionError:\n    print("Cannot divide by zero!")\nexcept Exception as e:\n    print(f"Unexpected error: {e}")\nelse:\n    print("No error occurred")  # runs if no exception\nfinally:\n    print("This always runs")   # cleanup\n\n# Raise your own\nif x < 0:\n    raise ValueError("x must be non-negative")\n\n# Common exception types:\n# TypeError, ValueError, IndexError, KeyError\n# FileNotFoundError, IOError, AttributeError\n# ImportError, RuntimeError, StopIteration\n\n# Custom exception\nclass MyError(Exception):\n    pass\n\n# Assertions\nassert x > 0, "x must be positive"'
+  },
+  {
+    title: "Comprehensions",
+    icon: "fa-solid fa-bolt",
+    code: '# List comprehension\nsquares = [x*x for x in range(10)]\nevens = [x for x in range(20) if x%2==0]\npairs = [(x,y) for x in [1,2] for y in [3,4]]\n# Result: [(1,3),(1,4),(2,3),(2,4)]\n\n# Dict comprehension\nsquare_dict = {x: x*x for x in range(5)}\n# {0:0, 1:1, 2:4, 3:9, 4:16}\n\n# Set comprehension\nunique_lens = {len(w) for w in ["hi","hello","hey"]}\n# {2, 5, 3}\n\n# Generator expression (lazy)\ntotal = sum(x*x for x in range(1000000))\n\n# Nested comprehension\nmatrix = [[1,2],[3,4]]\nflat = [num for row in matrix for num in row]\n# [1, 2, 3, 4]\n\n# Conditional (if-else in comprehension)\nlabels = ["even" if x%2==0 else "odd" for x in range(5)]'
+  },
+  {
+    title: "Imports &amp; Modules",
+    icon: "fa-solid fa-download",
+    code: '# Basic import\nimport math\nprint(math.sqrt(16))    # 4.0\n\n# Import specific\nfrom math import pi, sqrt\nprint(pi)               # 3.14159...\n\n# Alias\nimport numpy as np\nfrom datetime import datetime as dt\n\n# Import all (discouraged)\nfrom math import *\n\n# Import from submodule\nfrom os.path import join, exists\n\n# __name__ guard (in script.py)\nif __name__ == "__main__":\n    # This runs only when script is executed\n    # not when imported\n    main()\n\n# Import from parent dir\nimport sys\nsys.path.append("..")\n\n# Reload (Python 3.4+)\nimport importlib\nimportlib.reload(some_module)'
+  }
+];
+
+var librariesData = {
+  "File & Data": [
+    {name:"os", desc:"Operating system interface: file ops, paths, environment variables, process management.", code:'import os\nos.getcwd()              # current directory\nos.listdir(".")          # list files\nos.mkdir("newdir")       # create directory\nos.remove("file.txt")    # delete file\nos.rename("old","new")   # rename\nos.environ.get("PATH")   # env variable\nos.path.join("a","b")    # a/b or a\\\\b\nos.path.exists("x.txt")  # bool\nos.path.isfile("x.txt")  # bool\nos.path.isdir("x.txt")   # bool', url:"https://docs.python.org/3/library/os.html"},
+    {name:"sys", desc:"System-specific parameters and functions: argv, exit, path, stdin/stdout.", code:'import sys\nsys.argv                 # CLI arguments list\nsys.exit(0)              # exit with code\nsys.path                 # module search paths\nsys.stdin.read()         # read from stdin\nsys.stdout.write("hi")   # write to stdout\nsys.platform             # "win32", "linux", etc\nsys.version              # Python version\nsys.maxsize              # max int value', url:"https://docs.python.org/3/library/sys.html"},
+    {name:"json", desc:"JSON encoder and decoder for serializing/deserializing Python objects.", code:'import json\ndata = {"name":"Alice","age":30}\njson_str = json.dumps(data)      # to JSON string\nparsed = json.loads(json_str)    # from JSON string\n\nwith open("data.json","w") as f:\n    json.dump(data, f, indent=2)\nwith open("data.json","r") as f:\n    data = json.load(f)', url:"https://docs.python.org/3/library/json.html"},
+    {name:"csv", desc:"Read and write comma-separated value files.", code:'import csv\n# Write\nwith open("data.csv","w",newline="") as f:\n    w = csv.writer(f)\n    w.writerow(["Name","Age"])\n    w.writerow(["Alice",30])\n\n# Read\nwith open("data.csv","r") as f:\n    r = csv.reader(f)\n    for row in r:\n        print(row)\n\n# DictReader/DictWriter\nwith open("data.csv","r") as f:\n    for row in csv.DictReader(f):\n        print(row["Name"])', url:"https://docs.python.org/3/library/csv.html"},
+    {name:"xml", desc:"XML parsing and creation with ElementTree and other parsers.", code:'import xml.etree.ElementTree as ET\ntree = ET.parse("file.xml")\nroot = tree.getroot()\n\n# Find elements\nfor child in root:\n    print(child.tag, child.attrib, child.text)\n\n# Create XML\nelem = ET.Element("root")\nsub = ET.SubElement(elem, "item", attr="val")\nsub.text = "Hello"\ntree = ET.ElementTree(elem)\ntree.write("out.xml")', url:"https://docs.python.org/3/library/xml.html"},
+    {name:"sqlite3", desc:"Lightweight SQL database engine — full SQL support with Python integration.", code:'import sqlite3\nconn = sqlite3.connect("app.db")\nc = conn.cursor()\nc.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)")\nc.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))\nconn.commit()\nfor row in c.execute("SELECT * FROM users"):\n    print(row)\nconn.close()', url:"https://docs.python.org/3/library/sqlite3.html"},
+    {name:"pickle", desc:"Binary serialization of Python objects for persistence.", code:'import pickle\ndata = {"key": [1,2,3], "nested": {"a":1}}\n\n# Serialize\nwith open("data.pkl","wb") as f:\n    pickle.dump(data, f)\n\n# Deserialize\nwith open("data.pkl","rb") as f:\n    loaded = pickle.load(f)\n\nprint(loaded)  # {"key": [1,2,3], "nested": {"a":1}}', url:"https://docs.python.org/3/library/pickle.html"},
+    {name:"shelve", desc:"Persistent dictionary backed by a database (pickle-based).", code:'import shelve\nwith shelve.open("mydb") as db:\n    db["key1"] = {"value": [1,2,3]}\n    db["key2"] = "hello"\n    print(db["key1"])\n# Auto-syncs on close', url:"https://docs.python.org/3/library/shelve.html"},
+    {name:"configparser", desc:"Configuration file parser for INI-style config files.", code:'import configparser\nconfig = configparser.ConfigParser()\nconfig["DEFAULT"] = {"ServerAliveInterval": "45"}\nconfig["bitbucket.org"] = {"User": "hg"}\nwith open("config.ini","w") as f:\n    config.write(f)\n\nconfig.read("config.ini")\nprint(config["bitbucket.org"]["User"])  # hg', url:"https://docs.python.org/3/library/configparser.html"},
+    {name:"io", desc:"Core tools for working with streams and text/binary file I/O.", code:'import io\n# StringIO (in-memory text stream)\nbuf = io.StringIO()\nbuf.write("Hello World\\n")\nprint(buf.getvalue())   # "Hello World\\n"\n\n# BytesIO\nbbuf = io.BytesIO()\nbbuf.write(b"binary data")', url:"https://docs.python.org/3/library/io.html"},
+    {name:"pathlib", desc:"Object-oriented filesystem paths (Python 3.4+).", code:'from pathlib import Path\np = Path("data/subdir")\np.mkdir(parents=True, exist_ok=True)\n\nfile = p / "file.txt"\nfile.write_text("Hello")\nprint(file.read_text())  # Hello\nprint(file.suffix)        # .txt\nprint(file.stem)          # file\nprint(file.parent)        # data/subdir\n\nfor f in Path(".").glob("*.txt"):\n    print(f.name)', url:"https://docs.python.org/3/library/pathlib.html"},
+    {name:"tempfile", desc:"Generate temporary files and directories securely.", code:'import tempfile\n# Temporary file (auto-deleted)\nwith tempfile.TemporaryFile(mode="w+t") as f:\n    f.write("temporary data")\n    f.seek(0)\n    print(f.read())\n\n# Named temporary file\nwith tempfile.NamedTemporaryFile(delete=False) as f:\n    print(f.name)\n\n# Temporary directory\nwith tempfile.TemporaryDirectory() as tmpdir:\n    print(tmpdir)', url:"https://docs.python.org/3/library/tempfile.html"},
+    {name:"fileinput", desc:"Iterate over lines from multiple input files or stdin.", code:'import fileinput\n# Process lines from files or stdin\nfor line in fileinput.input(files=["a.txt","b.txt"]):\n    print(fileinput.filename(), line, end="")', url:"https://docs.python.org/3/library/fileinput.html"}
+  ],
+  "Text Processing": [
+    {name:"re", desc:"Regular expression operations for pattern matching and text manipulation.", code:'import re\ntext = "Hello, my email is alice@example.com"\n\nmatch = re.search(r"\\w+@\\w+\\.\\w+", text)\nif match:\n    print(match.group())   # alice@example.com\n\n# Find all\nphones = re.findall(r"\\d{3}-\\d{4}", "Call 555-1234 or 555-5678")\n\n# Replace\nresult = re.sub(r"\\s+", "-", "hello world again")\n\n# Split\nparts = re.split(r"[,\\s]+", "a, b  c,d")\n\n# Compile for efficiency\npat = re.compile(r"^\\d{5}(-\\d{4})?$")', url:"https://docs.python.org/3/library/re.html"},
+    {name:"string", desc:"Common string operations: constants, formatting, template strings.", code:'import string\nprint(string.ascii_letters)   # abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\nprint(string.digits)           # 0123456789\nprint(string.punctuation)      # !"#$%&\'()*+,-./:;<=>?@[\\\\]^_`{|}~\n\n# Template strings\nt = string.Template("$name is $age years old")\nprint(t.substitute(name="Alice", age=30))', url:"https://docs.python.org/3/library/string.html"},
+    {name:"textwrap", desc:"Format text paragraphs by wrapping, filling, and indenting.", code:'import textwrap\ntext = "Long line that needs to be wrapped across multiple lines nicely."\nprint(textwrap.fill(text, width=30))\n\n# Indent\nprint(textwrap.indent(text, "> "))\n\n# Dedent\nprint(textwrap.dedent("    indented\\n    text"))', url:"https://docs.python.org/3/library/textwrap.html"},
+    {name:"difflib", desc:"Helpers for computing deltas between sequences (diff).", code:'import difflib\ntext1 = "Hello World".splitlines()\ntext2 = "Hello Python".splitlines()\n\n# Unified diff\nfor line in difflib.unified_diff(text1, text2, lineterm=""):\n    print(line)\n\n# Find close matches\nmatches = difflib.get_close_matches("appel", ["apple","apply","ape","app"], n=2)\nprint(matches)  # ["apple", "apply"]\n\n# Sequence matcher\nratio = difflib.SequenceMatcher(None, "abc", "abd").ratio()', url:"https://docs.python.org/3/library/difflib.html"},
+    {name:"unicodedata", desc:"Access the Unicode database: character properties, names, categories.", code:'import unicodedata\nprint(unicodedata.lookup("SNOWMAN"))      # &#9731;\nprint(unicodedata.name("A"))              # LATIN CAPITAL LETTER A\nprint(unicodedata.category("A"))          # Lu (letter uppercase)\nprint(unicodedata.decimal("5"))           # 5\nprint(unicodedata.normalize("NFD", "caf\\xe9"))  # normalized form', url:"https://docs.python.org/3/library/unicodedata.html"},
+    {name:"struct", desc:"Interpret bytes as packed binary data (C-style structs).", code:'import struct\n# Pack values into bytes\npacked = struct.pack(">i 4s h", 7, b"abcd", 3)\n# > = big-endian, i = int, s = string, h = short\n\n# Unpack\nvalues = struct.unpack(">i 4s h", packed)\nprint(values)  # (7, b\'abcd\', 3)\n\n# Calc size\nprint(struct.calcsize(">i 4s h"))  # 10', url:"https://docs.python.org/3/library/struct.html"}
+  ],
+  "Data Types & Collections": [
+    {name:"datetime", desc:"Date, time, timedelta, and timezone handling with rich formatting.", code:'from datetime import datetime, date, time, timedelta\nnow = datetime.now()             # current date/time\ntoday = date.today()             # current date\n\nd = date(2024, 12, 25)\nt = time(14, 30, 0)\ndt = datetime(2024, 12, 25, 14, 30)\n\n# Formatting\nprint(dt.strftime("%Y-%m-%d %H:%M"))  # 2024-12-25 14:30\nparsed = datetime.strptime("2024-01-01", "%Y-%m-%d")\n\n# Arithmetic\ntd = timedelta(days=7, hours=3)\nfuture = now + td\n\n# ISO format\nprint(now.isoformat())', url:"https://docs.python.org/3/library/datetime.html"},
+    {name:"collections", desc:"Specialized container datatypes: deque, Counter, defaultdict, namedtuple, etc.", code:'from collections import deque, Counter, defaultdict, namedtuple, OrderedDict\n\n# deque (double-ended queue)\ndq = deque([1,2,3])\ndq.appendleft(0)\ndq.pop()                # 3\n\n# Counter\ntally = Counter("hello world")\nprint(tally.most_common(2))  # [(\'l\',3), (\'o\',2)]\n\n# defaultdict\ndd = defaultdict(list)\ndd["key"].append(1)     # no KeyError\n\n# namedtuple\nPoint = namedtuple("Point", ["x","y"])\np = Point(10, 20)\nprint(p.x, p.y)         # 10 20\nprint(p._asdict())      # {"x":10, "y":20}\n\n# OrderedDict (maintains insertion order)\nod = OrderedDict()\nod["a"] = 1\nod["b"] = 2', url:"https://docs.python.org/3/library/collections.html"},
+    {name:"array", desc:"Compact typed arrays for efficient numeric storage (like lists with types).", code:'from array import array\narr = array("i", [1,2,3,4,5])  # signed int\narr.append(6)\narr[0] = 10\nprint(arr)              # array(\'i\', [10,2,3,4,5,6])\n\n# Type codes: b/B (signed/unsigned char), h/H (short), i/I (int), l/L (long), f (float), d (double)', url:"https://docs.python.org/3/library/array.html"},
+    {name:"enum", desc:"Support for enumerations with auto-numbering and methods.", code:'from enum import Enum, auto\n\nclass Color(Enum):\n    RED = 1\n    GREEN = 2\n    BLUE = 3\n\nclass Status(Enum):\n    PENDING = auto()\n    APPROVED = auto()\n    REJECTED = auto()\n\nprint(Color.RED)        # Color.RED\nprint(Color.RED.name)   # RED\nprint(Color.RED.value)  # 1\n\n# Iteration\nfor c in Color:\n    print(c)', url:"https://docs.python.org/3/library/enum.html"},
+    {name:"heapq", desc:"Heap queue algorithm (priority queue) for sorted data access.", code:'import heapq\nnums = [3, 1, 4, 1, 5, 9, 2]\nheapq.heapify(nums)      # convert to heap\nprint(heapq.heappop(nums))  # 1 (smallest)\nheapq.heappush(nums, 0)\nprint(heapq.heappop(nums))  # 0\n\n# n largest/smallest\nprint(heapq.nlargest(3, [1,5,3,9,2]))  # [9,5,3]\nprint(heapq.nsmallest(3, [1,5,3,9,2])) # [1,2,3]', url:"https://docs.python.org/3/library/heapq.html"},
+    {name:"bisect", desc:"Array bisection algorithm for sorted list insertion and search.", code:'import bisect\nnums = [1, 3, 5, 7, 9]\npos = bisect.bisect_left(nums, 6)  # 3 (where to insert)\npos = bisect.bisect_right(nums, 5) # 3 (after existing)\n\nbisect.insort(nums, 6)   # insert keeping sort\nprint(nums)              # [1,3,5,6,7,9]', url:"https://docs.python.org/3/library/bisect.html"},
+    {name:"weakref", desc:"Weak references that allow object garbage collection.", code:'import weakref\nclass Obj:\n    pass\n\nobj = Obj()\nr = weakref.ref(obj)\nprint(r())              # <Obj object at ...> (alive)\ndel obj\nprint(r())              # None (collected)\n\n# WeakValueDictionary\nwd = weakref.WeakValueDictionary()\n# (values can be garbage collected)', url:"https://docs.python.org/3/library/weakref.html"},
+    {name:"types", desc:"Create and inspect types: DynamicClass, SimpleNamespace, coroutine, etc.", code:'from types import SimpleNamespace, MethodType, LambdaType\n\n# SimpleNamespace (like object with attrs)\nns = SimpleNamespace(x=10, y=20)\nprint(ns.x)             # 10\n\n# Create dynamic type\nNewType = type("NewType", (object,), {"attr": 42})', url:"https://docs.python.org/3/library/types.html"},
+    {name:"copy", desc:"Shallow and deep copy operations for objects.", code:'import copy\noriginal = [[1,2,3], [4,5,6]]\n\n# Shallow copy (nested objects shared)\nshallow = copy.copy(original)\n\n# Deep copy (fully independent)\ndeep = copy.deepcopy(original)\n\noriginal[0][0] = 99\nprint(shallow[0][0])   # 99 (shared)\nprint(deep[0][0])      # 1 (independent)', url:"https://docs.python.org/3/library/copy.html"},
+    {name:"pprint", desc:"Pretty-print Python data structures with formatting.", code:'from pprint import pprint\ndata = {"users": [{"name":"Alice","scores":[1,2,3]}, {"name":"Bob","scores":[4,5,6]}], "meta": {"version":1}}\n\npprint(data, indent=2, width=40)\n# Ordered, formatted output', url:"https://docs.python.org/3/library/pprint.html"}
+  ],
+  "Math & Statistics": [
+    {name:"math", desc:"Mathematical functions for floats: trig, log, constants, and more.", code:'import math\nprint(math.pi)            # 3.1415926535\nprint(math.e)              # 2.7182818284\nprint(math.sqrt(16))       # 4.0\nprint(math.floor(3.7))     # 3\nprint(math.ceil(3.2))      # 4\nprint(math.sin(math.pi/2)) # 1.0\nprint(math.log(100, 10))   # 2.0\nprint(math.gcd(12, 8))     # 4\nprint(math.comb(5,2))      # 10 (combinations)\nprint(math.factorial(5))   # 120\nprint(math.isclose(0.1+0.2, 0.3))  # True', url:"https://docs.python.org/3/library/math.html"},
+    {name:"random", desc:"Generate pseudo-random numbers with various distributions.", code:'import random\nprint(random.random())       # [0.0, 1.0)\nprint(random.randint(1,10))  # int in [1,10]\nprint(random.uniform(0,1))   # float in [0,1]\nprint(random.choice(["a","b","c"]))  # random element\nprint(random.sample(range(100), 5))  # 5 unique samples\nrandom.shuffle(["a","b","c","d"])    # in-place shuffle\n\n# Seeding for reproducibility\nrandom.seed(42)\nprint(random.random())  # 0.6394...\n\n# Normal distribution\nprint(random.gauss(0, 1))', url:"https://docs.python.org/3/library/random.html"},
+    {name:"statistics", desc:"Statistical functions: mean, median, mode, stdev, variance.", code:'import statistics\ndata = [1, 2, 3, 4, 5, 5, 6]\n\nprint(statistics.mean(data))      # 3.714\nprint(statistics.median(data))    # 4\nprint(statistics.mode(data))      # 5\nprint(statistics.stdev(data))     # 1.799 (sample stdev)\nprint(statistics.variance(data))  # 3.238\n\n# Quantiles\nprint(statistics.quantiles(data, n=4))  # quartiles', url:"https://docs.python.org/3/library/statistics.html"},
+    {name:"decimal", desc:"Fixed-point and floating-point arithmetic with configurable precision.", code:'from decimal import Decimal, getcontext\ngetcontext().prec = 28\n\na = Decimal("0.1")\nb = Decimal("0.2")\nprint(a + b)              # 0.3 (no floating error)\n\nc = Decimal(1) / Decimal(7)\nprint(c)                  # 0.142857142857... (28 digits)\n\n# Quantize for rounding\nprice = Decimal("19.995")\nrounded = price.quantize(Decimal("0.01"))  # 20.00', url:"https://docs.python.org/3/library/decimal.html"},
+    {name:"fractions", desc:"Rational number arithmetic with exact fractions.", code:'from fractions import Fraction\nf1 = Fraction(1, 3)\nf2 = Fraction(2, 6)        # auto-reduced to 1/3\nprint(f1 + f2)             # 2/3\nprint(f1 * 3)              # 1\n\n# From string\nf3 = Fraction("0.75")      # 3/4\n\n# Numerator/denominator\nprint(f3.numerator)       # 3\nprint(f3.denominator)     # 4\n\n# Float conversion\nprint(float(Fraction(22,7)))  # 3.142857...', url:"https://docs.python.org/3/library/fractions.html"},
+    {name:"numbers", desc:"Abstract base classes for numeric types (Number, Complex, Real, etc.).", code:'from numbers import Number, Integral, Real\n\nprint(isinstance(42, Integral))    # True\nprint(isinstance(3.14, Real))      # True\nprint(isinstance(1+2j, Number))    # True\n\n# Useful for type checking numeric types', url:"https://docs.python.org/3/library/numbers.html"},
+    {name:"itertools", desc:"Functions for efficient looping and iterator combinatorics.", code:'import itertools\n\n# count (infinite)\nfor i in itertools.count(10, 2):  # 10,12,14...\n    if i > 20: break\n\n# cycle\nfor item in itertools.cycle([1,2,3]):\n    break  # infinite!\n\n# repeat\nlist(itertools.repeat("A", 5))  # ["A","A","A","A","A"]\n\n# chain\nlist(itertools.chain([1,2],[3,4]))  # [1,2,3,4]\n\n# combinations & permutations\nlist(itertools.combinations("ABC", 2))  # AB, AC, BC\nlist(itertools.permutations("ABC", 2))  # AB,AC,BA,BC,CA,CB\n\n# product (Cartesian product)\nlist(itertools.product([1,2], ["a","b"]))\n\n# groupby\nfor k,g in itertools.groupby("AAABBBCCAA"):\n    print(k, list(g))  # A [A,A,A], B [B,B,B], ...\n\n# islice, takewhile, dropwhile\nlist(itertools.islice(range(10), 5))  # [0,1,2,3,4]', url:"https://docs.python.org/3/library/itertools.html"},
+    {name:"functools", desc:"Higher-order functions: partial, reduce, lru_cache, wraps, cmp_to_key.", code:'import functools\n\n# reduce\nsum_all = functools.reduce(lambda a,b: a+b, [1,2,3,4])\nprint(sum_all)            # 10\n\n# partial (fix arguments)\ndef power(base, exp): return base ** exp\nsquare = functools.partial(power, exp=2)\nprint(square(5))          # 25\n\n# lru_cache (memoization)\n@functools.lru_cache(maxsize=128)\ndef fib(n):\n    if n < 2: return n\n    return fib(n-1) + fib(n-2)\n\n# wraps (preserve metadata in decorators)\n@functools.lru_cache\n@functools.total_ordering\nclass MyClass: pass', url:"https://docs.python.org/3/library/functools.html"},
+    {name:"operator", desc:"Functional interface to Python operators (add, sub, itemgetter, etc.).", code:'import operator\nprint(operator.add(2, 3))           # 5\nprint(operator.mul(4, 5))           # 20\nprint(operator.itemgetter(1)([10,20,30]))  # 20\nprint(operator.attrgetter("x")(obj))  # obj.x\n\n# Sort by key\ndata = [{"name":"Bob","age":30}, {"name":"Alice","age":25}]\nsorted(data, key=operator.itemgetter("age"))\n\n# Method caller\nf = operator.methodcaller("upper")\nprint(f("hello"))        # HELLO', url:"https://docs.python.org/3/library/operator.html"}
+  ],
+  "Networking & Internet": [
+    {name:"socket", desc:"Low-level networking interface for TCP/IP and UDP communication.", code:'import socket\n# TCP client\ns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\ns.connect(("example.com", 80))\ns.send(b"GET / HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n")\nresponse = s.recv(4096)\ns.close()\n\n# TCP server\ns = socket.socket()\ns.bind(("0.0.0.0", 8080))\ns.listen(5)\nconn, addr = s.accept()\nprint(f"Connected by {addr}")\ndata = conn.recv(1024)\nconn.close()', url:"https://docs.python.org/3/library/socket.html"},
+    {name:"ssl", desc:"TLS/SSL wrapper for secure socket communication.", code:'import ssl\nimport socket\n\ncontext = ssl.create_default_context()\n\n# HTTPS client\nwith socket.create_connection(("example.com", 443)) as sock:\n    with context.wrap_socket(sock, server_hostname="example.com") as ssock:\n        ssock.send(b"GET / HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n")\n        response = ssock.recv(4096)', url:"https://docs.python.org/3/library/ssl.html"},
+    {name:"urllib", desc:"URL handling modules: request, parse, error, robotparser.", code:'from urllib.request import urlopen\nfrom urllib.parse import urlparse, urlencode, quote\n\n# HTTP request\nresponse = urlopen("https://api.github.com")\ndata = response.read().decode()\n\n# URL parsing\nparsed = urlparse("https://user:pass@example.com:8080/path?q=1#frag")\nprint(parsed.netloc)     # user:pass@example.com:8080\nprint(parsed.path)       # /path\n\n# URL encoding\nparams = urlencode({"q": "python", "page": 1})\nprint(params)            # q=python&page=1\n\n# Quote (percent-encode)\nprint(quote("hello world"))  # hello%20world', url:"https://docs.python.org/3/library/urllib.html"},
+    {name:"http", desc:"HTTP protocol: client (http.client) and server (http.server) modules.", code:'# HTTP Client\nfrom http.client import HTTPSConnection\nconn = HTTPSConnection("jsonplaceholder.typicode.com")\nconn.request("GET", "/todos/1")\nresp = conn.getresponse()\nprint(resp.status, resp.reason)  # 200 OK\ndata = resp.read()\nconn.close()\n\n# HTTP Server\nfrom http.server import HTTPServer, BaseHTTPRequestHandler\nclass Handler(BaseHTTPRequestHandler):\n    def do_GET(self):\n        self.send_response(200)\n        self.end_headers()\n        self.wfile.write(b"Hello")\nserver = HTTPServer(("", 8000), Handler)\nserver.serve_forever()', url:"https://docs.python.org/3/library/http.html"},
+    {name:"ftplib", desc:"FTP client protocol implementation for file transfers.", code:'from ftplib import FTP\nftp = FTP("ftp.example.com")\nftp.login(user="anonymous", passwd="guest")\nftp.cwd("/pub")                 # change directory\nfiles = ftp.nlst()               # list files\nprint(files)\nftp.retrbinary("RETR file.txt", open("file.txt","wb").write)\nftp.storbinary("STOR new.txt", open("local.txt","rb"))\nftp.quit()', url:"https://docs.python.org/3/library/ftplib.html"},
+    {name:"smtplib", desc:"SMTP client for sending email messages.", code:'import smtplib\nfrom email.message import EmailMessage\n\nmsg = EmailMessage()\nmsg.set_content("Hello from Python!")\nmsg["Subject"] = "Test Email"\nmsg["From"] = "sender@example.com"\nmsg["To"] = "recipient@example.com"\n\nwith smtplib.SMTP("smtp.example.com", 587) as s:\n    s.starttls()  # upgrade to secure\n    s.login("user", "password")\n    s.send_message(msg)', url:"https://docs.python.org/3/library/smtplib.html"},
+    {name:"poplib", desc:"POP3 protocol client for retrieving email from servers.", code:'import poplib\nmailbox = poplib.POP3("pop.example.com")\nmailbox.user("user")\nmailbox.pass_("password")\n\nnum_messages = len(mailbox.list()[1])\nprint(f"{num_messages} messages")\n\nfor i in range(num_messages):\n    response, lines, octets = mailbox.retr(i+1)\n    msg_text = b"\\r\\n".join(lines).decode()\n    print(msg_text[:200])\n\nmailbox.quit()', url:"https://docs.python.org/3/library/poplib.html"},
+    {name:"imaplib", desc:"IMAP4 protocol client for advanced email mailbox access.", code:'import imaplib\nmail = imaplib.IMAP4_SSL("imap.example.com")\nmail.login("user", "password")\nmail.select("INBOX")\n\ntype, data = mail.search(None, "ALL")\nmail_ids = data[0].split()\n\nfor mid in mail_ids[-5:]:  # latest 5\n    typ, msg_data = mail.fetch(mid, "(RFC822)")\n    print(msg_data[0][1][:200])\n\nmail.close()\nmail.logout()', url:"https://docs.python.org/3/library/imaplib.html"},
+    {name:"telnetlib", desc:"Telnet client for interactive command-line connections.", code:'import telnetlib\ntn = telnetlib.Telnet("example.com", 23)\ntn.write(b"user\\n")\ntn.write(b"password\\n")\noutput = tn.read_until(b"$", timeout=10)\nprint(output.decode())\ntn.close()', url:"https://docs.python.org/3/library/telnetlib.html"},
+    {name:"asyncio", desc:"Asynchronous I/O framework for concurrent code using async/await.", code:'import asyncio\n\nasync def fetch(url):\n    print(f"Fetching {url}")\n    await asyncio.sleep(1)  # simulate IO\n    return f"Data from {url}"\n\nasync def main():\n    tasks = [fetch(f"https://api.example.com/{i}") for i in range(3)]\n    results = await asyncio.gather(*tasks)\n    print(results)\n\nasyncio.run(main())\n\n# Single coroutine\nasync def hello():\n    print("Hello")\n    await asyncio.sleep(1)\n    print("World")\n\nasyncio.run(hello())', url:"https://docs.python.org/3/library/asyncio.html"},
+    {name:"select", desc:"Monitor multiple file descriptors for I/O readiness (poll/select/epoll).", code:'import select\nimport socket\n\ns = socket.socket()\ns.bind(("", 8000))\ns.listen(5)\ns.setblocking(False)\n\nreadable, _, _ = select.select([s], [], [], 1.0)\nfor sock in readable:\n    if sock is s:\n        conn, addr = s.accept()\n        print(f"Connection from {addr}")', url:"https://docs.python.org/3/library/select.html"},
+    {name:"socketserver", desc:"Framework for creating network servers (TCP, UDP, Unix, Forking, Threading).", code:'from socketserver import TCPServer, StreamRequestHandler\n\nclass MyHandler(StreamRequestHandler):\n    def handle(self):\n        data = self.rfile.readline().strip()\n        print(f"Received: {data}")\n        self.wfile.write(b"ACK\\n")\n\nwith TCPServer(("", 8080), MyHandler) as server:\n    server.serve_forever()', url:"https://docs.python.org/3/library/socketserver.html"},
+    {name:"ipaddress", desc:"Create, manipulate, and validate IPv4/IPv6 addresses and networks.", code:'import ipaddress\n\n# IPv4\nip = ipaddress.IPv4Address("192.168.1.1")\nprint(ip + 256)              # 192.168.2.1\nprint(ip.is_private)         # True\nprint(ip.is_loopback)        # False\n\n# Network\nnet = ipaddress.IPv4Network("192.168.1.0/24")\nprint(net.num_addresses)     # 256\nfor host in net.hosts():     # all usable hosts\n    print(host)\n\n# Validation\nprint(ipaddress.ip_address("::1"))  # IPv6 loopback', url:"https://docs.python.org/3/library/ipaddress.html"}
+  ],
+  "Web": [
+    {name:"html", desc:"HTML parsing and escaping: entities, tag stripping.", code:'import html\n# Escape special characters\nprint(html.escape("<tag> & text"))  # &lt;tag&gt; &amp; text\n\n# Unescape entities\nprint(html.unescape("&lt;tag&gt;"))  # <tag>\n\n# HTML parser\nfrom html.parser import HTMLParser\nclass MyParser(HTMLParser):\n    def handle_starttag(self, tag, attrs):\n        print(f"Tag: {tag}, attrs: {attrs}")\nparser = MyParser()\nparser.feed("<div class=\\"main\\">Hello</div>")', url:"https://docs.python.org/3/library/html.html"},
+    {name:"http.server", desc:"Simple HTTP server for file serving and custom request handling.", code:'from http.server import HTTPServer, SimpleHTTPRequestHandler\nimport socketserver\n\n# Serve current directory\nPORT = 8000\nHandler = SimpleHTTPRequestHandler\nwith HTTPServer(("", PORT), Handler) as httpd:\n    print(f"Serving on port {PORT}")\n    httpd.serve_forever()\n\n# Run: python -m http.server 8000', url:"https://docs.python.org/3/library/http.server.html"},
+    {name:"cgi", desc:"CGI script support for legacy web applications (deprecated).", code:'import cgi\nimport cgitb\ncgitb.enable()  # show tracebacks\n\n# Parse form data\nform = cgi.FieldStorage()\nname = form.getvalue("name", "Guest")\nprint("Content-Type: text/html\\n")\nprint(f"<h1>Hello, {name}!</h1>")', url:"https://docs.python.org/3/library/cgi.html"},
+    {name:"webbrowser", desc:"Launch web browsers from Python scripts.", code:'import webbrowser\n\n# Open URL in default browser\nwebbrowser.open("https://python.org")\n\n# Open in new tab\nwebbrowser.open_new_tab("https://docs.python.org")\n\n# Open in new window\nwebbrowser.open_new("https://pypi.org")\n\n# Get browser controller\nchrome = webbrowser.get("chrome")', url:"https://docs.python.org/3/library/webbrowser.html"},
+    {name:"urllib.parse", desc:"URL parsing, joining, encoding, and splitting utilities.", code:'from urllib.parse import urlparse, urljoin, urlencode, parse_qs, quote\n\n# Parse URL\nurl = "https://user:pass@example.com:8080/path?q=python&page=1#section"\np = urlparse(url)\nprint(p.scheme)    # https\nprint(p.netloc)    # user:pass@example.com:8080\nprint(p.path)      # /path\nprint(p.query)     # q=python&page=1\n\n# Encode params\nparams = urlencode({"search": "python ref", "limit": 10})\n\n# Parse query string\nqs = parse_qs("a=1&b=2&a=3")  # {"a": ["1","3"], "b": ["2"]}\n\n# Join URLs\nprint(urljoin("https://example.com/faq/", "contact"))  # https://example.com/faq/contact', url:"https://docs.python.org/3/library/urllib.parse.html"}
+  ],
+  "Compression & Archiving": [
+    {name:"zipfile", desc:"Read and write ZIP archive files with compression support.", code:'import zipfile\n# Write\nwith zipfile.ZipFile("archive.zip", "w", zipfile.ZIP_DEFLATED) as zf:\n    zf.write("file1.txt")\n    zf.write("file2.txt")\n\n# Read\nwith zipfile.ZipFile("archive.zip", "r") as zf:\n    zf.extractall("output_dir")\n    info = zf.getinfo("file1.txt")\n    print(info.file_size)\n    print(zf.namelist())  # list of files', url:"https://docs.python.org/3/library/zipfile.html"},
+    {name:"tarfile", desc:"Read and write tar archives with gzip/bz2/lzma compression.", code:'import tarfile\n# Write\nwith tarfile.open("archive.tar.gz", "w:gz") as tar:\n    tar.add("folder/")\n\n# Read\nwith tarfile.open("archive.tar.gz", "r:gz") as tar:\n    tar.extractall("output_dir")\n    for member in tar.getmembers():\n        print(member.name, member.size)\n\n# Modes: w (write), r (read), a (append)\n# Compression: :gz (gzip), :bz2 (bzip2), :xz (lzma)', url:"https://docs.python.org/3/library/tarfile.html"},
+    {name:"gzip", desc:"GNU zip compression/decompression for individual files.", code:'import gzip\n# Write compressed\nwith gzip.open("file.txt.gz", "wt", encoding="utf-8") as f:\n    f.write("Hello World\\n")\n\n# Read compressed\nwith gzip.open("file.txt.gz", "rt", encoding="utf-8") as f:\n    print(f.read())\n\n# Binary mode\nwith gzip.open("data.gz", "rb") as f:\n    raw = f.read()\n\n# Compress/decompress bytes\ncompressed = gzip.compress(b"Hello" * 100)\ndata = gzip.decompress(compressed)', url:"https://docs.python.org/3/library/gzip.html"},
+    {name:"bz2", desc:"Bzip2 compression/decompression (better ratios than gzip).", code:'import bz2\n# Compress bytes\ncompressed = bz2.compress(b"Hello World! " * 100)\ndata = bz2.decompress(compressed)\n\n# File I/O\nwith bz2.open("file.bz2", "wt") as f:\n    f.write("Hello\\n")\nwith bz2.open("file.bz2", "rt") as f:\n    print(f.read())', url:"https://docs.python.org/3/library/bz2.html"},
+    {name:"lzma", desc:"XZ/LZMA compression with high compression ratios.", code:'import lzma\n# Compress\ncompressed = lzma.compress(b"Hello" * 1000)\ndata = lzma.decompress(compressed)\n\n# File\nwith lzma.open("file.xz", "wt") as f:\n    f.write("Data\\n")\nwith lzma.open("file.xz", "rt") as f:\n    print(f.read())\n\n# Options\nlzma.compress(data, format=lzma.FORMAT_XZ, preset=9)', url:"https://docs.python.org/3/library/lzma.html"},
+    {name:"shutil", desc:"High-level file operations: copy, move, remove trees, disk usage.", code:'import shutil\nimport os\n\n# Copy file\nshutil.copy("src.txt", "dst.txt")        # file + permissions\nshutil.copy2("src.txt", "dst.txt")       # + metadata\n\n# Copy directory tree\nshutil.copytree("src_dir", "dst_dir")\n\n# Move/rename\nshutil.move("old.txt", "new_folder/new.txt")\n\n# Remove directory tree\nshutil.rmtree("unwanted_dir")\n\n# Disk usage\nusage = shutil.disk_usage("/")\nprint(f"{usage.free // (2**30)} GB free")\n\n# Archive creation\nshutil.make_archive("backup", "zip", "my_folder")', url:"https://docs.python.org/3/library/shutil.html"}
+  ],
+  "Concurrency & Parallelism": [
+    {name:"threading", desc:"Thread-based parallelism for concurrent execution (GIL-limited).", code:'import threading\nimport time\n\ndef worker(n):\n    print(f"Thread {n} starting")\n    time.sleep(1)\n    print(f"Thread {n} done")\n\nthreads = []\nfor i in range(5):\n    t = threading.Thread(target=worker, args=(i,))\n    threads.append(t)\n    t.start()\n\nfor t in threads:\n    t.join()  # wait for completion\n\n# Lock\nlock = threading.Lock()\nlock.acquire()\n# critical section\nlock.release()\n\n# With statement\nwith lock:\n    pass', url:"https://docs.python.org/3/library/threading.html"},
+    {name:"multiprocessing", desc:"Process-based parallelism for CPU-bound tasks (bypasses GIL).", code:'from multiprocessing import Process, Pool, Queue\n\ndef square(n):\n    return n * n\n\n# Pool (map workers)\nwith Pool(processes=4) as pool:\n    results = pool.map(square, [1,2,3,4,5])\n    print(results)  # [1,4,9,16,25]\n\n# Process\np = Process(target=square, args=(10,))\np.start()\np.join()\n\n# Queue (IPC)\nq = Queue()\nq.put("message")\nprint(q.get())', url:"https://docs.python.org/3/library/multiprocessing.html"},
+    {name:"subprocess", desc:"Spawn and manage external processes, access stdin/stdout/stderr.", code:'import subprocess\n\n# Run command, get output\nresult = subprocess.run(["echo", "Hello"], capture_output=True, text=True)\nprint(result.stdout)     # Hello\nprint(result.returncode) # 0\n\n# Run with shell\nsubprocess.run("ls -la", shell=True)\n\n# Popen (advanced)\nproc = subprocess.Popen(["python", "-c", "print(42)"], stdout=subprocess.PIPE)\nstdout, _ = proc.communicate()\nprint(stdout.decode())   # 42\n\n# Check return code\nsubprocess.check_call(["true"])  # raises CalledProcessError on failure', url:"https://docs.python.org/3/library/subprocess.html"},
+    {name:"concurrent.futures", desc:"High-level thread/process pool executors for async execution.", code:'from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed\nimport time\n\ndef fetch_url(url):\n    time.sleep(1)\n    return f"Data from {url}"\n\n# Thread pool\nwith ThreadPoolExecutor(max_workers=4) as ex:\n    futures = [ex.submit(fetch_url, f"site{i}") for i in range(8)]\n    for f in as_completed(futures):\n        print(f.result())\n\n# Process pool\nwith ProcessPoolExecutor() as ex:\n    results = ex.map(fetch_url, ["a","b","c"])\n    for r in results:\n        print(r)', url:"https://docs.python.org/3/library/concurrent.futures.html"},
+    {name:"queue", desc:"Thread-safe synchronized queues for producer-consumer patterns.", code:'from queue import Queue, LifoQueue, PriorityQueue\nimport threading\n\nq = Queue(maxsize=10)\n\n# Producer\ndef producer():\n    for i in range(10):\n        q.put(i)\n        print(f"Produced {i}")\n\n# Consumer\ndef consumer():\n    while True:\n        item = q.get()\n        if item is None: break\n        print(f"Consumed {item}")\n        q.task_done()\n\n# LifoQueue (stack), PriorityQueue (sorted by priority)', url:"https://docs.python.org/3/library/queue.html"},
+    {name:"signal", desc:"Set handlers for asynchronous signals (e.g., SIGINT, SIGTERM).", code:'import signal\nimport time\n\ndef handler(signum, frame):\n    print(f"Signal {signum} received, exiting...")\n    exit(0)\n\nsignal.signal(signal.SIGINT, handler)   # Ctrl+C\nsignal.signal(signal.SIGTERM, handler)  # kill\n\nprint("Running... Press Ctrl+C")\nwhile True:\n    time.sleep(1)\n\n# Alarm (Unix)\nsignal.alarm(5)  # raises SIGALRM in 5 seconds', url:"https://docs.python.org/3/library/signal.html"}
+  ],
+  "Development & Debugging": [
+    {name:"logging", desc:"Flexible event logging system with levels, handlers, and formatters.", code:'import logging\n\n# Basic config\nlogging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")\n\nlogging.debug("Debug info")      # not shown\nlogging.info("Informational")\nlogging.warning("Warning!")\nlogging.error("Error occurred")\nlogging.critical("Fatal error")\n\n# Logger with name\nlogger = logging.getLogger(__name__)\nlogger.info("From module")\n\n# File handler\nhandler = logging.FileHandler("app.log")\nlogger.addHandler(handler)', url:"https://docs.python.org/3/library/logging.html"},
+    {name:"pdb", desc:"Interactive source code debugger for inspecting and stepping through code.", code:'import pdb\n\ndef buggy_func(x):\n    y = x * 2\n    pdb.set_trace()    # breakpoint (Python 3.7+: breakpoint())\n    z = y + 10\n    return z\n\n# Debugger commands:\n# n (next line), s (step into), c (continue)\n# l (list source), p (print var), q (quit)\n# w (where/backtrace)\n# h (help)\n\n# Post-mortem\ntry:\n    1/0\nexcept:\n    pdb.post_mortem()', url:"https://docs.python.org/3/library/pdb.html"},
+    {name:"traceback", desc:"Format and print stack traces for exception handling and debugging.", code:'import traceback\n\ntry:\n    1/0\nexcept:\n    traceback.print_exc()  # print to stderr\n    # or get as string\n    tb = traceback.format_exc()\n    print("Traceback saved")\n\n# Extract stack frame\nstack = traceback.extract_stack()\nfor filename, lineno, func, text in stack:\n    print(f"{filename}:{lineno}:{func}:{text}")', url:"https://docs.python.org/3/library/traceback.html"},
+    {name:"profile / cProfile", desc:"Performance profiler for timing function calls and identifying bottlenecks.", code:'import cProfile\nimport pstats\n\ndef slow():\n    total = 0\n    for i in range(1000000):\n        total += i\n    return total\n\n# Profile\ncProfile.run("slow()", "profile_stats")\n\n# Analyze results\nstats = pstats.Stats("profile_stats")\nstats.sort_stats("time").print_stats(10)  # top 10 by time\n\n# Inline\ncProfile.run("slow()", sort="cumtime")', url:"https://docs.python.org/3/library/profile.html"},
+    {name:"timeit", desc:"Fine-grained timing of small code snippets for benchmarking.", code:'import timeit\n\n# Time a statement (1 million runs by default)\nt = timeit.timeit(\'"-".join(map(str, range(100)))\', number=10000)\nprint(f"Took {t:.4f}s")\n\n# From function\ndef test():\n    return sum(range(100))\n\nt = timeit.timeit(test, number=100000)\n\n# Repeat for best result\nr = timeit.repeat("x = [1,2,3,4,5]; x.sort()", repeat=5, number=10000)\nprint(min(r))\n\n# Command line:\n# python -m timeit \'",".join(str(i) for i in range(100))\'', url:"https://docs.python.org/3/library/timeit.html"},
+    {name:"doctest", desc:"Test interactive Python examples embedded in docstrings.", code:'def add(a, b):\n    """\n    Return a + b.\n\n    >>> add(2, 3)\n    5\n    >>> add(-1, 1)\n    0\n    """\n    return a + b\n\nif __name__ == "__main__":\n    import doctest\n    doctest.testmod()  # run all doctests\n\n# Run: python -m doctest module.py -v', url:"https://docs.python.org/3/library/doctest.html"},
+    {name:"unittest", desc:"Unit testing framework with test discovery, fixtures, and assertions.", code:'import unittest\n\ndef add(a, b):\n    return a + b\n\nclass TestMath(unittest.TestCase):\n    def setUp(self):\n        print("Before each test")\n\n    def test_add(self):\n        self.assertEqual(add(2,3), 5)\n        self.assertAlmostEqual(0.1+0.2, 0.3, places=5)\n\n    def test_negative(self):\n        self.assertLess(add(-1,-2), 0)\n\nif __name__ == "__main__":\n    unittest.main()\n\n# Run: python -m unittest test_module.py', url:"https://docs.python.org/3/library/unittest.html"},
+    {name:"argparse", desc:"Command-line argument parsing with auto-generated help messages.", code:'import argparse\n\nparser = argparse.ArgumentParser(description="Process some integers.")\nparser.add_argument("filename", help="file to process")\nparser.add_argument("-v", "--verbose", action="store_true", help="verbose output")\nparser.add_argument("-n", "--number", type=int, default=1, help="count")\nparser.add_argument("--format", choices=["json","csv"], default="json")\n\nargs = parser.parse_args()\nprint(args.filename, args.verbose, args.number, args.format)\n\n# Run: python script.py file.txt -v -n 5 --format json', url:"https://docs.python.org/3/library/argparse.html"},
+    {name:"getopt", desc:"C-style option parser for command-line arguments (legacy, prefer argparse).", code:'import getopt\nimport sys\n\nopts, args = getopt.getopt(sys.argv[1:], "ho:v", ["help", "output=", "verbose"])\nfor opt, arg in opts:\n    if opt == "-h" or opt == "--help":\n        print("Help")\n    elif opt == "-o" or opt == "--output":\n        print(f"Output: {arg}")', url:"https://docs.python.org/3/library/getopt.html"},
+    {name:"warnings", desc:"Issue warning messages and control warning filters.", code:'import warnings\n\n# Issue warning\nwarnings.warn("This function is deprecated", DeprecationWarning)\n\n# Control warnings\nwarnings.filterwarnings("ignore", category=DeprecationWarning)\nwarnings.filterwarnings("error", category=UserWarning)\n\n# Simple filter\nwith warnings.catch_warnings():\n    warnings.simplefilter("ignore")\n    deprecated_func()  # no warning', url:"https://docs.python.org/3/library/warnings.html"},
+    {name:"dataclasses", desc:"Auto-generate __init__, __repr__, __eq__ for simple classes (Python 3.7+).", code:'from dataclasses import dataclass, field, asdict\n\n@dataclass\nclass Person:\n    name: str\n    age: int\n    email: str = ""  # default\n    tags: list = field(default_factory=list)\n\n    def greet(self):\n        return f"Hi, I am {self.name}"\n\np = Person("Alice", 30, tags=["dev"])\nprint(p)               # Person(name=\'Alice\', age=30, email=\'\', tags=[\'dev\'])\nprint(asdict(p))       # dict\n\n# frozen=True makes it immutable\n@dataclass(frozen=True)\nclass Point:\n    x: float\n    y: float', url:"https://docs.python.org/3/library/dataclasses.html"},
+    {name:"typing", desc:"Type hints for type annotations and static type checking.", code:'from typing import List, Dict, Tuple, Optional, Union, Any, Callable\n\n# Basic types\nname: str = "Alice"\nage: int = 30\n\n# Collections\nnames: List[str] = ["Alice", "Bob"]\nscores: Dict[str, int] = {"math": 95}\npoint: Tuple[float, float] = (1.0, 2.0)\n\n# Optional (None or value)\nmaybe: Optional[str] = None\n\n# Union\nuid: Union[int, str] = "abc123"\n\n# Callable\nhandler: Callable[[int, str], bool] = lambda x, y: True\n\n# Any (untyped)\nanything: Any = 42\n\n# NewType\nUserId = int\nfrom typing import NewType\nythonUserId = NewType("UserId", int)', url:"https://docs.python.org/3/library/typing.html"}
+  ],
+  "Cryptography & Security": [
+    {name:"hashlib", desc:"Secure hash and message digest algorithms (SHA, MD5, Blake2, etc.).", code:'import hashlib\n\n# Hash a string\nhash_obj = hashlib.sha256(b"Hello World")\nprint(hash_obj.hexdigest())  # a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b...\n\n# With update (streaming)\nh = hashlib.sha256()\nh.update(b"Hello ")\nh.update(b"World")\nprint(h.hexdigest())\n\n# Available algorithms\nprint(hashlib.algorithms_available)\n\n# MD5 (not for security)\nprint(hashlib.md5(b"test").hexdigest())\n\n# Blake2\nprint(hashlib.blake2b(b"data").hexdigest())\n\n# PBKDF2 (password hashing)\ndk = hashlib.pbkdf2_hmac("sha256", b"password", b"salt", 100000)', url:"https://docs.python.org/3/library/hashlib.html"},
+    {name:"hmac", desc:"Keyed-hashing for message authentication (HMAC) algorithm.", code:'import hmac\nimport hashlib\n\nkey = b"secret-key"\nmessage = b"Hello World"\n\n# Create HMAC\nh = hmac.new(key, message, hashlib.sha256)\nprint(h.hexdigest())\n\n# Verify\nreceived_digest = b"..."  # from sender\nis_valid = hmac.compare_digest(h.digest(), received_digest)', url:"https://docs.python.org/3/library/hmac.html"},
+    {name:"secrets", desc:"Cryptographically secure random numbers for passwords, tokens, and keys.", code:'import secrets\n\n# Random token (hex)\ntoken = secrets.token_hex(16)  # 32 hex chars\nprint(token)\n\n# Random URL-safe string\nurl_safe = secrets.token_urlsafe(32)\n\n# Random integer in range\nn = secrets.randbelow(100)  # 0-99\n\n# Random choice (secure)\nchoice = secrets.choice(["a", "b", "c"])\n\n# Compare strings (constant-time)\nis_match = secrets.compare_digest(token, another_token)', url:"https://docs.python.org/3/library/secrets.html"},
+    {name:"base64", desc:"Encode/decode binary data using Base16, Base32, Base64, and Base85.", code:'import base64\n\n# Base64 encode\ndata = b"Hello World"\nencoded = base64.b64encode(data)\nprint(encoded)            # b\'SGVsbG8gV29ybGQ=\'\n\ndecoded = base64.b64decode(encoded)\nprint(decoded)            # b\'Hello World\'\n\n# URL-safe Base64\nurl_safe = base64.urlsafe_b64encode(data)\n\n# Base32\nb32 = base64.b32encode(data)\nprint(b32)                # b\'JBSWY3DPEBLW64TMMQ======\'\n\n# Base16 (hex)\nb16 = base64.b16encode(data)\nprint(b16)                # b\'48656C6C6F20576F726C64\'', url:"https://docs.python.org/3/library/base64.html"},
+    {name:"binascii", desc:"Convert between binary and ASCII: hex, base64, uuencode, CRC.", code:'import binascii\n\n# Binary <-> hex\ndata = b"Hello"\nhex_str = binascii.hexlify(data)\nprint(hex_str)            # b\'48656c6c6f\'\nprint(binascii.unhexlify(hex_str))  # b\'Hello\'\n\n# CRC32\ncrc = binascii.crc32(b"data")\nprint(hex(crc))\n\n# a2b / b2a conversions\n# uuencode\nuu = binascii.b2a_uu(b"hello")\nprint(uu)', url:"https://docs.python.org/3/library/binascii.html"}
+  ],
+  "System & OS": [
+    {name:"platform", desc:"Access system/platform identification: OS, Python version, architecture.", code:'import platform\n\nprint(platform.system())           # Windows/Linux/Darwin\nprint(platform.release())          # 10, 5.15.0, etc\nprint(platform.version())          # detailed version\nprint(platform.machine())          # x86_64, arm64\nprint(platform.processor())        # processor model\nprint(platform.python_version())   # 3.12.0\nprint(platform.platform())         # condensed string\nprint(platform.node())             # hostname', url:"https://docs.python.org/3/library/platform.html"},
+    {name:"glob", desc:"Unix-style pathname pattern expansion for file matching.", code:'import glob\n\n# All .txt files\nfor f in glob.glob("*.txt"):\n    print(f)\n\n# Recursive\nfor f in glob.glob("**/*.py", recursive=True):\n    print(f)\n\n# Wildcards: * (any), ? (single char), [abc] (set), [!abc] (negation)\n# {a,b} (alternation)\n\n# With Path\nfrom pathlib import Path\nfor f in Path(".").glob("**/*.csv"):\n    print(f)', url:"https://docs.python.org/3/library/glob.html"},
+    {name:"fnmatch", desc:"Unix-style glob pattern matching against filenames.", code:'import fnmatch\nimport os\n\n# Match pattern\nprint(fnmatch.fnmatch("data.txt", "*.txt"))   # True\nprint(fnmatch.fnmatch("data.txt", "data.???")) # True\nprint(fnmatch.fnmatch("foo.py", "[!a]*"))      # True (not starting with a)\n\n# Filter list\nfiles = os.listdir(".")\ntxt_files = fnmatch.filter(files, "*.txt")\nprint(txt_files)\n\n# Case sensitivity\nfnmatch.fnmatchcase("A.txt", "*.TXT")   # False (case-sensitive)', url:"https://docs.python.org/3/library/fnmatch.html"},
+    {name:"stat", desc:"Interpreting stat() results: file mode, permissions, type constants.", code:'import os\nimport stat\n\ninfo = os.stat("file.txt")\n\n# File type\nprint(stat.S_ISDIR(info.st_mode))    # False\nprint(stat.S_ISREG(info.st_mode))    # True\n\n# Permissions\nmode = info.st_mode\nif mode & stat.S_IRUSR:\n    print("Owner can read")\nif mode & stat.S_IXUSR:\n    print("Owner can execute")\n\n# Common constants: S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWOTH, etc.', url:"https://docs.python.org/3/library/stat.html"},
+    {name:"getpass", desc:"Prompt for passwords without echoing to terminal.", code:'import getpass\n\n# Password input (no echo)\npwd = getpass.getpass("Enter password: ")\n\n# Current username\nuser = getpass.getuser()\nprint(f"User: {user}")', url:"https://docs.python.org/3/library/getpass.html"},
+    {name:"locale", desc:"Internationalization services: number/date formatting, currency, collation.", code:'import locale\n\n# Set locale\nlocale.setlocale(locale.LC_ALL, "en_US.UTF-8")\n\n# Number formatting\nprint(locale.format_string("%d", 1234567, grouping=True))  # 1,234,567\n\n# Currency\nprint(locale.currency(1234.56))       # $1,234.56\n\n# Date formatting\nimport datetime\nprint(locale.nl_langinfo(locale.D_T_FMT))\nprint(datetime.datetime.now().strftime(locale.nl_langinfo(locale.D_FMT)))', url:"https://docs.python.org/3/library/locale.html"}
+  ],
+  "Image & Media": [
+    {name:"wave", desc:"Read/write WAV sound files (RIFF format).", code:'import wave\n\n# Read\nwith wave.open("sound.wav", "rb") as wf:\n    print(f"Channels: {wf.getnchannels()}")\n    print(f"Sample width: {wf.getsampwidth()} bytes")\n    print(f"Frame rate: {wf.getframerate()} Hz")\n    print(f"Frames: {wf.getnframes()}")\n    frames = wf.readframes(wf.getnframes())\n\n# Write\nwith wave.open("output.wav", "wb") as wf:\n    wf.setnchannels(1)\n    wf.setsampwidth(2)\n    wf.setframerate(44100)\n    wf.writeframes(b"\\x00\\x00" * 44100)  # 1 sec silence', url:"https://docs.python.org/3/library/wave.html"},
+    {name:"colorsys", desc:"Convert between color systems: RGB, YIQ, HLS, HSV.", code:'import colorsys\n\n# RGB (0-1) to HSV\nr, g, b = 0.5, 0.8, 0.2\nh, s, v = colorsys.rgb_to_hsv(r, g, b)\nprint(f"HSV: {h:.2f}, {s:.2f}, {v:.2f}")\n\n# HSV to RGB\nr2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)\n\n# Other conversions\n# rgb_to_hls(), rgb_to_yiq()\n# hls_to_rgb(), hsv_to_rgb(), yiq_to_rgb()', url:"https://docs.python.org/3/library/colorsys.html"},
+    {name:"turtle", desc:"Turtle graphics for introductory programming (logo-style drawing).", code:'import turtle\n\nt = turtle.Turtle()\nt.speed(3)\nt.color("blue")\n\n# Draw a square\nfor _ in range(4):\n    t.forward(100)\n    t.right(90)\n\n# Draw a circle\nt.penup()\nt.goto(50, 50)\nt.pendown()\nt.circle(50)\n\nturtle.done()\n# Run: python -m turtle', url:"https://docs.python.org/3/library/turtle.html"}
+  ],
+  "Internationalization": [
+    {name:"gettext", desc:"Multilingual internationalization (i18n) using GNU gettext message catalogs.", code:'import gettext\n\n# Setup\nt = gettext.translation("myapp", localedir="locale", languages=["fr"])\n_ = t.gettext\n\n# Use\nprint(_("Hello World"))  # Bonjour le monde (if translated)\n\n# Or install globally\ngettext.install("myapp")\nprint(_("Hello World"))', url:"https://docs.python.org/3/library/gettext.html"},
+    {name:"codecs", desc:"Codec registry and base classes for encoding/decoding text and binary data.", code:'import codecs\n\n# Encode/decode with specific codec\nencoded = codecs.encode("Hello", "rot_13")\nprint(encoded)            # Uryyb\ndecoded = codecs.decode(encoded, "rot_13")\nprint(decoded)            # Hello\n\n# Open file with encoding\nwith codecs.open("file.txt", "r", encoding="utf-8") as f:\n    content = f.read()\n\n# List available codecs\nprint(codecs.lookup("utf-8"))\n\n# Handle BOM (Byte Order Mark)\nwith codecs.open("file.txt", "r", encoding="utf-8-sig") as f:\n    # auto-strips BOM\n    pass', url:"https://docs.python.org/3/library/codecs.html"}
+  ],
+  "Other / Meta": [
+    {name:"cmd", desc:"Framework for building line-oriented command interpreters (CLI tools).", code:'import cmd\n\nclass MyShell(cmd.Cmd):\n    intro = "Welcome to MyShell. Type help or ? to list commands."\n    prompt = "(myshell) "\n\n    def do_greet(self, arg):\n        """Greet a person"""\n        print(f"Hello, {arg}!")\n\n    def do_quit(self, arg):\n        """Exit the shell"""\n        return True\n\n    def do_EOF(self, arg):\n        return True\n\nif __name__ == "__main__":\n    MyShell().cmdloop()', url:"https://docs.python.org/3/library/cmd.html"},
+    {name:"shlex", desc:"Lexical analysis of shell-style syntax for parsing quoted strings.", code:'import shlex\n\n# Split shell-like command\ncmd = \'echo "Hello World" | grep "test"\'\nparts = shlex.split(cmd)\nprint(parts)  # [\'echo\', \'Hello World\', \'|\', \'grep\', \'test\']\n\n# Join\njoined = shlex.join(parts)\nprint(joined)\n\n# Quote\nprint(shlex.quote("hello world"))  # \'hello world\'', url:"https://docs.python.org/3/library/shlex.html"},
+    {name:"dis", desc:"Disassembler for Python bytecode analysis and debugging.", code:'import dis\n\ndef func(x):\n    return x * 2 + 1\n\n# Disassemble function\ndis.dis(func)\n\n# Disassemble code object\ncode = compile("print(42)", "<string>", "exec")\ndis.dis(code)\n\n# Show bytecode as string\nprint(dis.Bytecode(func).info())', url:"https://docs.python.org/3/library/dis.html"},
+    {name:"inspect", desc:"Inspect live objects: source code, signatures, class hierarchy, stack frames.", code:'import inspect\n\ndef my_func(a: int, b: str = "hello") -> bool:\n    """Docstring"""\n    return True\n\n# Get source code\nprint(inspect.getsource(my_func))\n\n# Get signature\nsig = inspect.signature(my_func)\nfor name, param in sig.parameters.items():\n    print(f"{name}: {param.annotation} = {param.default}")\n\n# Check types\nprint(inspect.isfunction(my_func))     # True\nprint(inspect.isclass(int))            # True\n\n# Stack\nframe = inspect.currentframe()\nprint(inspect.getframeinfo(frame))\n\n# Get members\nfor name, val in inspect.getmembers([1,2,3]):\n    print(name, type(val))', url:"https://docs.python.org/3/library/inspect.html"},
+    {name:"__future__", desc:"Enable newer Python language features in older versions (e.g., print_function, annotations).", code:'# At top of module\nfrom __future__ import annotations\nfrom __future__ import print_function\nfrom __future__ import division\n\n# Makes division return float (3/2 = 1.5)\n# Makes print a function\n# Makes annotations not evaluated (PEP 563)\n\n# Available: generator_stop, absolute_import, unicode_literals', url:"https://docs.python.org/3/library/__future__.html"},
+    {name:"antigravity", desc:"Python easter egg — opens xkcd comic #353 in a web browser.", code:'import antigravity\n\n# Opens https://xkcd.com/353/ in browser\n# Also implements the geohashing algorithm from xkcd comic\n\n# No practical use — just for fun!\nantigravity', url:"https://docs.python.org/3/library/antigravity.html"}
+  ]
+};
+
+var cheatsheetData = [
+  {
+    title: "Basics",
+    items: [
+      '# Hello World\nprint("Hello, World!")\n\n# Run script\n# python script.py\n# python -c "print(1+1)"\n\n# Interactive mode\n# Just type: python\n\n# Comments\n# Single line\n""" Multi-line docstring """',
+      '# Variables\nname = "Alice"\nage = 30\nheight = 5.7\nis_ok = True\n\n# Multiple assignment\na, b, c = 1, 2, 3\n\n# Swap\nx, y = y, x\n\n# Delete\ndel x',
+      '# Constants (convention)\nPI = 3.14159\nMAX_SIZE = 100\n\n# Type checking\ntype(x)          # <class \'int\'>\nisinstance(x, int)  # True',
+      '# None\nresult = None\nif result is None:\n    print("no value")\n\n# Truthy/Falsy\n# False: 0, "", [], {}, None, False, set()'
+    ]
+  },
+  {
+    title: "Operators",
+    items: [
+      '# Arithmetic\n+  -  *  /       # add, sub, mul, div\n// %  **          # floor div, mod, power\n\n# Comparison\n==  !=  <  >  <=  >=\nis    is not      # identity\nin    not in      # membership\n\n# Logical\nand  or  not\n\n# Bitwise\n&  |  ^  ~  <<  >>',
+      '# Short-circuit\nx = a or b      # a if truthy else b\nx = a and b     # b if truthy a else a\n\n# Walrus (3.8+)\nif (n := len(x)) > 0:\n    print(n)',
+      '# String operators\n"hello" + " world"  # concat\n"ha" * 3            # hahaha\n\n# List operators\n[1,2] + [3,4]      # [1,2,3,4]\n[0] * 5             # [0,0,0,0,0]',
+      '# Operator overloading\n# __add__, __sub__, __mul__, __truediv__\n# __eq__, __lt__, __len__, __str__, __repr__'
+    ]
+  },
+  {
+    title: "Strings",
+    items: [
+      '# Creation\ns = "double"\ns = \'single\'\ns = """multi\nline"""\n\n# f-string (3.6+)\nf"Value: {x:.2f}"\n\n# Raw string\npath = r"C:\\Users\\name"',
+      '# Methods\ns.upper()   s.lower()\ns.strip()   s.lstrip()\ns.split(sep)  s.join(list)\ns.replace(old, new)\ns.startswith(x)  s.endswith(x)\ns.find(x)  s.index(x)\ns.count(x)  s.isdigit()',
+      '# Slicing\ns[start:stop:step]\ns[0]       # first char\ns[-1]      # last\ns[::-1]    # reverse\ns[1:4]     # indices 1,2,3\n\n# Format\n"{} {}".format("a", 1)\n"%s %d" % ("a", 1)'
+    ]
+  },
+  {
+    title: "Lists",
+    items: [
+      '# Creation\nlst = [1, 2, 3]\nlst = list(range(5))\n\n# Access\nlst[0]   lst[-1]\nlst[1:3]  # slice\n\n# Methods\nappend(x)     # add to end\ninsert(i, x)  # at index\nextend(L)     # merge list\npop(i)        # remove & return\nremove(x)     # remove first x\nsort()  reverse()\nindex(x)  count(x)',
+      '# List comprehension\n[x*2 for x in range(10)]\n[x for x in lst if x > 5]\n[(x,y) for x in a for y in b]\n\n# Copy\ncopy = lst[:]\ncopy = list(lst)\nimport copy; copy.deepcopy(lst)',
+      '# Sorting\nsorted(lst)            # new list\nlst.sort()             # in-place\nsorted(lst, reverse=True)\nsorted(lst, key=len)\n\n# Map/Filter\nlist(map(f, lst))\nlist(filter(f, lst))'
+    ]
+  },
+  {
+    title: "Dicts & Sets",
+    items: [
+      '# Dict creation\nd = {"key": "value"}\nd = dict(a=1, b=2)\nd = {x: x*2 for x in range(5)}\n\n# Access\nd["key"]       # KeyError if missing\nd.get("key", default)  # safe\nd.setdefault("k", v)   # set if missing\n\n# Keys/Values\nfor k in d:         # keys\nfor k,v in d.items(): # both\nfor v in d.values():  # values',
+      '# Dict methods\nd.keys()   d.values()   d.items()\nd.pop(k, default)   del d[k]\nd.update({"a":1, "b":2})\nd.copy()\n\n# Merging (3.9+)\nz = x | y           # merge\nd |= {"a": 1}       # update',
+      '# Sets\ns = {1, 2, 3}\ns = set([1, 2, 2])  # {1, 2}\n\n# Methods\ns.add(x)   s.remove(x)\ns.union(t)  s.intersection(t)\ns.difference(t)  s.symmetric_difference(t)\ns.issubset(t)  s.issuperset(t)\n\n# Set comprehension\n{x%3 for x in range(10)}'
+    ]
+  },
+  {
+    title: "Control Flow",
+    items: [
+      '# if/elif/else\nif x > 0:\n    print("pos")\nelif x == 0:\n    print("zero")\nelse:\n    print("neg")\n\n# Ternary\n"even" if x%2==0 else "odd"',
+      '# for loop\nfor i in range(5):\nfor i, v in enumerate(lst):\nfor k, v in d.items():\nfor a, b in zip(xs, ys):\n\n# while\nwhile condition:\n    # body\n\n# break / continue / pass',
+      '# range\nrange(stop)\nrange(start, stop)\nrange(start, stop, step)\n\n# enumerate\nfor idx, val in enumerate(items):\n\n# zip\nfor a, b in zip(list1, list2):'
+    ]
+  },
+  {
+    title: "Functions",
+    items: [
+      '# Define\ndef func(a, b=0, *args, **kwargs):\n    """docstring"""\n    return a + b\n\n# Lambda\nf = lambda x: x * 2\n\n# Decorator\n@decorator\ndef func(): pass',
+      '# Args & kwargs\ndef f(*args, **kwargs):\n    # args = tuple\n    # kwargs = dict\n\n# Unpacking\nf(*[1,2,3])       # f(1,2,3)\nf(**{"a":1})      # f(a=1)',
+      '# Built-ins\nlen(x)  type(x)  int(x)\nstr(x)  float(x)  bool(x)\nlist(x)  dict(x)  set(x)\nprint()  input()  open()\nrange()  enumerate()  zip()\nmap()  filter()  sorted()\nsum()  min()  max()  abs()'
+    ]
+  },
+  {
+    title: "Classes",
+    items: [
+      '# Class\nclass MyClass(Base):\n    class_attr = 0\n\n    def __init__(self, val):\n        self.attr = val\n\n    def method(self):\n        return self.attr\n\n    @classmethod\n    def cm(cls): pass\n\n    @staticmethod\n    def sm(): pass',
+      '# Magic methods\n__init__, __str__, __repr__\n__len__, __eq__, __lt__\n__add__, __sub__, __call__\n__getitem__, __setitem__\n__enter__, __exit__ (context)\n\n# Property\n@property\ndef name(self): return self._name\n\n@name.setter\ndef name(self, v): self._name = v'
+    ]
+  },
+  {
+    title: "File I/O",
+    items: [
+      '# Open & read\nwith open("f.txt", "r") as f:\n    data = f.read()\n    line = f.readline()\n    lines = f.readlines()\n\n# Write\nwith open("f.txt", "w") as f:\n    f.write("text")\n    f.writelines(["a\\n","b\\n"])',
+      '# Modes\n"r"  read (default)\n"w"  write (overwrite)\n"a"  append\n"x"  exclusive create\n"b"  binary (rb, wb)\n"+"  read+write (r+)\n\n# Check\nimport os; os.path.exists("f")'
+    ]
+  },
+  {
+    title: "Exceptions",
+    items: [
+      '# try/except/finally\ntry:\n    risky()\nexcept ValueError as e:\n    print(e)\nexcept (TypeError, IOError):\n    pass\nexcept Exception:\n    pass\nelse:\n    print("no error")\nfinally:\n    cleanup()\n\nraise ValueError("msg")',
+      '# Common exceptions\nValueError, TypeError, IndexError\nKeyError, FileNotFoundError\nImportError, AttributeError\nRuntimeError, ZeroDivisionError\nStopIteration, OSError',
+      '# Assertions\nassert x > 0, "must be positive"\n\n# Warnings\nimport warnings\nwarnings.warn("deprecated", DeprecationWarning)'
+    ]
+  },
+  {
+    title: "One-Liners",
+    items: [
+      '# Reverse string\ns[::-1]\n\n# Flatten list\n[i for sub in lst for i in sub]\nsum(lst, [])\n\n# Merge dicts (3.9+)\nmerged = d1 | d2\n\n# Unique elements\nlist(set(lst))',
+      '# Transpose matrix\nlist(zip(*matrix))\n\n# Palindrome check\ns == s[::-1]\n\n# Most common element\nmax(set(lst), key=lst.count)\n\n# Find duplicates\n[x for x in lst if lst.count(x) > 1]',
+      '# Chained comparison\nif 0 < x < 10:\n\n# Any/all\nall(x > 0 for x in lst)\nany(x > 10 for x in lst)\n\n# Map to dict\ndict(zip(keys, values))\n\n# Factorial (one-liner)\nfact = lambda n: n * fact(n-1) if n>1 else 1'
+    ]
+  },
+  {
+    title: "Common Snippets",
+    items: [
+      '# Read file into list\nlines = open("f.txt").read().splitlines()\n\n# Write list to file\nwith open("f.txt","w") as f:\n    f.write("\\n".join(lines))\n\n# Current date\ndatetime.now().strftime("%Y-%m-%d")\n\n# Timer\nimport time; time.time()',
+      '# Type of object\ntype(obj).__name__\n\n# Getattr safely\ngetattr(obj, "attr", default)\n\n# List all attrs\ndir(obj)\n\n# Memory usage\nimport sys; sys.getsizeof(obj)',
+      '# __main__ guard\nif __name__ == "__main__":\n    main()\n\n# String to bytes\nb = s.encode()\n\n# Bytes to string\ns = b.decode()\n\n# Sort dict by value\nsorted(d.items(), key=lambda x: x[1])'
+    ]
+  }
+];
+
+var tabTabs = document.getElementById('tabTabs');
+var tabBasics = document.getElementById('tabBasics');
+var tabLibraries = document.getElementById('tabLibraries');
+var tabCheatsheet = document.getElementById('tabCheatsheet');
+
+tabTabs.querySelectorAll('.mode-tab').forEach(function(tab){
+  tab.onclick = function(){
+    tabTabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+    var target = tab.dataset.tab;
+    tabBasics.style.display = target === 'basics' ? '' : 'none';
+    tabLibraries.style.display = target === 'libraries' ? '' : 'none';
+    tabCheatsheet.style.display = target === 'cheatsheet' ? '' : 'none';
+  };
+});
+
+function buildBasics(){
+  var container = document.getElementById('basicsContainer');
+  var html = '';
+  for(var i = 0; i < basicsData.length; i++){
+    var sec = basicsData[i];
+    html += '<div class="card mb-2">';
+    html += '<div class="section-header" data-index="' + i + '">';
+    html += '<i class="fa-solid fa-chevron-right text-[#2dd4bf]"></i>';
+    html += '<i class="' + sec.icon + ' text-[#2dd4bf] mr-1 text-sm"></i>';
+    html += '<span class="text-sm font-medium">' + sec.title + '</span>';
+    html += '</div>';
+    html += '<div class="collapsible" id="collapsible' + i + '" style="max-height:0">';
+    html += '<div class="code-block" id="codeBlock' + i + '">' + sec.code.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+    html += '</div>';
+    html += '</div>';
+  }
+  container.innerHTML = html;
+
+  for(var i = 0; i < basicsData.length; i++){
+    (function(idx){
+      var header = container.querySelector('.section-header[data-index="' + idx + '"]');
+      var coll = document.getElementById('collapsible' + idx);
+      var open = false;
+      header.onclick = function(){
+        open = !open;
+        coll.style.maxHeight = open ? coll.scrollHeight + 'px' : '0';
+        header.classList.toggle('open');
+      };
+      var codeBlock = document.getElementById('codeBlock' + idx);
+      var copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-btn';
+      copyBtn.innerHTML = '<i class="fa-regular fa-copy mr-1"></i>Copy';
+      copyBtn.onclick = function(e){
+        e.stopPropagation();
+        navigator.clipboard.writeText(basicsData[idx].code);
+        copyBtn.innerHTML = '<i class="fa-regular fa-check mr-1"></i>Copied!';
+        setTimeout(function(){ copyBtn.innerHTML = '<i class="fa-regular fa-copy mr-1"></i>Copy'; }, 2000);
+      };
+      codeBlock.appendChild(copyBtn);
+    })(i);
+  }
+}
+
+function buildLibraries(){
+  var list = document.getElementById('libList');
+  var filters = document.getElementById('libCategoryFilters');
+  var cats = Object.keys(librariesData);
+
+  var filterHtml = '<span class="mode-tab active" data-cat="all">All</span>';
+  for(var c = 0; c < cats.length; c++){
+    filterHtml += '<span class="mode-tab" data-cat="' + cats[c] + '">' + cats[c] + '</span>';
+  }
+  filters.innerHTML = filterHtml;
+
+  var activeCat = 'all';
+  var searchTerm = '';
+
+  function render(){
+    var html = '';
+    for(var c = 0; c < cats.length; c++){
+      var catName = cats[c];
+      if(activeCat !== 'all' && activeCat !== catName) continue;
+      var modules = librariesData[catName];
+      var filtered = modules;
+      if(searchTerm){
+        var st = searchTerm.toLowerCase();
+        filtered = [];
+        for(var m = 0; m < modules.length; m++){
+          if(modules[m].name.toLowerCase().indexOf(st) !== -1 || modules[m].desc.toLowerCase().indexOf(st) !== -1){
+            filtered.push(modules[m]);
+          }
+        }
+      }
+      if(filtered.length === 0) continue;
+      html += '<div class="lib-cat">' + catName + '</div>';
+      for(var m = 0; m < filtered.length; m++){
+        var mod = filtered[m];
+        html += '<div class="lib-item" data-module="' + mod.name + '"><div class="lib-name">' + mod.name + '</div><div class="lib-desc">' + mod.desc + '</div></div>';
+      }
+    }
+    list.innerHTML = html;
+
+    list.querySelectorAll('.lib-item').forEach(function(item){
+      item.onclick = function(){
+        var modName = this.dataset.module;
+        for(var c = 0; c < cats.length; c++){
+          var mods = librariesData[cats[c]];
+          for(var m = 0; m < mods.length; m++){
+            if(mods[m].name === modName){
+              showLibModal(mods[m]);
+              return;
+            }
+          }
+        }
+      };
+    });
+  }
+
+  filters.querySelectorAll('.mode-tab').forEach(function(tab){
+    tab.onclick = function(){
+      filters.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      activeCat = tab.dataset.cat;
+      render();
+    };
+  });
+
+  document.getElementById('libSearch').oninput = function(){
+    searchTerm = this.value;
+    render();
+  };
+
+  render();
+}
+
+function showLibModal(mod){
+  document.getElementById('libModalTitle').textContent = mod.name;
+  document.getElementById('libModalDesc').textContent = mod.desc;
+  var codeEl = document.getElementById('libModalCode');
+  codeEl.innerHTML = mod.code.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('libModalDocs').href = mod.url || '#';
+
+  var copyBtn2 = document.createElement('button');
+  copyBtn2.className = 'copy-btn';
+  copyBtn2.innerHTML = '<i class="fa-regular fa-copy mr-1"></i>Copy';
+  copyBtn2.onclick = function(){
+    navigator.clipboard.writeText(mod.code);
+    copyBtn2.innerHTML = '<i class="fa-regular fa-check mr-1"></i>Copied!';
+    setTimeout(function(){ copyBtn2.innerHTML = '<i class="fa-regular fa-copy mr-1"></i>Copy'; }, 2000);
+  };
+  codeEl.appendChild(copyBtn2);
+
+  document.getElementById('libModal').classList.add('open');
+}
+
+document.getElementById('libModalClose').onclick = function(){
+  document.getElementById('libModal').classList.remove('open');
+};
+document.getElementById('libModal').onclick = function(e){
+  if(e.target === this) this.classList.remove('open');
+};
+
+function buildCheatsheet(){
+  var container = document.getElementById('cheatsheetContent');
+  var html = '<div class="cheatsheet-grid">';
+  for(var i = 0; i < cheatsheetData.length; i++){
+    var group = cheatsheetData[i];
+    html += '<div class="cheatsheet-card"><h4>' + group.title + '</h4>';
+    for(var j = 0; j < group.items.length; j++){
+      html += '<div class="cs-line">' + group.items[j].replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+      if(j < group.items.length - 1) html += '<hr class="border-[#27272a] my-1.5">';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+buildBasics();
+buildLibraries();
+buildCheatsheet();
+</script>
+</body>
+</html>

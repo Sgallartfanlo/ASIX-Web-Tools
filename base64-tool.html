@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Encoder / Decoder</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s;resize:vertical}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.btn{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1.25rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:0.5rem}
+.btn:hover{opacity:0.9}
+.btn:active{opacity:0.8}
+.btn-outline{background:#18181b;border:1px solid #27272a;color:#d4d4d8;font-family:'Inter',sans-serif;font-size:0.875rem;padding:0.5rem 1.25rem;border-radius:0.5rem;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:0.5rem}
+.btn-outline:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.result-area{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem;min-height:80px;word-break:break-all;font-family:'Fira Code',monospace;font-size:0.85rem}
+.status-badge{display:inline-block;padding:0.125rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:600;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-exchange text-[#2dd4bf] text-2xl"></i>
+      Base64 Encoder / Decoder
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Encode or decode text to/from Base64 with UTF-8 support</p>
+  </header>
+
+  <div class="grid grid-cols-1 gap-6">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-keyboard mr-2"></i>Input Text</div>
+      <textarea id="inputText" class="input-field" rows="6" placeholder="Enter text or Base64 string here..."></textarea>
+    </div>
+
+    <div class="flex flex-wrap gap-3 justify-center">
+      <button class="btn" id="encodeBtn"><i class="fa-solid fa-lock"></i> Encode to Base64</button>
+      <button class="btn" id="decodeBtn"><i class="fa-solid fa-unlock"></i> Decode from Base64</button>
+      <button class="btn-outline" id="swapBtn"><i class="fa-solid fa-arrows-rotate"></i> Swap</button>
+      <button class="btn-outline" id="clearBtn"><i class="fa-regular fa-trash-can"></i> Clear</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title flex items-center justify-between">
+        <span><i class="fa-regular fa-rectangle-list mr-2"></i>Result</span>
+        <button class="btn-outline text-xs py-1 px-2" id="copyBtn"><i class="fa-regular fa-copy"></i> Copy</button>
+      </div>
+      <div id="resultArea" class="result-area">Waiting for input...</div>
+      <div id="statusMsg" class="mt-2 text-xs text-[#a1a1aa]"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> Base64 Tool</a>
+  </footer>
+</div>
+
+<script>
+const inputEl = document.getElementById('inputText');
+const resultEl = document.getElementById('resultArea');
+const statusEl = document.getElementById('statusMsg');
+const encodeBtn = document.getElementById('encodeBtn');
+const decodeBtn = document.getElementById('decodeBtn');
+const swapBtn = document.getElementById('swapBtn');
+const clearBtn = document.getElementById('clearBtn');
+const copyBtn = document.getElementById('copyBtn');
+
+function setStatus(msg, type) {
+  statusEl.innerHTML = '<span class="status-badge" style="background:'+(type==='error'?'rgba(239,68,68,0.15);color:#ef4444':'rgba(45,212,191,0.15);color:#2dd4bf')+'">'+(type==='error'?'Error':'Success')+'</span> '+msg;
+}
+
+function encodeBase64(str) {
+  try {
+    const bytes = new TextEncoder().encode(str);
+    const binString = Array.from(bytes).map(b => String.fromCodePoint(b)).join('');
+    return btoa(binString);
+  } catch(e) {
+    throw new Error('Encoding failed: '+e.message);
+  }
+}
+
+function decodeBase64(str) {
+  try {
+    const binString = atob(str.replace(/\s/g,''));
+    const bytes = Uint8Array.from(binString, c => c.codePointAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch(e) {
+    throw new Error('Invalid Base64 string: '+e.message);
+  }
+}
+
+encodeBtn.onclick = function() {
+  const text = inputEl.value;
+  if (!text) { setStatus('Please enter text to encode', 'error'); return; }
+  try {
+    resultEl.textContent = encodeBase64(text);
+    setStatus('Encoded successfully', 'success');
+  } catch(e) {
+    resultEl.textContent = 'Error: '+e.message;
+    setStatus(e.message, 'error');
+  }
+};
+
+decodeBtn.onclick = function() {
+  const text = inputEl.value.trim();
+  if (!text) { setStatus('Please enter Base64 to decode', 'error'); return; }
+  try {
+    resultEl.textContent = decodeBase64(text);
+    setStatus('Decoded successfully', 'success');
+  } catch(e) {
+    resultEl.textContent = 'Error: '+e.message;
+    setStatus(e.message, 'error');
+  }
+};
+
+swapBtn.onclick = function() {
+  const tmp = inputEl.value;
+  inputEl.value = resultEl.textContent.startsWith('Error:') ? '' : resultEl.textContent;
+  resultEl.textContent = tmp || 'Waiting for input...';
+  statusEl.innerHTML = '';
+};
+
+clearBtn.onclick = function() {
+  inputEl.value = '';
+  resultEl.textContent = 'Waiting for input...';
+  statusEl.innerHTML = '';
+};
+
+copyBtn.onclick = function() {
+  const text = resultEl.textContent;
+  if (!text || text === 'Waiting for input...' || text.startsWith('Error:')) {
+    setStatus('Nothing to copy', 'error');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(function() {
+    copyBtn.innerHTML = '<i class="fa-regular fa-check"></i> Copied!';
+    setTimeout(function(){ copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 2000);
+  }).catch(function() {
+    setStatus('Failed to copy', 'error');
+  });
+};
+</script>
+</body>
+</html>

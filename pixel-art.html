@@ -1,0 +1,384 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Art Creator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.btn-primary{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.5rem 1rem;border-radius:0.5rem;font-weight:600;font-size:0.8rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:active{opacity:0.8}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-secondary{background:#18181b;border:1px solid #27272a;color:#d4d4d8;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:500;display:inline-flex;align-items:center;gap:0.375rem}
+.btn-secondary:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.btn-secondary.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.btn-secondary.danger:hover{border-color:#ef4444;color:#ef4444}
+.canvas-wrapper{position:relative;display:inline-block;border:2px solid #27272a;border-radius:0.5rem;overflow:hidden;background:#000;cursor:crosshair;line-height:0}
+.canvas-wrapper canvas{display:block}
+.palette-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.5rem}
+.palette-swatch{width:28px;height:28px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.palette-swatch:hover{transform:scale(1.15)}
+.palette-swatch.active{border-color:#fff;box-shadow:0 0 0 2px #2dd4bf;transform:scale(1.1)}
+.coord-display{font-size:0.75rem;color:#a1a1aa;font-family:'Cascadia Code','Consolas',monospace}
+select{background:#18181b;border:1px solid #27272a;color:#e4e4e7;padding:0.375rem 1.75rem 0.375rem 0.5rem;border-radius:0.5rem;font-family:'Inter',sans-serif;font-size:0.8rem;cursor:pointer;transition:all .2s;appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.4rem center;background-repeat:no-repeat;background-size:1rem}
+select:focus{outline:none;border-color:#2dd4bf}
+.toolbar{display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center}
+.color-picker-wrap{position:relative;width:28px;height:28px;overflow:hidden;border-radius:4px;border:2px solid #27272a;cursor:pointer}
+.color-picker-wrap input[type=color]{position:absolute;top:-4px;left:-4px;width:36px;height:36px;cursor:pointer;border:none;padding:0}
+</style>
+</head>
+<body>
+
+<div class="max-w-2xl w-full mx-auto px-4 py-6">
+  <header class="text-center mb-6">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-regular fa-palette text-[#2dd4bf] text-2xl"></i>
+      Pixel Art Creator
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Crea pixel art amb facilitat</p>
+  </header>
+
+  <div class="card mb-4">
+    <div class="card-title"><i class="fa-regular fa-screwdriver-wrench mr-2"></i>Eines</div>
+    <div class="toolbar mb-3">
+      <button class="btn-secondary active" data-tool="paint" id="toolPaint"><i class="fa-regular fa-pencil"></i> Pintar</button>
+      <button class="btn-secondary" data-tool="fill" id="toolFill"><i class="fa-regular fa-bucket"></i> Omplir</button>
+      <button class="btn-secondary" data-tool="eyedropper" id="toolEye"><i class="fa-regular fa-eye-dropper"></i> Ull</button>
+      <button class="btn-secondary danger" id="clearBtn"><i class="fa-regular fa-eraser"></i> Netejar</button>
+      <button class="btn-secondary" id="undoBtn" disabled><i class="fa-regular fa-rotate-left"></i> Desfer</button>
+      <button class="btn-primary" id="exportBtn"><i class="fa-regular fa-download"></i> Exportar PNG</button>
+    </div>
+    <div class="toolbar">
+      <div>
+        <label class="text-xs text-[#a1a1aa] mr-1">Graella:</label>
+        <select id="gridSizeSelect">
+          <option value="16">16x16</option>
+          <option value="32" selected>32x32</option>
+          <option value="48">48x48</option>
+          <option value="64">64x64</option>
+        </select>
+      </div>
+      <span class="coord-display" id="coordDisplay"><i class="fa-regular fa-crosshairs mr-1"></i>(0, 0)</span>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-title"><i class="fa-regular fa-palette mr-2"></i>Paleta de colors</div>
+    <div class="palette-grid" id="paletteGrid"></div>
+    <div class="flex items-center gap-2">
+      <div class="color-picker-wrap" id="customColorWrap" style="background:#ffffff">
+        <input type="color" id="customColor" value="#ffffff">
+      </div>
+      <span class="text-xs text-[#a1a1aa]">Color personalitzat</span>
+      <span class="text-xs text-[#a1a1aa] ml-auto" id="currentColorDisplay"><span class="inline-block w-4 h-4 rounded align-middle mr-1" id="currentColorSwatch" style="background:#ffffff"></span> #ffffff</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex justify-center">
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="pixelCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-6 pb-4">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i>Pixel Art Creator - Sergi Gallart</a>
+  </footer>
+</div>
+
+<script>
+const presetColors = [
+  '#000000','#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff',
+  '#800000','#808000','#008000','#008080','#000080','#800080','#808080','#c0c0c0',
+  '#ff8800','#ff4488','#44ff88','#8844ff'
+];
+
+const canvas = document.getElementById('pixelCanvas');
+const ctx = canvas.getContext('2d');
+const paletteGrid = document.getElementById('paletteGrid');
+const gridSizeSelect = document.getElementById('gridSizeSelect');
+const coordDisplay = document.getElementById('coordDisplay');
+const clearBtn = document.getElementById('clearBtn');
+const undoBtn = document.getElementById('undoBtn');
+const exportBtn = document.getElementById('exportBtn');
+const customColor = document.getElementById('customColor');
+const customColorWrap = document.getElementById('customColorWrap');
+const currentColorDisplay = document.getElementById('currentColorDisplay');
+const currentColorSwatch = document.getElementById('currentColorSwatch');
+
+const CANVAS_SIZE = 480;
+let gridSize = 32;
+let cellSize = CANVAS_SIZE / gridSize;
+let grid = [];
+let currentColor = '#ffffff';
+let currentTool = 'paint';
+let isDrawing = false;
+let undoStack = [];
+let maxUndo = 20;
+
+function initGrid(size) {
+  grid = [];
+  for (let y = 0; y < size; y++) {
+    grid[y] = [];
+    for (let x = 0; x < size; x++) {
+      grid[y][x] = null;
+    }
+  }
+}
+
+function saveUndo() {
+  const snapshot = JSON.parse(JSON.stringify(grid));
+  undoStack.push(snapshot);
+  if (undoStack.length > maxUndo) undoStack.shift();
+  undoBtn.disabled = false;
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  grid = undoStack.pop();
+  if (undoStack.length === 0) undoBtn.disabled = true;
+  render();
+}
+
+function clearGrid() {
+  saveUndo();
+  initGrid(gridSize);
+  render();
+}
+
+function render() {
+  canvas.width = CANVAS_SIZE;
+  canvas.height = CANVAS_SIZE;
+  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      const color = grid[y][x];
+      if (color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= gridSize; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * cellSize, 0);
+    ctx.lineTo(i * cellSize, CANVAS_SIZE);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i * cellSize);
+    ctx.lineTo(CANVAS_SIZE, i * cellSize);
+    ctx.stroke();
+  }
+}
+
+function getCell(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CANVAS_SIZE / rect.width;
+  const scaleY = CANVAS_SIZE / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const cx = Math.floor(mx / cellSize);
+  const cy = Math.floor(my / cellSize);
+  return { x: Math.max(0, Math.min(cx, gridSize - 1)), y: Math.max(0, Math.min(cy, gridSize - 1)) };
+}
+
+function paintCell(x, y) {
+  if (grid[y][x] === currentColor) return;
+  saveUndo();
+  grid[y][x] = currentColor;
+  render();
+}
+
+function eraseCell(x, y) {
+  if (grid[y][x] === null) return;
+  saveUndo();
+  grid[y][x] = null;
+  render();
+}
+
+function floodFill(startX, startY, fillColor) {
+  const targetColor = grid[startY][startX];
+  if (targetColor === fillColor) return;
+
+  saveUndo();
+  const stack = [[startX, startY]];
+  const visited = new Set();
+
+  while (stack.length > 0) {
+    const [x, y] = stack.pop();
+    const key = x + ',' + y;
+    if (visited.has(key)) continue;
+    visited.add(key);
+    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) continue;
+    if (grid[y][x] !== targetColor) continue;
+
+    grid[y][x] = fillColor;
+
+    stack.push([x - 1, y]);
+    stack.push([x + 1, y]);
+    stack.push([x, y - 1]);
+    stack.push([x, y + 1]);
+  }
+  render();
+}
+
+function getColorAt(x, y) {
+  return grid[y][x] || null;
+}
+
+function setupPalette() {
+  paletteGrid.innerHTML = '';
+  presetColors.forEach(function(color) {
+    const swatch = document.createElement('div');
+    swatch.className = 'palette-swatch' + (color === currentColor ? ' active' : '');
+    swatch.style.background = color;
+    if (color === '#ffffff') swatch.style.border = '2px solid #3f3f46';
+    swatch.dataset.color = color;
+    swatch.addEventListener('click', function() {
+      setCurrentColor(color);
+    });
+    paletteGrid.appendChild(swatch);
+  });
+  updateColorDisplay();
+}
+
+function setCurrentColor(color) {
+  currentColor = color;
+  document.querySelectorAll('.palette-swatch').forEach(function(s) {
+    s.classList.toggle('active', s.dataset.color === color);
+  });
+  customColorWrap.style.background = color;
+  customColor.value = color;
+  updateColorDisplay();
+}
+
+function updateColorDisplay() {
+  currentColorSwatch.style.background = currentColor;
+  currentColorDisplay.innerHTML = '<span class="inline-block w-4 h-4 rounded align-middle mr-1" style="background:' + currentColor + '"></span> ' + currentColor;
+}
+
+customColor.addEventListener('input', function() {
+  setCurrentColor(this.value);
+});
+
+function resizeGrid(newSize) {
+  if (undoStack.length > 0 && gridSize !== newSize) {
+    if (!confirm('Canviar la mida netejar&agrave; el dibuix. Continuar?')) {
+      gridSizeSelect.value = gridSize;
+      return;
+    }
+  }
+  gridSize = newSize;
+  cellSize = CANVAS_SIZE / gridSize;
+  undoStack = [];
+  undoBtn.disabled = true;
+  initGrid(gridSize);
+  render();
+}
+
+gridSizeSelect.addEventListener('change', function() {
+  resizeGrid(parseInt(this.value));
+});
+
+clearBtn.addEventListener('click', function() {
+  const hasContent = grid.some(function(row) { return row.some(function(c) { return c !== null; }); });
+  if (!hasContent) return;
+  if (confirm('Segur que vols netejar el llen&ccedil;?')) clearGrid();
+});
+
+undoBtn.addEventListener('click', undo);
+
+exportBtn.addEventListener('click', function() {
+  const expCanvas = document.createElement('canvas');
+  const expCtx = expCanvas.getContext('2d');
+  const pxSize = 10;
+  expCanvas.width = gridSize * pxSize;
+  expCanvas.height = gridSize * pxSize;
+
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      const color = grid[y][x];
+      if (color) {
+        expCtx.fillStyle = color;
+        expCtx.fillRect(x * pxSize, y * pxSize, pxSize, pxSize);
+      }
+    }
+  }
+
+  const link = document.createElement('a');
+  link.download = 'pixel-art-' + gridSize + 'x' + gridSize + '.png';
+  link.href = expCanvas.toDataURL('image/png');
+  link.click();
+});
+
+canvas.addEventListener('mousedown', function(e) {
+  e.preventDefault();
+  if (e.button === 2) {
+    const cell = getCell(e);
+    if (cell.x >= 0 && cell.y >= 0) eraseCell(cell.x, cell.y);
+    return;
+  }
+  const cell = getCell(e);
+  if (cell.x < 0 || cell.y < 0) return;
+
+  if (currentTool === 'fill') {
+    floodFill(cell.x, cell.y, currentColor);
+    return;
+  }
+  if (currentTool === 'eyedropper') {
+    const picked = getColorAt(cell.x, cell.y);
+    if (picked) setCurrentColor(picked);
+    return;
+  }
+
+  isDrawing = true;
+  paintCell(cell.x, cell.y);
+});
+
+canvas.addEventListener('mousemove', function(e) {
+  const cell = getCell(e);
+  coordDisplay.innerHTML = '<i class="fa-regular fa-crosshairs mr-1"></i>(' + cell.x + ', ' + cell.y + ')';
+
+  if (isDrawing && currentTool === 'paint') {
+    paintCell(cell.x, cell.y);
+  }
+});
+
+canvas.addEventListener('mouseup', function() { isDrawing = false; });
+canvas.addEventListener('mouseleave', function() { isDrawing = false; });
+
+canvas.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+  const cell = getCell(e);
+  if (cell.x >= 0 && cell.y >= 0) eraseCell(cell.x, cell.y);
+});
+
+document.querySelectorAll('[data-tool]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('[data-tool]').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentTool = btn.dataset.tool;
+    canvas.style.cursor = currentTool === 'fill' ? 'cell' : currentTool === 'eyedropper' ? 'copy' : 'crosshair';
+  });
+});
+
+setupPalette();
+initGrid(gridSize);
+render();
+</script>
+</body>
+</html>

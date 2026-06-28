@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDAP/AD User Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+select.input-field{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a1a1aa' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0.75rem center;padding-right:2rem}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.mode-tabs{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.mode-tab{background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:0.375rem 0.75rem;border-radius:0.375rem;font-size:0.8rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace}
+.mode-tab:hover{background:#27272a;color:#e4e4e7}
+.mode-tab.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.btn{background:#18181b;border:1px solid #27272a;color:#e4e4e7;padding:0.5rem 1rem;border-radius:0.5rem;font-size:0.8rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:0.375rem}
+.btn:hover{background:#27272a;border-color:#3f3f46}
+.btn-primary{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.btn-primary:hover{background:rgba(45,212,191,0.2)}
+.btn-danger{background:rgba(239,68,68,0.1);border-color:#ef4444;color:#ef4444}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.btn-sm{padding:0.25rem 0.5rem;font-size:0.7rem}
+textarea.input-field{resize:vertical;min-height:200px;font-size:0.8rem;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-size:0.8rem}
+th{text-align:left;color:#a1a1aa;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;font-size:0.65rem;padding:0.5rem 0.5rem;border-bottom:1px solid #27272a}
+td{padding:0.5rem;border-bottom:1px solid #27272a;color:#d4d4d8}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:0.5rem}
+.checkbox-group label{display:inline-flex;align-items:center;gap:0.375rem;font-size:0.75rem;text-transform:none;letter-spacing:0;color:#d4d4d8;cursor:pointer;padding:0.25rem 0.5rem;border:1px solid #27272a;border-radius:0.375rem;transition:all .2s;font-weight:400;margin-bottom:0}
+.checkbox-group label:hover{border-color:#3f3f46}
+.checkbox-group label.checked{border-color:#2dd4bf;background:rgba(45,212,191,0.1);color:#2dd4bf}
+.checkbox-group input[type="checkbox"]{display:none}
+.ou-helper-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:10;background:#18181b;border:1px solid #27272a;border-radius:0.5rem;margin-top:0.25rem;max-height:200px;overflow-y:auto}
+.ou-helper-dropdown.show{display:block}
+.ou-helper-item{padding:0.5rem 0.75rem;font-family:'Fira Code',monospace;font-size:0.75rem;color:#d4d4d8;cursor:pointer;transition:all .15s;border-bottom:1px solid #27272a}
+.ou-helper-item:last-child{border-bottom:none}
+.ou-helper-item:hover{background:rgba(45,212,191,0.1);color:#2dd4bf}
+.pos-relative{position:relative}
+input[type="number"]{-moz-appearance:textfield}
+input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.status-toggle{display:inline-flex;background:#18181b;border:1px solid #27272a;border-radius:0.5rem;overflow:hidden}
+.status-toggle button{padding:0.375rem 0.75rem;font-size:0.8rem;cursor:pointer;transition:all .2s;border:none;background:transparent;color:#a1a1aa;font-family:'Inter',sans-serif}
+.status-toggle button.active{background:rgba(45,212,191,0.1);color:#2dd4bf}
+.status-toggle button.off.active{background:rgba(239,68,68,0.1);color:#ef4444}
+.password-wrap{position:relative}
+.password-wrap .input-field{padding-right:2.5rem}
+.password-toggle{position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#52525b;cursor:pointer;padding:0;font-size:1rem;transition:color .2s}
+.password-toggle:hover{color:#2dd4bf}
+.empty-state{text-align:center;padding:2rem;color:#52525b;font-size:0.85rem}
+.empty-state i{font-size:2rem;margin-bottom:0.75rem;display:block}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-users text-[#2dd4bf] text-2xl"></i>
+      LDAP / AD User Generator
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Generate LDIF, CSV, and PowerShell user templates for bulk import</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-user mr-2"></i>User Details</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label>First Name</label>
+        <input id="firstName" class="input-field" type="text" placeholder="e.g. John">
+      </div>
+      <div>
+        <label>Last Name</label>
+        <input id="lastName" class="input-field" type="text" placeholder="e.g. Smith">
+      </div>
+      <div>
+        <label>Username</label>
+        <input id="username" class="input-field" type="text" placeholder="firstname.lastname">
+      </div>
+      <div>
+        <label>Email</label>
+        <input id="email" class="input-field" type="email" placeholder="user@domain.com">
+      </div>
+      <div>
+        <label>Password</label>
+        <div class="password-wrap">
+          <input id="password" class="input-field" type="password" placeholder="Enter password">
+          <button id="pwToggle" class="password-toggle" title="Show/Hide Password" type="button"><i class="fa-regular fa-eye"></i></button>
+        </div>
+      </div>
+      <div>
+        <label>Department</label>
+        <select id="department" class="input-field">
+          <option value="">Select department</option>
+          <option value="IT">IT</option>
+          <option value="HR">HR</option>
+          <option value="Finance">Finance</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Sales">Sales</option>
+          <option value="Operations">Operations</option>
+          <option value="Engineering">Engineering</option>
+        </select>
+      </div>
+      <div>
+        <label>Job Title</label>
+        <input id="jobTitle" class="input-field" type="text" placeholder="e.g. IT Specialist">
+      </div>
+      <div>
+        <label>Phone Number</label>
+        <input id="phone" class="input-field" type="text" placeholder="+1 555-000-0000">
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label>Group Membership</label>
+      <div class="checkbox-group" id="groupCheckboxes">
+        <label data-group="Domain Users" class="checked"><input type="checkbox" checked> Domain Users</label>
+        <label data-group="Domain Admins"><input type="checkbox"> Domain Admins</label>
+        <label data-group="IT_Staff"><input type="checkbox"> IT_Staff</label>
+        <label data-group="HR_Staff"><input type="checkbox"> HR_Staff</label>
+        <label data-group="Finance_Staff"><input type="checkbox"> Finance_Staff</label>
+        <label data-group="Marketing"><input type="checkbox"> Marketing</label>
+        <label data-group="VPN_Users"><input type="checkbox"> VPN_Users</label>
+        <label data-group="Remote_Desktop"><input type="checkbox"> Remote_Desktop</label>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div>
+        <label>Account Status</label>
+        <div class="status-toggle" id="statusToggle">
+          <button class="active" data-value="true"><i class="fa-regular fa-check-circle mr-1"></i>Enabled</button>
+          <button class="off" data-value="false"><i class="fa-regular fa-circle-xmark mr-1"></i>Disabled</button>
+        </div>
+      </div>
+      <div>
+        <label>OU Path</label>
+        <div class="pos-relative">
+          <div class="flex gap-2">
+            <input id="ouPath" class="input-field" type="text" placeholder="OU=Users,DC=domain,DC=com" value="OU=Users,DC=domain,DC=com">
+            <button id="ouHelperBtn" class="btn btn-sm" title="Browse common OU paths" type="button"><i class="fa-regular fa-folder-tree"></i></button>
+          </div>
+          <div class="ou-helper-dropdown" id="ouHelperDropdown">
+            <div class="ou-helper-item" data-path="OU=Users,DC=domain,DC=com">OU=Users,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Staff,DC=domain,DC=com">OU=Staff,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=IT,OU=Departments,DC=domain,DC=com">OU=IT,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=HR,OU=Departments,DC=domain,DC=com">OU=HR,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Finance,OU=Departments,DC=domain,DC=com">OU=Finance,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Marketing,OU=Departments,DC=domain,DC=com">OU=Marketing,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Sales,OU=Departments,DC=domain,DC=com">OU=Sales,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Operations,OU=Departments,DC=domain,DC=com">OU=Operations,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Engineering,OU=Departments,DC=domain,DC=com">OU=Engineering,OU=Departments,DC=domain,DC=com</div>
+            <div class="ou-helper-item" data-path="OU=Service Accounts,DC=domain,DC=com">OU=Service Accounts,DC=domain,DC=com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mt-6">
+      <button id="addBtn" class="btn btn-primary"><i class="fa-regular fa-plus"></i>Add Another</button>
+      <button id="genLdifBtn" class="btn"><i class="fa-regular fa-file-lines"></i>Generate LDIF</button>
+      <button id="genCsvBtn" class="btn"><i class="fa-regular fa-table"></i>Generate CSV</button>
+      <button id="genPsBtn" class="btn"><i class="fa-regular fa-terminal"></i>Generate PS</button>
+      <button id="clearFormBtn" class="btn"><i class="fa-regular fa-eraser"></i>Clear</button>
+    </div>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-layer-group mr-2"></i>Batch Generator</div>
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="w-32">
+        <label>Number of Users</label>
+        <input id="batchCount" class="input-field" type="number" value="5" min="1" max="50">
+      </div>
+      <button id="batchBtn" class="btn btn-primary"><i class="fa-regular fa-wand-magic-sparkles"></i>Generate Batch</button>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button id="quick5Btn" class="btn btn-sm"><i class="fa-regular fa-bolt"></i>Quick: 5 IT Users</button>
+      <button id="quick10Btn" class="btn btn-sm"><i class="fa-regular fa-bolt"></i>Quick: 10 Department Users</button>
+    </div>
+  </div>
+
+  <div class="card mb-6" id="usersCard" style="display:none">
+    <div class="card-title flex items-center justify-between">
+      <span><i class="fa-regular fa-list mr-2"></i>Collected Users (<span id="userCount">0</span>)</span>
+      <button id="clearAllBtn" class="btn btn-sm btn-danger"><i class="fa-regular fa-trash-can"></i>Clear All</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Username</th><th>Department</th><th>Status</th><th>Groups</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-code mr-2"></i>Output</div>
+    <div class="mode-tabs" id="outputTabs">
+      <span class="mode-tab active" data-format="ldif"><i class="fa-regular fa-file-lines mr-1"></i>LDIF</span>
+      <span class="mode-tab" data-format="csv"><i class="fa-regular fa-table mr-1"></i>CSV</span>
+      <span class="mode-tab" data-format="ps"><i class="fa-regular fa-terminal mr-1"></i>PowerShell</span>
+    </div>
+    <textarea id="outputArea" class="input-field" rows="15" readonly placeholder="Generated output will appear here..."></textarea>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button id="generateBtn" class="btn btn-primary"><i class="fa-regular fa-play"></i>Generate LDIF</button>
+      <button id="copyBtn" class="btn"><i class="fa-regular fa-copy"></i>Copy</button>
+      <button id="downloadBtn" class="btn"><i class="fa-regular fa-download"></i>Download</button>
+      <button id="clearOutputBtn" class="btn"><i class="fa-regular fa-xmark"></i>Clear</button>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> LDAP / AD User Generator</a>
+  </footer>
+</div>
+
+<script>
+var firstName = document.getElementById('firstName');
+var lastName = document.getElementById('lastName');
+var username = document.getElementById('username');
+var email = document.getElementById('email');
+var password = document.getElementById('password');
+var pwToggle = document.getElementById('pwToggle');
+var department = document.getElementById('department');
+var jobTitle = document.getElementById('jobTitle');
+var phone = document.getElementById('phone');
+var groupCheckboxes = document.getElementById('groupCheckboxes');
+var statusToggle = document.getElementById('statusToggle');
+var ouPath = document.getElementById('ouPath');
+var ouHelperBtn = document.getElementById('ouHelperBtn');
+var ouHelperDropdown = document.getElementById('ouHelperDropdown');
+var addBtn = document.getElementById('addBtn');
+var genLdifBtn = document.getElementById('genLdifBtn');
+var genCsvBtn = document.getElementById('genCsvBtn');
+var genPsBtn = document.getElementById('genPsBtn');
+var clearFormBtn = document.getElementById('clearFormBtn');
+var batchCount = document.getElementById('batchCount');
+var batchBtn = document.getElementById('batchBtn');
+var quick5Btn = document.getElementById('quick5Btn');
+var quick10Btn = document.getElementById('quick10Btn');
+var usersCard = document.getElementById('usersCard');
+var userCount = document.getElementById('userCount');
+var usersTableBody = document.getElementById('usersTableBody');
+var clearAllBtn = document.getElementById('clearAllBtn');
+var outputTabs = document.getElementById('outputTabs');
+var outputArea = document.getElementById('outputArea');
+var generateBtn = document.getElementById('generateBtn');
+var copyBtn = document.getElementById('copyBtn');
+var downloadBtn = document.getElementById('downloadBtn');
+var clearOutputBtn = document.getElementById('clearOutputBtn');
+var users = [];
+var currentFormat = 'ldif';
+
+var firstNames = ['John','Jane','Michael','Sarah','David','Emily','Robert','Jessica','William','Amanda','James','Jennifer','Christopher','Lisa','Daniel','Mary','Matthew','Patricia','Andrew','Sandra','Brian','Ashley','Kevin','Kimberly','Thomas','Donna','Joseph','Michelle','Jason','Carol','Ryan','Melissa','Nicholas','Deborah','Eric','Stephanie','Jonathan','Rebecca','Stephen','Sharon','Mark','Laura','Paul','Cynthia','Steven','Kathleen','Kenneth','Angela','Edward','Tina'];
+var lastNames = ['Smith','Johnson','Williams','Brown','Jones','Miller','Davis','Garcia','Rodriguez','Wilson','Martinez','Anderson','Taylor','Thomas','Hernandez','Moore','Martin','Jackson','Thompson','White','Lee','Harris','Clark','Lewis','Robinson','Walker','Young','Allen','King','Wright','Scott','Hill','Green','Adams','Baker','Nelson','Carter','Mitchell','Roberts','Turner','Phillips','Campbell','Parker','Evans','Edwards','Collins','Stewart','Morris','Murphy'];
+var departments = ['IT','HR','Finance','Marketing','Sales','Operations','Engineering'];
+var jobTitles = {
+  IT: ['IT Specialist','Systems Administrator','Network Engineer','Help Desk Technician','IT Manager','Security Analyst','Database Administrator','DevOps Engineer'],
+  HR: ['HR Coordinator','HR Manager','Recruiter','Benefits Specialist','HR Assistant','Talent Acquisition Specialist','Training Coordinator'],
+  Finance: ['Accountant','Financial Analyst','Controller','Finance Manager','Auditor','Payroll Specialist','Budget Analyst'],
+  Marketing: ['Marketing Specialist','Marketing Manager','SEO Analyst','Content Writer','Social Media Manager','Brand Strategist','Graphic Designer'],
+  Sales: ['Sales Representative','Sales Manager','Account Executive','Business Development Rep','Sales Coordinator','Regional Sales Manager'],
+  Operations: ['Operations Manager','Supply Chain Analyst','Logistics Coordinator','Operations Coordinator','Project Manager','Quality Assurance Specialist'],
+  Engineering: ['Software Engineer','Senior Software Engineer','Full Stack Developer','QA Engineer','DevOps Engineer','Engineering Manager','Systems Engineer']
+};
+var allGroups = ['Domain Users','Domain Admins','IT_Staff','HR_Staff','Finance_Staff','Marketing','VPN_Users','Remote_Desktop'];
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[rand(0, arr.length - 1)]; }
+
+function autoGenerateUsername(first, last) {
+  return (first + '.' + last).toLowerCase();
+}
+function autoGenerateEmail(first, last) {
+  return (first + '.' + last).toLowerCase() + '@domain.com';
+}
+function generatePassword() {
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+  var pw = '';
+  pw += pick('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+  pw += pick('abcdefghijklmnopqrstuvwxyz');
+  pw += pick('0123456789');
+  pw += pick('!@#$%');
+  for (var i = 0; i < 8; i++) pw += pick(chars);
+  return pw.split('').sort(function(){return Math.random()-0.5}).join('');
+}
+function generatePhone() {
+  return '+1 ' + rand(200,999) + '-' + rand(100,999).toString().padStart(3,'0') + '-' + rand(1000,9999).toString().padStart(4,'0');
+}
+function getStatusValue() {
+  var activeBtn = statusToggle.querySelector('.active');
+  return activeBtn ? activeBtn.dataset.value === 'true' : true;
+}
+function getSelectedGroups() {
+  var selected = [];
+  groupCheckboxes.querySelectorAll('label.checked').forEach(function(lbl) {
+    selected.push(lbl.dataset.group);
+  });
+  return selected;
+}
+function getFormUser() {
+  return {
+    firstName: firstName.value.trim(),
+    lastName: lastName.value.trim(),
+    username: username.value.trim(),
+    email: email.value.trim(),
+    password: password.value,
+    department: department.value,
+    jobTitle: jobTitle.value.trim(),
+    phone: phone.value.trim(),
+    groups: getSelectedGroups(),
+    enabled: getStatusValue(),
+    ouPath: ouPath.value.trim()
+  };
+}
+function setFormUser(u) {
+  firstName.value = u.firstName || '';
+  lastName.value = u.lastName || '';
+  username.value = u.username || '';
+  email.value = u.email || '';
+  password.value = u.password || '';
+  department.value = u.department || '';
+  jobTitle.value = u.jobTitle || '';
+  phone.value = u.phone || '';
+  ouPath.value = u.ouPath || 'OU=Users,DC=domain,DC=com';
+  groupCheckboxes.querySelectorAll('label').forEach(function(lbl) {
+    var isChecked = u.groups && u.groups.indexOf(lbl.dataset.group) !== -1;
+    var cb = lbl.querySelector('input[type="checkbox"]');
+    cb.checked = isChecked;
+    lbl.classList.toggle('checked', isChecked);
+  });
+  var en = u.enabled !== false;
+  statusToggle.querySelectorAll('button').forEach(function(btn) {
+    btn.classList.remove('active');
+    if ((btn.dataset.value === 'true' && en) || (btn.dataset.value === 'false' && !en)) {
+      btn.classList.add('active');
+    }
+  });
+}
+function clearForm() {
+  setFormUser({firstName:'',lastName:'',username:'',email:'',password:'',department:'',jobTitle:'',phone:'',groups:['Domain Users'],enabled:true,ouPath:'OU=Users,DC=domain,DC=com'});
+}
+
+function getUserDisplayName(u) {
+  return u.firstName + ' ' + u.lastName;
+}
+function renderUsersTable() {
+  if (users.length === 0) {
+    usersCard.style.display = 'none';
+    return;
+  }
+  usersCard.style.display = 'block';
+  userCount.textContent = users.length;
+  var html = '';
+  for (var i = 0; i < users.length; i++) {
+    var u = users[i];
+    var groupsStr = u.groups.join(', ');
+    html += '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td class="font-medium">' + getUserDisplayName(u) + '</td>' +
+      '<td class="fira" style="font-size:0.75rem">' + u.username + '</td>' +
+      '<td>' + (u.department || '-') + '</td>' +
+      '<td>' + (u.enabled ? '<span class="text-[#2dd4bf]">Enabled</span>' : '<span class="text-[#ef4444]">Disabled</span>') + '</td>' +
+      '<td style="font-size:0.7rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + groupsStr + '">' + groupsStr + '</td>' +
+      '<td><button class="btn btn-sm btn-danger remove-user" data-index="' + i + '"><i class="fa-regular fa-xmark"></i></button></td>' +
+      '</tr>';
+  }
+  usersTableBody.innerHTML = html;
+  usersTableBody.querySelectorAll('.remove-user').forEach(function(btn) {
+    btn.onclick = function() {
+      var idx = parseInt(btn.dataset.index);
+      users.splice(idx, 1);
+      renderUsersTable();
+      if (users.length === 0) usersCard.style.display = 'none';
+    };
+  });
+}
+
+function addCurrentUser() {
+  var u = getFormUser();
+  if (!u.firstName || !u.lastName) { alert('Please enter at least a first and last name.'); return false; }
+  if (!u.username) u.username = autoGenerateUsername(u.firstName, u.lastName);
+  if (!u.email) u.email = autoGenerateEmail(u.firstName, u.lastName);
+  users.push(u);
+  renderUsersTable();
+  return true;
+}
+
+function getOutputUsers() {
+  if (users.length > 0) return users;
+  var u = getFormUser();
+  if (!u.firstName && !u.lastName) return [];
+  if (!u.username) u.username = autoGenerateUsername(u.firstName, u.lastName);
+  if (!u.email) u.email = autoGenerateEmail(u.firstName, u.lastName);
+  return [u];
+}
+
+function escapeLdif(val) {
+  if (!val) return '';
+  return val.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+}
+function generateLDIF(userList) {
+  var lines = [];
+  var idx = 1;
+  for (var i = 0; i < userList.length; i++) {
+    var u = userList[i];
+    var dn = 'CN=' + getUserDisplayName(u) + ',' + (u.ouPath || 'OU=Users,DC=domain,DC=com');
+    if (i > 0) lines.push('');
+    lines.push('dn: ' + dn);
+    lines.push('objectClass: top');
+    lines.push('objectClass: person');
+    lines.push('objectClass: organizationalPerson');
+    lines.push('objectClass: user');
+    lines.push('cn: ' + getUserDisplayName(u));
+    lines.push('sn: ' + (u.lastName || ''));
+    lines.push('givenName: ' + (u.firstName || ''));
+    lines.push('displayName: ' + getUserDisplayName(u));
+    lines.push('name: ' + getUserDisplayName(u));
+    lines.push('userPrincipalName: ' + (u.email || u.username + '@domain.com'));
+    lines.push('sAMAccountName: ' + u.username);
+    if (u.email) lines.push('mail: ' + u.email);
+    if (u.jobTitle) lines.push('title: ' + u.jobTitle);
+    if (u.department) lines.push('department: ' + u.department);
+    if (u.phone) lines.push('telephoneNumber: ' + u.phone);
+    if (u.password) lines.push('userPassword: ' + u.password);
+    lines.push('accountStatus: ' + (u.enabled ? 'active' : 'inactive'));
+    for (var g = 0; g < u.groups.length; g++) {
+      lines.push('memberOf: CN=' + u.groups[g] + ',CN=Users,DC=domain,DC=com');
+    }
+    lines.push('');
+    lines.push('# -- End of user ' + (idx++) + ' --');
+  }
+  return lines.join('\n');
+}
+
+function escapeCsv(val) {
+  if (val == null) return '';
+  var s = String(val);
+  if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+function generateCSV(userList) {
+  var headers = ['firstName','lastName','username','email','password','department','jobTitle','phone','groups','enabled','ouPath'];
+  var lines = [headers.join(',')];
+  for (var i = 0; i < userList.length; i++) {
+    var u = userList[i];
+    var row = [
+      escapeCsv(u.firstName),
+      escapeCsv(u.lastName),
+      escapeCsv(u.username),
+      escapeCsv(u.email),
+      escapeCsv(u.password),
+      escapeCsv(u.department),
+      escapeCsv(u.jobTitle),
+      escapeCsv(u.phone),
+      escapeCsv(u.groups.join(';')),
+      u.enabled ? 'TRUE' : 'FALSE',
+      escapeCsv(u.ouPath)
+    ];
+    lines.push(row.join(','));
+  }
+  return lines.join('\n');
+}
+
+function generatePS(userList) {
+  var lines = ['<#',' .SYNOPSIS','    Active Directory User Creation Script','.DESCRIPTION','    Auto-generated PowerShell script to create AD users','#>','','Import-Module ActiveDirectory',''];
+  for (var i = 0; i < userList.length; i++) {
+    var u = userList[i];
+    var uname = u.username;
+    var displayName = getUserDisplayName(u);
+    var upn = u.email || u.username + '@domain.com';
+    var pwd = u.password || 'P@ssw0rd!';
+    lines.push('# User ' + (i + 1) + ': ' + displayName);
+    lines.push('$userParams = @{');
+    lines.push('    Name              = "' + displayName + '"');
+    lines.push('    GivenName         = "' + u.firstName + '"');
+    lines.push('    Surname           = "' + u.lastName + '"');
+    lines.push('    SamAccountName    = "' + uname + '"');
+    lines.push('    UserPrincipalName = "' + upn + '"');
+    lines.push('    DisplayName       = "' + displayName + '"');
+    if (u.email) lines.push('    EmailAddress      = "' + u.email + '"');
+    if (u.jobTitle) lines.push('    Title             = "' + u.jobTitle + '"');
+    if (u.department) lines.push('    Department        = "' + u.department + '"');
+    if (u.phone) lines.push('    PhoneNumber       = "' + u.phone + '"');
+    if (u.ouPath) lines.push('    Path              = "' + u.ouPath + '"');
+    lines.push('    AccountPassword   = (ConvertTo-SecureString "' + pwd + '" -AsPlainText -Force)');
+    lines.push('    Enabled           = $' + (u.enabled ? 'true' : 'false') + '');
+    lines.push('    PassThru          = $true');
+    lines.push('}');
+    lines.push('New-ADUser @userParams');
+    if (u.groups && u.groups.length > 0) {
+      lines.push('Start-Sleep -Seconds 1');
+      for (var g = 0; g < u.groups.length; g++) {
+        lines.push('Add-ADGroupMember -Identity "' + u.groups[g] + '" -Members "' + uname + '"');
+      }
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+function generateOutput(format) {
+  format = format || currentFormat;
+  var userList = getOutputUsers();
+  if (userList.length === 0) {
+    outputArea.value = 'No users to generate. Please add users first.';
+    return;
+  }
+  var output = '';
+  if (format === 'ldif') output = generateLDIF(userList);
+  else if (format === 'csv') output = generateCSV(userList);
+  else output = generatePS(userList);
+  outputArea.value = output;
+}
+function updateGenerateBtnText() {
+  var label = currentFormat === 'ldif' ? 'Generate LDIF' : currentFormat === 'csv' ? 'Generate CSV' : 'Generate PS';
+  generateBtn.innerHTML = '<i class="fa-regular fa-play"></i>' + label;
+  var suffix = users.length > 0 ? ' (' + users.length + ' users)' : '';
+  generateBtn.innerHTML = '<i class="fa-regular fa-play"></i>' + label + suffix;
+}
+function copyOutput() {
+  var text = outputArea.value;
+  if (!text || text === outputArea.placeholder) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      var orig = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<i class="fa-regular fa-check"></i>Copied!';
+      setTimeout(function(){ copyBtn.innerHTML = orig; }, 2000);
+    });
+  } else {
+    outputArea.select();
+    document.execCommand('copy');
+    var orig = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<i class="fa-regular fa-check"></i>Copied!';
+    setTimeout(function(){ copyBtn.innerHTML = orig; }, 2000);
+  }
+}
+function downloadOutput() {
+  var text = outputArea.value;
+  if (!text || text === outputArea.placeholder || text.indexOf('No users') === 0) return;
+  var ext = currentFormat === 'ldif' ? 'ldif' : currentFormat === 'csv' ? 'csv' : 'ps1';
+  var mime = currentFormat === 'ldif' ? 'text/plain' : currentFormat === 'csv' ? 'text/csv' : 'text/plain';
+  var blob = new Blob([text], {type: mime + ';charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'users.' + ext;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+function generateRandomUser(dept) {
+  var first = pick(firstNames);
+  var last = pick(lastNames);
+  var d = dept || pick(departments);
+  var titles = jobTitles[d] || ['Staff'];
+  return {
+    firstName: first,
+    lastName: last,
+    username: autoGenerateUsername(first, last),
+    email: autoGenerateEmail(first, last),
+    password: generatePassword(),
+    department: d,
+    jobTitle: pick(titles),
+    phone: generatePhone(),
+    groups: ['Domain Users'],
+    enabled: true,
+    ouPath: 'OU=' + d + ',OU=Departments,DC=domain,DC=com'
+  };
+}
+function generateBatch(n) {
+  var count = parseInt(n) || 5;
+  if (count < 1) count = 1;
+  if (count > 50) count = 50;
+  for (var i = 0; i < count; i++) {
+    users.push(generateRandomUser());
+  }
+  renderUsersTable();
+}
+
+function quickTemplate5IT() {
+  var itTitles = jobTitles.IT;
+  var itUsers = [
+    {first:'Alice',last:'Mitchell',title:'IT Manager'},
+    {first:'Bob',last:'Chen',title:'Systems Administrator'},
+    {first:'Carol',last:'Davis',title:'Network Engineer'},
+    {first:'Dan',last:'Patel',title:'Security Analyst'},
+    {first:'Eve',last:'Torres',title:'Help Desk Technician'}
+  ];
+  for (var i = 0; i < itUsers.length; i++) {
+    var t = itUsers[i];
+    var u = {
+      firstName: t.first,
+      lastName: t.last,
+      username: autoGenerateUsername(t.first, t.last),
+      email: autoGenerateEmail(t.first, t.last),
+      password: generatePassword(),
+      department: 'IT',
+      jobTitle: t.title,
+      phone: generatePhone(),
+      groups: ['Domain Users','IT_Staff','VPN_Users'],
+      enabled: true,
+      ouPath: 'OU=IT,OU=Departments,DC=domain,DC=com'
+    };
+    users.push(u);
+  }
+  renderUsersTable();
+}
+function quickTemplate10Dept() {
+  var usedDepts = ['IT','HR','Finance','Marketing','Sales','Operations','Engineering'];
+  var deptMap = {
+    IT: ['IT_Staff','VPN_Users'],
+    HR: ['HR_Staff'],
+    Finance: ['Finance_Staff'],
+    Marketing: ['Marketing'],
+    Sales: [],
+    Operations: [],
+    Engineering: ['IT_Staff','VPN_Users']
+  };
+  for (var i = 0; i < 10; i++) {
+    var d = usedDepts[i % usedDepts.length];
+    var first = pick(firstNames);
+    var last = pick(lastNames);
+    var titles = jobTitles[d] || ['Staff'];
+    var extras = deptMap[d] || [];
+    var groups = ['Domain Users'].concat(extras);
+    var u = {
+      firstName: first,
+      lastName: last,
+      username: autoGenerateUsername(first, last),
+      email: autoGenerateEmail(first, last),
+      password: generatePassword(),
+      department: d,
+      jobTitle: pick(titles),
+      phone: generatePhone(),
+      groups: groups,
+      enabled: true,
+      ouPath: 'OU=' + d + ',OU=Departments,DC=domain,DC=com'
+    };
+    users.push(u);
+  }
+  renderUsersTable();
+}
+
+firstName.oninput = function() {
+  if (!username.dataset.manual) {
+    var fn = firstName.value.trim();
+    var ln = lastName.value.trim();
+    if (fn && ln) username.value = autoGenerateUsername(fn, ln);
+  }
+  if (!email.dataset.manual) {
+    var fn = firstName.value.trim();
+    var ln = lastName.value.trim();
+    if (fn && ln) email.value = autoGenerateEmail(fn, ln);
+  }
+};
+lastName.oninput = function() {
+  if (!username.dataset.manual) {
+    var fn = firstName.value.trim();
+    var ln = lastName.value.trim();
+    if (fn && ln) username.value = autoGenerateUsername(fn, ln);
+  }
+  if (!email.dataset.manual) {
+    var fn = firstName.value.trim();
+    var ln = lastName.value.trim();
+    if (fn && ln) email.value = autoGenerateEmail(fn, ln);
+  }
+};
+username.oninput = function() { username.dataset.manual = 'true'; };
+email.oninput = function() { email.dataset.manual = 'true'; };
+
+pwToggle.onclick = function() {
+  var pw = document.getElementById('password');
+  var icon = pwToggle.querySelector('i');
+  if (pw.type === 'password') {
+    pw.type = 'text';
+    icon.className = 'fa-regular fa-eye-slash';
+  } else {
+    pw.type = 'password';
+    icon.className = 'fa-regular fa-eye';
+  }
+};
+
+groupCheckboxes.querySelectorAll('label').forEach(function(lbl) {
+  lbl.onclick = function(e) {
+    if (e.target.tagName === 'INPUT') return;
+    var cb = lbl.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    lbl.classList.toggle('checked', cb.checked);
+  };
+  lbl.querySelector('input[type="checkbox"]').onchange = function() {
+    lbl.classList.toggle('checked', this.checked);
+  };
+});
+
+statusToggle.querySelectorAll('button').forEach(function(btn) {
+  btn.onclick = function() {
+    statusToggle.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  };
+});
+
+ouHelperBtn.onclick = function(e) {
+  e.stopPropagation();
+  ouHelperDropdown.classList.toggle('show');
+};
+ouHelperDropdown.querySelectorAll('.ou-helper-item').forEach(function(item) {
+  item.onclick = function() {
+    ouPath.value = item.dataset.path;
+    ouHelperDropdown.classList.remove('show');
+  };
+});
+document.onclick = function() {
+  ouHelperDropdown.classList.remove('show');
+};
+
+addBtn.onclick = function() {
+  if (addCurrentUser()) clearForm();
+};
+clearFormBtn.onclick = clearForm;
+clearAllBtn.onclick = function() {
+  users = [];
+  renderUsersTable();
+  usersCard.style.display = 'none';
+};
+
+genLdifBtn.onclick = function() {
+  currentFormat = 'ldif';
+  outputTabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+  outputTabs.querySelector('[data-format="ldif"]').classList.add('active');
+  updateGenerateBtnText();
+  generateOutput('ldif');
+};
+genCsvBtn.onclick = function() {
+  currentFormat = 'csv';
+  outputTabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+  outputTabs.querySelector('[data-format="csv"]').classList.add('active');
+  updateGenerateBtnText();
+  generateOutput('csv');
+};
+genPsBtn.onclick = function() {
+  currentFormat = 'ps';
+  outputTabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+  outputTabs.querySelector('[data-format="ps"]').classList.add('active');
+  updateGenerateBtnText();
+  generateOutput('ps');
+};
+
+outputTabs.querySelectorAll('.mode-tab').forEach(function(tab) {
+  tab.onclick = function() {
+    outputTabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentFormat = tab.dataset.format;
+    updateGenerateBtnText();
+  };
+});
+
+generateBtn.onclick = function() { generateOutput(currentFormat); };
+copyBtn.onclick = copyOutput;
+downloadBtn.onclick = downloadOutput;
+clearOutputBtn.onclick = function() { outputArea.value = ''; };
+
+batchBtn.onclick = function() {
+  var n = parseInt(batchCount.value) || 5;
+  generateBatch(n);
+};
+quick5Btn.onclick = quickTemplate5IT;
+quick10Btn.onclick = quickTemplate10Dept;
+
+clearForm();
+
+setFormUser({
+  firstName: 'John',
+  lastName: 'Smith',
+  username: 'john.smith',
+  email: 'john.smith@domain.com',
+  password: 'P@ssw0rd!',
+  department: 'IT',
+  jobTitle: 'IT Specialist',
+  phone: '+1 555-123-4567',
+  groups: ['Domain Users','IT_Staff','VPN_Users'],
+  enabled: true,
+  ouPath: 'OU=IT,OU=Departments,DC=domain,DC=com'
+});
+
+updateGenerateBtnText();
+</script>
+</body>
+</html>

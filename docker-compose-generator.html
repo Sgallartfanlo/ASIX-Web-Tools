@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker Compose Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+    :root { --bg: #050816; --panel: rgba(15,23,42,0.78); --border: rgba(148,163,184,0.18); --accent: #38bdf8; --accent-2: #8b5cf6; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.16), transparent 34%), radial-gradient(circle at top right, rgba(139,92,246,0.14), transparent 32%), linear-gradient(135deg,#020617 0%,#0f172a 55%,#020617 100%);
+      color: #e5e7eb; min-height: 100vh;
+    }
+    .code-font { font-family: 'Fira Code', monospace; }
+    .glass { background: var(--panel); border: 1px solid var(--border); backdrop-filter: blur(18px); box-shadow: 0 20px 45px rgba(0,0,0,0.25); }
+    .input-s { background: rgba(15,23,42,.88); border:1px solid rgba(148,163,184,.22); color:#f8fafc; transition:all .2s ease; }
+    .input-s:focus { outline:none; border-color:rgba(56,189,248,.9); box-shadow:0 0 0 3px rgba(56,189,248,.12); }
+    .btn-s { background:linear-gradient(135deg,#38bdf8,#8b5cf6); transition:all .25s ease; }
+    .btn-s:hover { transform:translateY(-1px); filter:brightness(1.08); }
+    .btn-soft { background:rgba(30,41,59,.92); border:1px solid rgba(148,163,184,.18); transition:all .2s ease; }
+    .btn-soft:hover { background:rgba(51,65,85,.95); }
+    .service-card { transition:all .2s ease; }
+    .service-card:hover { transform:translateY(-2px); background:rgba(30,41,59,0.95); }
+    .toast { transform:translateY(120px); opacity:0; transition:all .3s ease; }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .custom-scroll::-webkit-scrollbar { width:7px; }
+    .custom-scroll::-webkit-scrollbar-track { background:#020617; }
+    .custom-scroll::-webkit-scrollbar-thumb { background:#334155; border-radius:999px; }
+  </style>
+</head>
+<body>
+  <main class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+    <header class="mb-8">
+      <div class="glass rounded-3xl p-6 md:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <p class="text-sky-300 font-semibold mb-2"><i class="fa-brands fa-docker mr-2"></i>Docker Compose Generator</p>
+            <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">Generador de docker-compose.yml</h1>
+            <p class="text-slate-400 mt-3 max-w-2xl">Selecciona serveis, configura ports, volums i xarxes, i genera el fitxer docker-compose.yml al moment.</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <aside class="xl:col-span-4 space-y-6">
+        <div class="glass rounded-3xl p-5">
+          <h2 class="text-lg font-bold mb-4"><i class="fa-solid fa-cube text-sky-400 mr-2"></i>Serveis disponibles</h2>
+          <div class="space-y-2" id="servicesList"></div>
+        </div>
+      </aside>
+
+      <section class="xl:col-span-4 space-y-6">
+        <div class="glass rounded-3xl p-5">
+          <h2 class="text-lg font-bold mb-4"><i class="fa-solid fa-sliders text-sky-400 mr-2"></i>Configuració</h2>
+          <div class="space-y-4" id="configPanel">
+            <p class="text-sm text-slate-500">Selecciona un servei per configurar-lo.</p>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl p-5">
+          <h2 class="text-lg font-bold mb-4"><i class="fa-solid fa-list text-sky-400 mr-2"></i>Serveis afegits</h2>
+          <div id="addedServices" class="space-y-2">
+            <p class="text-sm text-slate-500">Cap servei seleccionat.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="xl:col-span-4 space-y-6">
+        <div class="glass rounded-3xl overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+              <span class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>
+              <span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>
+              <span class="ml-3 text-sm text-slate-400 code-font">docker-compose.yml</span>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="copyYaml()" class="btn-soft px-3 py-2 rounded-xl text-sm"><i class="fa-regular fa-copy"></i></button>
+              <button onclick="downloadYaml()" class="btn-soft px-3 py-2 rounded-xl text-sm"><i class="fa-solid fa-download"></i></button>
+            </div>
+          </div>
+          <div class="p-5 min-h-[400px] max-h-[600px] overflow-auto custom-scroll" style="background:#020617;">
+            <pre id="outputCode" class="code-font text-emerald-300 text-sm whitespace-pre-wrap leading-relaxed">version: "3.8"
+
+services:
+  # Afegeix serveis per començar</pre>
+          </div>
+        </div>
+      </section>
+    </section>
+    <footer class="text-center text-slate-500 text-sm mt-10">Desenvolupat per Sergi Gallart &middot; Docker Compose Generator</footer>
+  </main>
+
+  <div id="toast" class="toast fixed bottom-6 right-6 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+    <i class="fa-solid fa-check-circle"></i><span id="toastText">Fet</span>
+  </div>
+
+  <script>
+    const availableServices = [
+      { id:'nginx', name:'Nginx', icon:'fa-brands fa-nginx', color:'#22c55e', defaultPort:80, defaultImage:'nginx:alpine' },
+      { id:'postgres', name:'PostgreSQL', icon:'fa-solid fa-elephant', color:'#38bdf8', defaultPort:5432, defaultImage:'postgres:16-alpine', env:['POSTGRES_DB','POSTGRES_USER','POSTGRES_PASSWORD'] },
+      { id:'mysql', name:'MySQL', icon:'fa-solid fa-dolphin', color:'#60a5fa', defaultPort:3306, defaultImage:'mysql:8', env:['MYSQL_ROOT_PASSWORD','MYSQL_DATABASE','MYSQL_USER','MYSQL_PASSWORD'] },
+      { id:'redis', name:'Redis', icon:'fa-solid fa-bolt', color:'#ef4444', defaultPort:6379, defaultImage:'redis:7-alpine' },
+      { id:'mariadb', name:'MariaDB', icon:'fa-solid fa-fish', color:'#f59e0b', defaultPort:3306, defaultImage:'mariadb:11', env:['MARIADB_ROOT_PASSWORD','MARIADB_DATABASE','MARIADB_USER','MARIADB_PASSWORD'] },
+      { id:'mongodb', name:'MongoDB', icon:'fa-solid fa-leaf', color:'#22c55e', defaultPort:27017, defaultImage:'mongo:7', env:['MONGO_INITDB_ROOT_USERNAME','MONGO_INITDB_ROOT_PASSWORD'] },
+      { id:'phpmyadmin', name:'phpMyAdmin', icon:'fa-solid fa-database', color:'#f59e0b', defaultPort:8080, defaultImage:'phpmyadmin:latest', env:['PMA_HOST','PMA_USER','PMA_PASSWORD'] },
+      { id:'adminer', name:'Adminer', icon:'fa-solid fa-table', color:'#8b5cf6', defaultPort:8080, defaultImage:'adminer:latest' },
+      { id:'node', name:'Node.js', icon:'fa-brands fa-node-js', color:'#22c55e', defaultPort:3000, defaultImage:'node:20-alpine' },
+      { id:'python', name:'Python', icon:'fa-brands fa-python', color:'#f59e0b', defaultPort:5000, defaultImage:'python:3.12-slim' },
+    ];
+
+    let selectedServices = [];
+    let editingId = null;
+
+    function init() {
+      renderServices();
+      document.getElementById('configPanel').innerHTML = `<p class="text-sm text-slate-500">Selecciona un servei per configurar-lo.</p>`;
+      generateYaml();
+    }
+
+    function renderServices() {
+      const container = document.getElementById('servicesList');
+      container.innerHTML = availableServices.map(s => `
+        <div onclick="selectService('${s.id}')" class="service-card glass rounded-2xl p-3 cursor-pointer flex items-center gap-3">
+          <i class="${s.icon}" style="color:${s.color}; font-size:1.25rem;"></i>
+          <div>
+            <p class="font-semibold text-sm">${s.name}</p>
+            <p class="text-xs text-slate-500">${s.defaultImage}</p>
+          </div>
+          <i class="fa-solid fa-plus ml-auto text-slate-600"></i>
+        </div>
+      `).join('');
+    }
+
+    function selectService(id) {
+      const svc = availableServices.find(s => s.id === id);
+      if (!svc) return;
+      const exists = selectedServices.find(s => s.id === id);
+      if (exists) { showToast('Aquest servei ja està afegit'); return; }
+
+      const cfg = {
+        id: svc.id,
+        name: svc.name,
+        image: svc.defaultImage,
+        port: svc.defaultPort,
+        env: {},
+        volumes: [],
+        networks: []
+      };
+
+      selectedServices.push(cfg);
+      editService(svc.id);
+      renderAdded();
+      generateYaml();
+      showToast(`${svc.name} afegit`);
+    }
+
+    function editService(id) {
+      editingId = id;
+      const svc = availableServices.find(s => s.id === id);
+      const cfg = selectedServices.find(s => s.id === id);
+      if (!svc || !cfg) return;
+
+      const panel = document.getElementById('configPanel');
+      panel.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold"><i class="${svc.icon}" style="color:${svc.color}"></i> ${svc.name}</h3>
+          <button onclick="removeService('${id}')" class="text-red-400 text-sm"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <label class="block text-xs text-slate-400 mb-1">Imatge</label>
+        <input value="${cfg.image}" oninput="updateCfg('${id}','image',this.value)" class="input-s w-full rounded-xl p-2.5 text-sm mb-3">
+
+        <label class="block text-xs text-slate-400 mb-1">Port (host:container)</label>
+        <input value="${cfg.port}" type="number" oninput="updateCfg('${id}','port',this.value)" class="input-s w-full rounded-xl p-2.5 text-sm mb-3">
+
+        ${svc.env ? `
+        <label class="block text-xs text-slate-400 mb-1">Variables d'entorn</label>
+        ${svc.env.map(e => `
+          <div class="flex gap-2 mb-2 items-center">
+            <span class="text-xs text-slate-500 w-1/3 code-font">${e}=</span>
+            <input value="${cfg.env[e]||''}" oninput="updateEnv('${id}','${e}',this.value)" class="input-s w-full rounded-xl p-2.5 text-sm" placeholder="valor">
+          </div>
+        `).join('')}
+        `:''}
+
+        <label class="block text-xs text-slate-400 mb-1 mt-3">Volums</label>
+        <div class="flex gap-2 mb-2">
+          <input id="volInput" class="input-s flex-1 rounded-xl p-2.5 text-sm" placeholder="./data:/var/lib/data">
+          <button onclick="addVolume('${id}')" class="btn-soft px-3 rounded-xl text-sm"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <div id="volList" class="space-y-1 mb-3">
+          ${cfg.volumes.map((v,i) => `<div class="flex items-center justify-between bg-slate-900/60 rounded-lg px-3 py-1.5 text-xs code-font"><span>${v}</span><button onclick="removeVolume('${id}',${i})" class="text-red-400"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}
+        </div>
+
+        <label class="block text-xs text-slate-400 mb-1">Xarxes</label>
+        <div class="flex gap-2 mb-2">
+          <input id="netInput" class="input-s flex-1 rounded-xl p-2.5 text-sm" placeholder="app-network">
+          <button onclick="addNetwork('${id}')" class="btn-soft px-3 rounded-xl text-sm"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <div id="netList" class="space-y-1">
+          ${cfg.networks.map((n,i) => `<div class="flex items-center justify-between bg-slate-900/60 rounded-lg px-3 py-1.5 text-xs code-font"><span>${n}</span><button onclick="removeNetwork('${id}',${i})" class="text-red-400"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}
+        </div>
+      `;
+    }
+
+    function updateCfg(id, key, val) {
+      const cfg = selectedServices.find(s => s.id === id);
+      if (cfg) { cfg[key] = val; generateYaml(); }
+    }
+
+    function updateEnv(id, key, val) {
+      const cfg = selectedServices.find(s => s.id === id);
+      if (cfg) { cfg.env[key] = val; generateYaml(); }
+    }
+
+    function addVolume(id) {
+      const input = document.getElementById('volInput');
+      if (!input.value.trim()) return;
+      const cfg = selectedServices.find(s => s.id === id);
+      if (cfg) { cfg.volumes.push(input.value.trim()); input.value = ''; editService(id); generateYaml(); }
+    }
+
+    function removeVolume(id, idx) {
+      const cfg = selectedServices.find(s => s.id === id);
+      if (cfg) { cfg.volumes.splice(idx, 1); editService(id); generateYaml(); }
+    }
+
+    function addNetwork(id) {
+      const input = document.getElementById('netInput');
+      if (!input.value.trim()) return;
+      const cfg = selectedServices.find(s => s.id === id);
+      if (cfg) { cfg.networks.push(input.value.trim()); input.value = ''; editService(id); generateYaml(); }
+    }
+
+    function removeNetwork(id, idx) {
+      const cfg = selectedServices.find(s => s.id === id);
+      if (cfg) { cfg.networks.splice(idx, 1); editService(id); generateYaml(); }
+    }
+
+    function removeService(id) {
+      selectedServices = selectedServices.filter(s => s.id !== id);
+      renderAdded();
+      generateYaml();
+      document.getElementById('configPanel').innerHTML = `<p class="text-sm text-slate-500">Selecciona un servei per configurar-lo.</p>`;
+      showToast('Servei eliminat');
+    }
+
+    function renderAdded() {
+      const container = document.getElementById('addedServices');
+      if (selectedServices.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-500">Cap servei seleccionat.</p>`;
+        return;
+      }
+      container.innerHTML = selectedServices.map(s => {
+        const svc = availableServices.find(a => a.id === s.id);
+        return `<div onclick="editService('${s.id}')" class="flex items-center gap-3 glass rounded-2xl p-3 cursor-pointer ${editingId===s.id?'border border-sky-500/40':''}">
+          <i class="${svc.icon}" style="color:${svc.color}"></i>
+          <span class="text-sm font-medium">${s.name}</span>
+          <span class="text-xs text-slate-500 code-font ml-auto">:${s.port}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function generateYaml() {
+      const lines = ['version: "3.8"', '', 'services:'];
+      if (selectedServices.length === 0) {
+        lines.push('  # Afegeix serveis per començar');
+      }
+      const allNetworks = new Set();
+
+      selectedServices.forEach(s => {
+        const svc = availableServices.find(a => a.id === s.id);
+        lines.push(`  ${s.id}:`);
+        lines.push(`    image: ${s.image}`);
+        lines.push(`    container_name: ${s.id}`);
+        if (s.port) lines.push(`    ports:\n      - "${s.port}:${s.port}"`);
+        if (Object.keys(s.env).length > 0) {
+          lines.push('    environment:');
+          Object.entries(s.env).forEach(([k,v]) => { if (v) lines.push(`      ${k}: ${v}`); });
+        }
+        if (s.volumes.length > 0) {
+          lines.push('    volumes:');
+          s.volumes.forEach(v => lines.push(`      - ${v}`));
+        }
+        if (s.networks.length > 0) {
+          lines.push('    networks:');
+          s.networks.forEach(n => { lines.push(`      - ${n}`); allNetworks.add(n); });
+        }
+      });
+
+      if (allNetworks.size > 0) {
+        lines.push('', 'networks:');
+        allNetworks.forEach(n => lines.push(`  ${n}:`));
+      }
+
+      document.getElementById('outputCode').textContent = lines.join('\n');
+    }
+
+    function copyYaml() {
+      const text = document.getElementById('outputCode').textContent;
+      if (navigator.clipboard) { navigator.clipboard.writeText(text); }
+      else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+      showToast('YAML copiat al portapapers');
+    }
+
+    function downloadYaml() {
+      const text = document.getElementById('outputCode').textContent;
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='docker-compose.yml'; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Fitxer descarregat');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastText').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Generator & Solver</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.btn-primary{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.625rem 1.5rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:active{opacity:0.8}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.btn-secondary{background:#18181b;border:1px solid #27272a;color:#d4d4d8;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:500}
+.btn-secondary:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.btn-secondary:disabled{opacity:0.4;cursor:not-allowed}
+select{background:#18181b;border:1px solid #27272a;color:#e4e4e7;padding:0.5rem 2rem 0.5rem 0.75rem;border-radius:0.5rem;font-family:'Inter',sans-serif;font-size:0.875rem;cursor:pointer;transition:all .2s;appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.5rem center;background-repeat:no-repeat;background-size:1.25rem}
+select:focus{outline:none;border-color:#2dd4bf}
+canvas{display:block;margin:0 auto;border:2px solid #27272a;border-radius:0.5rem;background:#18181b}
+.toggle-label{display:flex;align-items:center;gap:0.5rem;cursor:pointer;user-select:none;font-size:0.875rem;color:#a1a1aa}
+.toggle-switch{width:36px;height:20px;background:#27272a;border-radius:10px;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-switch::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#a1a1aa;top:2px;left:2px;transition:all .2s}
+input[type=checkbox]:checked+.toggle-switch{background:rgba(45,212,191,0.4)}
+input[type=checkbox]:checked+.toggle-switch::after{left:18px;background:#2dd4bf}
+input[type=checkbox]{display:none}
+.legend-dot{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-regular fa-square-poll-vertical text-[#2dd4bf] text-2xl"></i>
+      Maze Generator & Solver
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Generate and solve mazes with DFS recursive backtracking</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-sliders mr-2"></i>Controls</div>
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-[#a1a1aa]">Grid:</label>
+        <select id="gridSize">
+          <option value="5">5x5</option>
+          <option value="8">8x8</option>
+          <option value="10">10x10</option>
+          <option value="15">15x15</option>
+          <option value="20">20x20</option>
+          <option value="25" selected>25x25</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="generateBtn"><i class="fa-regular fa-rotate mr-2"></i>Generate</button>
+      <button class="btn-secondary" id="solveBtn" disabled><i class="fa-regular fa-route mr-2"></i>Solve</button>
+      <label class="toggle-label">
+        <input type="checkbox" id="animateToggle" checked>
+        <span class="toggle-switch"></span>
+        Animated
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="mazeContainer" class="flex justify-center">
+      <canvas id="mazeCanvas"></canvas>
+    </div>
+    <div class="flex flex-wrap items-center gap-4 mt-4 text-sm text-[#a1a1aa]">
+      <div><span class="legend-dot bg-green-500"></span> Start</div>
+      <div><span class="legend-dot bg-red-500"></span> End</div>
+      <div><span class="legend-dot bg-blue-500"></span> Solution</div>
+      <div id="mazeInfo" class="text-[#52525b]"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i>Maze Generator & Solver - Sergi Gallart</a>
+  </footer>
+</div>
+
+<script>
+var canvas = document.getElementById('mazeCanvas');
+var ctx = canvas.getContext('2d');
+var gridSelect = document.getElementById('gridSize');
+var generateBtn = document.getElementById('generateBtn');
+var solveBtn = document.getElementById('solveBtn');
+var animateToggle = document.getElementById('animateToggle');
+var mazeInfo = document.getElementById('mazeInfo');
+
+var maze = [];
+var rows = 25, cols = 25;
+var cellSize = 0;
+var solutionPath = [];
+var isSolving = false;
+var animTimer = null;
+
+function initMaze(r, c) {
+  maze = [];
+  for (var i = 0; i < r; i++) {
+    maze[i] = [];
+    for (var j = 0; j < c; j++) {
+      maze[i][j] = { top: true, right: true, bottom: true, left: true, visited: false };
+    }
+  }
+}
+
+function getUnvisitedNeighbors(r, c) {
+  var n = [];
+  if (r > 0 && !maze[r - 1][c].visited) n.push([r - 1, c, 'top', 'bottom']);
+  if (r < rows - 1 && !maze[r + 1][c].visited) n.push([r + 1, c, 'bottom', 'top']);
+  if (c > 0 && !maze[r][c - 1].visited) n.push([r, c - 1, 'left', 'right']);
+  if (c < cols - 1 && !maze[r][c + 1].visited) n.push([r, c + 1, 'right', 'left']);
+  return n;
+}
+
+function generateMaze() {
+  initMaze(rows, cols);
+  var stack = [];
+  maze[0][0].visited = true;
+  stack.push([0, 0]);
+
+  while (stack.length > 0) {
+    var cur = stack[stack.length - 1];
+    var cr = cur[0], cc = cur[1];
+    var neighbors = getUnvisitedNeighbors(cr, cc);
+    if (neighbors.length === 0) {
+      stack.pop();
+    } else {
+      var pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+      var nr = pick[0], nc = pick[1], wallC = pick[2], wallN = pick[3];
+      maze[cr][cc][wallC] = false;
+      maze[nr][nc][wallN] = false;
+      maze[nr][nc].visited = true;
+      stack.push([nr, nc]);
+    }
+  }
+  solutionPath = [];
+  solveBtn.disabled = false;
+}
+
+function computeCellSize() {
+  var container = document.getElementById('mazeContainer');
+  var maxW = Math.min(container.clientWidth - 40, 700);
+  var maxH = 560;
+  cellSize = Math.floor(Math.min(maxW / cols, maxH / rows));
+  if (cellSize < 4) cellSize = 4;
+}
+
+function drawMaze(highlightPath) {
+  computeCellSize();
+  var W = cellSize * cols;
+  var H = cellSize * rows;
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Fill cells
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      ctx.fillStyle = '#18181b';
+      ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+    }
+  }
+
+  // Draw walls
+  ctx.strokeStyle = '#3f3f46';
+  ctx.lineWidth = Math.max(1.5, Math.floor(cellSize / 12));
+
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      var x = c * cellSize, y = r * cellSize;
+      var cell = maze[r][c];
+      if (cell.top) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); ctx.stroke(); }
+      if (cell.bottom) { ctx.beginPath(); ctx.moveTo(x, y + cellSize); ctx.lineTo(x + cellSize, y + cellSize); ctx.stroke(); }
+      if (cell.left) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + cellSize); ctx.stroke(); }
+      if (cell.right) { ctx.beginPath(); ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); ctx.stroke(); }
+    }
+  }
+
+  // Draw solution path
+  if (highlightPath && highlightPath.length > 0) {
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.45)';
+    var pad = Math.max(2, Math.floor(cellSize / 6));
+    for (var i = 0; i < highlightPath.length; i++) {
+      var pr = highlightPath[i][0], pc = highlightPath[i][1];
+      if (pr === 0 && pc === 0) continue;
+      if (pr === rows - 1 && pc === cols - 1) continue;
+      ctx.fillRect(pc * cellSize + pad, pr * cellSize + pad, cellSize - pad * 2, cellSize - pad * 2);
+    }
+  }
+
+  // Draw start marker
+  ctx.fillStyle = '#22c55e';
+  var sp = Math.max(1, Math.floor(cellSize / 10));
+  ctx.fillRect(sp, sp, cellSize - sp * 2, cellSize - sp * 2);
+
+  // Draw end marker
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect((cols - 1) * cellSize + sp, (rows - 1) * cellSize + sp, cellSize - sp * 2, cellSize - sp * 2);
+
+  mazeInfo.textContent = rows + 'x' + cols + ' \u00B7 ' + (rows * cols) + ' cells' + (solutionPath.length > 0 ? ' \u00B7 Solution: ' + (solutionPath.length - 1) + ' steps' : '');
+}
+
+function solveMaze(animate) {
+  if (isSolving) return;
+  isSolving = true;
+  solveBtn.disabled = true;
+  animate = animate && animateToggle.checked;
+
+  // BFS
+  var queue = [[0, 0]];
+  var parent = {};
+  var visited = {};
+  visited['0,0'] = true;
+
+  var found = false;
+  var endR = rows - 1, endC = cols - 1;
+
+  var dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  var wallKey = { '-1,0': 'top', '1,0': 'bottom', '0,-1': 'left', '0,1': 'right' };
+
+  while (queue.length > 0 && !found) {
+    var cur = queue.shift();
+    var cr = cur[0], cc = cur[1];
+
+    if (cr === endR && cc === endC) { found = true; break; }
+
+    for (var d = 0; d < dirs.length; d++) {
+      var dr = dirs[d][0], dc = dirs[d][1];
+      var nr = cr + dr, nc = cc + dc;
+      var key = nr + ',' + nc;
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited[key]) {
+        var wall = wallKey[dr + ',' + dc];
+        if (!maze[cr][cc][wall]) {
+          visited[key] = true;
+          parent[key] = cr + ',' + cc;
+          queue.push([nr, nc]);
+        }
+      }
+    }
+  }
+
+  if (found) {
+    var path = [];
+    var curKey = endR + ',' + endC;
+    while (curKey) {
+      var parts = curKey.split(',');
+      path.unshift([parseInt(parts[0]), parseInt(parts[1])]);
+      curKey = parent[curKey];
+    }
+    solutionPath = path;
+
+    if (animate) {
+      var i = 0;
+      function drawStep() {
+        if (i <= solutionPath.length) {
+          drawMaze(solutionPath.slice(0, i));
+          i++;
+          animTimer = setTimeout(drawStep, 30);
+        } else {
+          isSolving = false;
+          solveBtn.disabled = false;
+          animTimer = null;
+        }
+      }
+      drawStep();
+    } else {
+      drawMaze(solutionPath);
+      isSolving = false;
+      solveBtn.disabled = false;
+    }
+  } else {
+    solutionPath = [];
+    drawMaze(null);
+    mazeInfo.textContent += ' \u00B7 No solution!';
+    isSolving = false;
+    solveBtn.disabled = false;
+  }
+}
+
+function generate() {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  isSolving = false;
+  rows = parseInt(gridSelect.value);
+  cols = rows;
+  generateMaze();
+  drawMaze(null);
+  solveBtn.disabled = false;
+}
+
+generateBtn.addEventListener('click', generate);
+
+solveBtn.addEventListener('click', function() {
+  if (solutionPath.length > 0) {
+    drawMaze(null);
+    setTimeout(function() { solveMaze(true); }, 80);
+  } else {
+    solveMaze(true);
+  }
+});
+
+gridSelect.addEventListener('change', generate);
+
+window.addEventListener('resize', function() {
+  if (maze.length > 0) drawMaze(solutionPath.length > 0 ? solutionPath : null);
+});
+
+generate();
+</script>
+</body>
+</html>

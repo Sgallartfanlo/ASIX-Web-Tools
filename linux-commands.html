@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Commands Reference</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.card-title i{margin-right:0.5rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.cmd-item{border-bottom:1px solid #27272a}
+.cmd-item:last-child{border-bottom:none}
+.cmd-header{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;cursor:pointer;transition:all .2s;user-select:none}
+.cmd-header:hover{color:#2dd4bf}
+.cmd-name{font-family:'Fira Code',monospace;font-size:0.95rem;font-weight:600;color:#2dd4bf}
+.cmd-desc{font-size:0.82rem;color:#a1a1aa;margin-top:0.125rem}
+.cmd-details{background:#0f0f11;border-radius:0.5rem;padding:0.75rem;margin-bottom:0.75rem;display:none}
+.cmd-details.open{display:block}
+.cmd-syntax{background:rgba(45,212,191,0.05);border:1px solid rgba(45,212,191,0.15);border-radius:0.375rem;padding:0.5rem 0.75rem;margin-bottom:0.5rem}
+.cmd-syntax code{font-family:'Fira Code',monospace;font-size:0.85rem;color:#2dd4bf}
+.cmd-opts{margin-top:0.5rem}
+.opt-row{display:flex;gap:0.75rem;padding:0.25rem 0;font-size:0.78rem}
+.opt-flag{font-family:'Fira Code',monospace;color:#2dd4bf;min-width:5rem;flex-shrink:0}
+.opt-desc{color:#a1a1aa}
+.category-count{font-size:0.7rem;color:#52525b;margin-left:0.5rem}
+.expand-icon{color:#52525b;transition:transform .2s;font-size:0.75rem}
+.cmd-header.open .expand-icon{transform:rotate(180deg)}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-brands fa-linux text-[#2dd4bf] text-2xl"></i>
+      Linux Commands Reference
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Quick reference for essential Linux commands</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="flex gap-3 items-center">
+      <i class="fa-regular fa-magnifying-glass text-[#52525b]"></i>
+      <input id="searchInput" class="input-field" type="text" placeholder="Search commands by name, description, or category..." style="font-size:0.85rem">
+      <span id="searchCount" class="text-xs text-[#52525b] whitespace-nowrap"></span>
+    </div>
+  </div>
+
+  <div id="categories"></div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> Linux Commands Reference</a>
+  </footer>
+</div>
+
+<script>
+var COMMANDS = [
+  { cat:"File Operations", name:"ls", desc:"List directory contents", syntax:"ls [options] [path]", opts:[["-l","Long format with details"],["-a","Show hidden files"],["-h","Human-readable sizes"],["-R","Recursive listing"],["-S","Sort by size"],["-t","Sort by modification time"]]},
+  { cat:"File Operations", name:"cd", desc:"Change directory", syntax:"cd [path]", opts:[["~","Go to home directory"],["..","Go up one level"],["-","Go to previous directory"]]},
+  { cat:"File Operations", name:"pwd", desc:"Print working directory", syntax:"pwd", opts:[["-P","Show physical path without symlinks"]]},
+  { cat:"File Operations", name:"cp", desc:"Copy files and directories", syntax:"cp [options] source dest", opts:[["-r","Recursive copy"],["-i","Interactive prompt"],["-u","Update (newer files only)"],["-v","Verbose output"],["-a","Archive mode (preserve attributes)"],["-p","Preserve permissions"]]},
+  { cat:"File Operations", name:"mv", desc:"Move/rename files", syntax:"mv [options] source dest", opts:[["-i","Interactive prompt"],["-u","Update only"],["-v","Verbose output"],["-n","No overwrite"]]},
+  { cat:"File Operations", name:"rm", desc:"Remove files or directories", syntax:"rm [options] path", opts:[["-r","Recursive delete"],["-f","Force (no prompt)"],["-i","Interactive"],["-v","Verbose"]]},
+  { cat:"File Operations", name:"mkdir", desc:"Create directories", syntax:"mkdir [options] dirname", opts:[["-p","Create parent directories"],["-v","Verbose"],["-m","Set permissions (mode)"]]},
+  { cat:"File Operations", name:"rmdir", desc:"Remove empty directories", syntax:"rmdir [options] dirname", opts:[["-p","Remove parent dirs if empty"],["--ignore-fail","Ignore non-empty errors"]]},
+  { cat:"File Operations", name:"touch", desc:"Create file or update timestamp", syntax:"touch [options] file", opts:[["-a","Change access time"],["-m","Change modification time"],["-c","Don't create file"],["-t","Use specific timestamp"]]},
+  { cat:"File Operations", name:"find", desc:"Search for files", syntax:"find [path] [expression]", opts:[["-name","Search by filename"],["-type","Filter by type (f,d,l)"],["-size","Filter by size"],["-exec","Execute command on results"],["-mtime","Filter by modification time"],["-delete","Delete found files"]]},
+  { cat:"File Operations", name:"locate", desc:"Quick file search using database", syntax:"locate [options] pattern", opts:[["-i","Case-insensitive"],["-c","Count matches"],["-r","Regex pattern"]]},
+  { cat:"File Operations", name:"cat", desc:"Concatenate and display files", syntax:"cat [options] file", opts:[["-n","Number lines"],["-b","Number non-blank lines"],["-s","Squeeze blank lines"],["-E","Show $ at line ends"]]},
+  { cat:"File Operations", name:"less", desc:"View file with pagination", syntax:"less [options] file", opts:[["-N","Show line numbers"],["-S","Chop long lines"],["-g","Highlight search matches"],["+F","Follow mode (like tail -f)"]]},
+  { cat:"File Operations", name:"head", desc:"Display first lines of file", syntax:"head [options] file", opts:[["-n","Number of lines (default 10)"],["-c","Number of bytes"]]},
+  { cat:"File Operations", name:"tail", desc:"Display last lines of file", syntax:"tail [options] file", opts:[["-n","Number of lines (default 10)"],["-f","Follow file changes"],["-F","Follow with retry"],["-c","Number of bytes"]]},
+  { cat:"File Operations", name:"grep", desc:"Search text with patterns", syntax:"grep [options] pattern file", opts:[["-i","Case-insensitive"],["-r","Recursive"],["-n","Show line numbers"],["-c","Count matches"],["-v","Invert match"],["-E","Extended regex"],["-l","Show filenames only"]]},
+  { cat:"File Operations", name:"sort", desc:"Sort lines of text", syntax:"sort [options] file", opts:[["-n","Numeric sort"],["-r","Reverse order"],["-u","Unique lines"],["-k","Sort by column"],["-t","Field separator"]]},
+  { cat:"File Operations", name:"wc", desc:"Count lines, words, bytes", syntax:"wc [options] file", opts:[["-l","Count lines"],["-w","Count words"],["-c","Count bytes"],["-m","Count characters"]]},
+  { cat:"File Operations", name:"diff", desc:"Compare files line by line", syntax:"diff [options] file1 file2", opts:[["-u","Unified format"],["-i","Ignore case"],["-w","Ignore whitespace"],["-r","Recursive"],["-q","Brief (only report difference)"]]},
+  { cat:"File Operations", name:"ln", desc:"Create hard/symbolic links", syntax:"ln [options] target link_name", opts:[["-s","Symbolic link"],["-f","Force overwrite"],["-v","Verbose"],["-n","Treat destination as normal file"]]},
+
+  { cat:"Networking", name:"ping", desc:"Test network connectivity", syntax:"ping [options] host", opts:[["-c","Count of packets"],["-i","Interval between pings"],["-s","Packet size"],["-W","Timeout seconds"],["-4","Use IPv4"],["-6","Use IPv6"]]},
+  { cat:"Networking", name:"curl", desc:"Transfer data from/to URLs", syntax:"curl [options] URL", opts:[["-o","Output to file"],["-L","Follow redirects"],["-H","Custom header"],["-d","POST data"],["-X","HTTP method"],["-k","Allow insecure"]]},
+  { cat:"Networking", name:"wget", desc:"Download files from web", syntax:"wget [options] URL", opts:[["-O","Output filename"],["-c","Resume download"],["-q","Quiet mode"],["-r","Recursive download"],["--limit-rate","Rate limit"]]},
+  { cat:"Networking", name:"ssh", desc:"Secure shell connection", syntax:"ssh [options] user@host", opts:[["-p","Port number"],["-i","Identity file"],["-v","Verbose mode"],["-N","No commands (port forwarding)"],["-L","Local port forward"],["-R","Remote port forward"]]},
+  { cat:"Networking", name:"scp", desc:"Secure file copy over SSH", syntax:"scp [options] source dest", opts:[["-P","Port number"],["-r","Recursive"],["-C","Compress"],["-i","Identity file"],["-v","Verbose"]]},
+  { cat:"Networking", name:"rsync", desc:"Fast remote file sync", syntax:"rsync [options] source dest", opts:[["-a","Archive mode"],["-v","Verbose"],["-z","Compress"],["-r","Recursive"],["--delete","Delete extraneous files"],["--progress","Show progress"],["-e","Remote shell (e.g., ssh)"]]},
+  { cat:"Networking", name:"netstat", desc:"Network statistics and connections", syntax:"netstat [options]", opts:[["-t","TCP connections"],["-u","UDP connections"],["-l","Listening sockets"],["-n","Numeric addresses"],["-p","Show PID/program"],["-a","All sockets"]]},
+  { cat:"Networking", name:"ss", desc:"Socket statistics", syntax:"ss [options]", opts:[["-t","TCP sockets"],["-u","UDP sockets"],["-l","Listening sockets"],["-n","Numeric"],["-p","Process info"],["-a","All sockets"]]},
+  { cat:"Networking", name:"nslookup", desc:"DNS lookup queries", syntax:"nslookup [options] host", opts:[["-type","Query type (A, MX, TXT)"],["-port","DNS server port"],["-debug","Debug mode"]]},
+  { cat:"Networking", name:"dig", desc:"DNS lookup utility", syntax:"dig [options] host", opts:[["+short","Short output"],["+trace","Trace DNS path"],["-x","Reverse lookup"],["@server","Use specific DNS server"]]},
+  { cat:"Networking", name:"ip", desc:"Show/manipulate routing and network devices", syntax:"ip [options] object command", opts:[["addr","Show/manage IP addresses"],["route","Show/manage routing table"],["link","Show/manage network interfaces"],["neigh","Neighbor table (ARP)"],["-s","Statistics"],["-br","Brief output"]]},
+
+  { cat:"System Info", name:"uname", desc:"Print system information", syntax:"uname [options]", opts:[["-a","All information"],["-r","Kernel release"],["-s","Kernel name"],["-n","Network hostname"],["-m","Machine architecture"],["-o","Operating system"]]},
+  { cat:"System Info", name:"df", desc:"Disk space usage", syntax:"df [options] [filesystem]", opts:[["-h","Human-readable"],["-T","Filesystem type"],["-i","Inode usage"],["-a","All filesystems"],["--total","Show totals"]]},
+  { cat:"System Info", name:"du", desc:"File space usage", syntax:"du [options] [path]", opts:[["-h","Human-readable"],["-s","Summary (total only)"],["-a","All files"],["-c","Grand total"],["--max-depth","Limit directory depth"]]},
+  { cat:"System Info", name:"free", desc:"Memory usage", syntax:"free [options]", opts:[["-h","Human-readable"],["-m","Megabytes"],["-g","Gigabytes"],["-t","Show totals"],["-s","Continuous update (seconds)"]]},
+  { cat:"System Info", name:"top", desc:"Process activity monitor", syntax:"top [options]", opts:[["-u","Show specific user"],["-p","Monitor specific PIDs"],["-H","Thread view"],["-b","Batch mode"],["-n","Number of iterations"]]},
+  { cat:"System Info", name:"htop", desc:"Interactive process viewer", syntax:"htop [options]", opts:[["-u","Filter by user"],["-p","Monitor specific PIDs"],["-s","Sort by column"],["--tree","Tree view"]]},
+  { cat:"System Info", name:"ps", desc:"Process status", syntax:"ps [options]", opts:[["aux","All processes (BSD syntax)"],["-ef","All processes (standard syntax)"],["-u","User's processes"],["-C","Process by command name"],["--sort","Sort output"]]},
+  { cat:"System Info", name:"uptime", desc:"System uptime and load average", syntax:"uptime [options]", opts:[["-s","Show since timestamp"],["-p","Pretty format"]]},
+  { cat:"System Info", name:"lscpu", desc:"CPU architecture info", syntax:"lscpu [options]", opts:[["-e","Extended output"],["-J","JSON output"],["-b","Parseable output"]]},
+  { cat:"System Info", name:"lspci", desc:"List PCI devices", syntax:"lspci [options]", opts:[["-v","Verbose"],["-vv","Very verbose"],["-k","Kernel drivers"],["-t","Tree view"],["-n","Numeric IDs"]]},
+  { cat:"System Info", name:"lsblk", desc:"List block devices", syntax:"lsblk [options]", opts:[["-f","Filesystem info"],["-m","Permissions"],["-t","Topology"],["-o","Custom columns"],["--json","JSON format"]]},
+
+  { cat:"Permissions", name:"chmod", desc:"Change file permissions", syntax:"chmod [options] mode file", opts:[["-R","Recursive"],["-v","Verbose"],["-c","Report changes"],["--reference","Use reference file's mode"]]},
+  { cat:"Permissions", name:"chown", desc:"Change file owner/group", syntax:"chown [options] owner[:group] file", opts:[["-R","Recursive"],["-v","Verbose"],["--from","Change only if current owner matches"]]},
+  { cat:"Permissions", name:"chgrp", desc:"Change group ownership", syntax:"chgrp [options] group file", opts:[["-R","Recursive"],["-v","Verbose"],["-c","Report changes"],["--reference","Use reference file's group"]]},
+  { cat:"Permissions", name:"umask", desc:"Set default permissions for new files", syntax:"umask [mode]", opts:[["-S","Symbolic notation"],["-p","Output as command"]]},
+  { cat:"Permissions", name:"lsattr", desc:"List file attributes on ext filesystems", syntax:"lsattr [options] file", opts:[["-a","All files"],["-d","Directories"],["-R","Recursive"],["-v","Version"]]},
+  { cat:"Permissions", name:"chattr", desc:"Change file attributes", syntax:"chattr [options] attributes file", opts:[["+i","Immutable (cannot modify)"],["-i","Remove immutable"],["+a","Append only"],["-R","Recursive"]]},
+  { cat:"Permissions", name:"id", desc:"Show user and group IDs", syntax:"id [options] [user]", opts:[["-u","Show UID"],["-g","Show GID"],["-G","Show all group IDs"],["-n","Show names instead of numbers"],["-r","Show real ID"]]},
+  { cat:"Permissions", name:"whoami", desc:"Print current username", syntax:"whoami", opts:[]},
+
+  { cat:"Process Management", name:"kill", desc:"Terminate processes by PID", syntax:"kill [options] PID", opts:[["-9","SIGKILL (force kill)"],["-15","SIGTERM (graceful)"],["-2","SIGINT (interrupt)"],["-1","SIGHUP (reload config)"],["-l","List signal names"]]},
+  { cat:"Process Management", name:"killall", desc:"Kill processes by name", syntax:"killall [options] name", opts:[["-9","Force kill"],["-i","Interactive"],["-u","Kill user's processes"],["-w","Wait for process to die"]]},
+  { cat:"Process Management", name:"pkill", desc:"Kill processes by pattern", syntax:"pkill [options] pattern", opts:[["-f","Match full command line"],["-u","User filter"],["-signal","Signal number/name"],["-n","Newest process only"]]},
+  { cat:"Process Management", name:"pgrep", desc:"List processes by pattern", syntax:"pgrep [options] pattern", opts:[["-u","Filter by user"],["-f","Match full command line"],["-l","Show process name"],["-n","Newest process"],["-x","Exact match"]]},
+  { cat:"Process Management", name:"nice", desc:"Run process with priority", syntax:"nice [options] command", opts:[["-n","Priority adjustment (higher = lower priority)"]]},
+  { cat:"Process Management", name:"renice", desc:"Change running process priority", syntax:"renice priority [options] PID", opts:[["-n","New priority value"],["-p","Target PID"],["-g","Process group"],["-u","By user"]]},
+  { cat:"Process Management", name:"nohup", desc:"Run immune to hangups", syntax:"nohup command [args]", opts:[["&","Run in background"]]},
+  { cat:"Process Management", name:"bg", desc:"Resume job in background", syntax:"bg [jobspec]", opts:[["%n","Job number"]]},
+  { cat:"Process Management", name:"fg", desc:"Bring job to foreground", syntax:"fg [jobspec]", opts:[["%n","Job number"]]},
+  { cat:"Process Management", name:"jobs", desc:"List background jobs", syntax:"jobs [options]", opts:[["-l","Show PIDs"],["-p","Show PIDs only"],["-s","Stopped jobs only"],["-r","Running jobs only"]]},
+
+  { cat:"Compression", name:"tar", desc:"Archive files", syntax:"tar [options] archive [files]", opts:[["-c","Create archive"],["-x","Extract archive"],["-z","Gzip compression"],["-j","Bzip2 compression"],["-v","Verbose"],["-f","Archive filename"],["-t","List contents"]]},
+  { cat:"Compression", name:"gzip", desc:"Compress files (GNU zip)", syntax:"gzip [options] file", opts:[["-d","Decompress"],["-k","Keep original"],["-r","Recursive"],["-v","Verbose"],["-1..9","Compression level (1=fast,9=best)"]]},
+  { cat:"Compression", name:"gunzip", desc:"Decompress gzip files", syntax:"gunzip [options] file", opts:[["-k","Keep original"],["-r","Recursive"],["-v","Verbose"],["-f","Force"]]},
+  { cat:"Compression", name:"bzip2", desc:"High-compression file compressor", syntax:"bzip2 [options] file", opts:[["-d","Decompress"],["-k","Keep original"],["-v","Verbose"],["-1..9","Compression level"]]},
+  { cat:"Compression", name:"xz", desc:"LZMA file compressor", syntax:"xz [options] file", opts:[["-d","Decompress"],["-k","Keep original"],["-v","Verbose"],["-0..9","Compression level"],["-T","Threads"]]},
+  { cat:"Compression", name:"zip", desc:"Package and compress files (ZIP)", syntax:"zip [options] archive files", opts:[["-r","Recursive"],["-d","Delete from archive"],["-u","Update archive"],["-l","List contents"],["-9","Maximum compression"]]},
+  { cat:"Compression", name:"unzip", desc:"Extract ZIP archives", syntax:"unzip [options] archive", opts:[["-l","List contents"],["-d","Extract to directory"],["-o","Overwrite without prompt"],["-j","Junk paths"]]},
+  { cat:"Compression", name:"zcat", desc:"View compressed file contents", syntax:"zcat file.gz", opts:[["-f","Force"]]},
+
+  { cat:"Package Management", name:"apt", desc:"Debian/Ubuntu package manager", syntax:"apt [command] [package]", opts:[["update","Update package index"],["upgrade","Upgrade all packages"],["install","Install package(s)"],["remove","Remove package(s)"],["autoremove","Remove unused packages"],["search","Search packages"],["show","Package details"]]},
+  { cat:"Package Management", name:"apt-get", desc:"Traditional Debian package tool", syntax:"apt-get [command] [package]", opts:[["update","Update package index"],["upgrade","Upgrade packages"],["dist-upgrade","Distribution upgrade"],["install","Install package"],["remove","Remove package"],["purge","Remove package + config"],["clean","Clear package cache"]]},
+  { cat:"Package Management", name:"dpkg", desc:"Debian package low-level manager", syntax:"dpkg [options] [package.deb]", opts:[["-i","Install package"],["-r","Remove package"],["-l","List packages"],["-s","Package status"],["-L","List files in package"],["-S","Find package by file"]]},
+  { cat:"Package Management", name:"yum", desc:"RPM-based package manager (old)", syntax:"yum [command] [package]", opts:[["install","Install package"],["remove","Remove package"],["update","Update packages"],["search","Search packages"],["info","Package info"],["groupinstall","Install package group"]]},
+  { cat:"Package Management", name:"dnf", desc:"Next-gen RPM package manager", syntax:"dnf [command] [package]", opts:[["install","Install package"],["remove","Remove package"],["upgrade","Upgrade system"],["search","Search packages"],["autoremove","Remove orphans"],["history","Transaction history"],["group","Manage package groups"]]},
+  { cat:"Package Management", name:"rpm", desc:"RPM package manager", syntax:"rpm [options] package.rpm", opts:[["-i","Install package"],["-e","Erase/remove"],["-q","Query package"],["-l","List files"],["-U","Upgrade package"],["-V","Verify package"]]},
+  { cat:"Package Management", name:"zypper", desc:"OpenSUSE package manager", syntax:"zypper [command] [package]", opts:[["install","Install package"],["remove","Remove package"],["update","Update packages"],["search","Search packages"],["info","Package details"],["patches","List available patches"]]},
+  { cat:"Package Management", name:"pacman", desc:"Arch Linux package manager", syntax:"pacman [options] [package]", opts:[["-S","Install/sync package"],["-R","Remove package"],["-U","Install local package"],["-Q","Query installed packages"],["-Sy","Sync package databases"],["-Su","Upgrade system"]]},
+  { cat:"Package Management", name:"snap", desc:"Snap package manager", syntax:"snap [command] [package]", opts:[["install","Install snap"],["remove","Remove snap"],["list","List installed snaps"],["refresh","Update snaps"],["info","Snap details"],["changes","Recent changes"]]},
+  { cat:"Package Management", name:"flatpak", desc:"Flatpak app manager", syntax:"flatpak [command] [package]", opts:[["install","Install application"],["uninstall","Remove application"],["update","Update applications"],["list","List installed"],["search","Search remotes"],["run","Run application"]]}
+];
+
+var CATEGORIES = {};
+COMMANDS.forEach(function(cmd){
+  if (!CATEGORIES[cmd.cat]) CATEGORIES[cmd.cat] = [];
+  CATEGORIES[cmd.cat].push(cmd);
+});
+var CAT_KEYS = Object.keys(CATEGORIES);
+var CAT_LABELS = {
+  "File Operations":"fa-regular fa-files","Networking":"fa-solid fa-network-wired",
+  "System Info":"fa-regular fa-circle-info","Permissions":"fa-solid fa-lock",
+  "Process Management":"fa-solid fa-microchip","Compression":"fa-solid fa-file-zipper",
+  "Package Management":"fa-solid fa-box"
+};
+
+var categoriesEl = document.getElementById('categories');
+var searchInput = document.getElementById('searchInput');
+var searchCount = document.getElementById('searchCount');
+
+function toggleCmd(el) {
+  var header = el;
+  var details = header.nextElementSibling;
+  var isOpen = details.classList.contains('open');
+  document.querySelectorAll('.cmd-details.open').forEach(function(d){ d.classList.remove('open'); });
+  document.querySelectorAll('.cmd-header.open').forEach(function(h){ h.classList.remove('open'); });
+  if (!isOpen) {
+    details.classList.add('open');
+    header.classList.add('open');
+  }
+}
+
+function renderCommands(filter) {
+  var f = (filter || '').toLowerCase().trim();
+  categoriesEl.innerHTML = '';
+  var totalVisible = 0;
+
+  CAT_KEYS.forEach(function(cat){
+    var cmds = CATEGORIES[cat];
+    var filtered = f ? cmds.filter(function(c){
+      return c.name.toLowerCase().includes(f) || c.desc.toLowerCase().includes(f) || cat.toLowerCase().includes(f);
+    }) : cmds;
+    if (filtered.length === 0) return;
+    totalVisible += filtered.length;
+
+    var html = '<div class="card mb-4">';
+    html += '<div class="card-title"><i class="'+(CAT_LABELS[cat]||'fa-regular fa-folder')+'"></i>' + cat + ' <span class="category-count">(' + filtered.length + ')</span></div>';
+    filtered.forEach(function(cmd){
+      html += '<div class="cmd-item">';
+      html += '<div class="cmd-header" onclick="toggleCmd(this)">';
+      html += '<div><div class="cmd-name">' + cmd.name + '</div><div class="cmd-desc">' + cmd.desc + '</div></div>';
+      html += '<div class="flex items-center gap-2"><span class="text-xs text-[#52525b]">' + (cmd.opts ? cmd.opts.length + ' opts' : '') + '</span><i class="fa-solid fa-chevron-down expand-icon"></i></div>';
+      html += '</div>';
+      html += '<div class="cmd-details">';
+      html += '<div class="cmd-syntax"><code>' + cmd.syntax + '</code></div>';
+      if (cmd.opts && cmd.opts.length) {
+        html += '<div class="cmd-opts">';
+        cmd.opts.forEach(function(opt){
+          html += '<div class="opt-row"><span class="opt-flag">' + opt[0] + '</span><span class="opt-desc">' + opt[1] + '</span></div>';
+        });
+        html += '</div>';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+    categoriesEl.innerHTML += html;
+  });
+
+  searchCount.textContent = totalVisible + ' of ' + COMMANDS.length + ' commands';
+}
+
+searchInput.oninput = function() {
+  renderCommands(this.value);
+};
+
+renderCommands('');
+</script>
+</body>
+</html>

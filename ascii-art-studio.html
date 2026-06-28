@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII Art Studio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.btn-tool{background:#18181b;border:1px solid #27272a;color:#e4e4e7;padding:0.4rem 0.7rem;border-radius:0.375rem;font-size:0.78rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace;white-space:nowrap}
+.btn-tool:hover{background:#27272a;border-color:#3f3f46}
+.btn-tool.active{background:rgba(45,212,191,0.12);border-color:#2dd4bf;color:#2dd4bf}
+.btn-sm{padding:0.3rem 0.5rem;font-size:0.7rem}
+.btn-accent{background:rgba(45,212,191,0.12);border:1px solid #2dd4bf;color:#2dd4bf;padding:0.4rem 0.7rem;border-radius:0.375rem;font-size:0.78rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace;white-space:nowrap}
+.btn-accent:hover{background:rgba(45,212,191,0.22)}
+.char-picker{display:flex;flex-wrap:wrap;gap:0.25rem;align-items:center}
+.char-btn{background:#0f0f11;border:1px solid #27272a;color:#e4e4e7;width:2rem;height:2rem;border-radius:0.375rem;cursor:pointer;font-family:'Fira Code',monospace;font-size:1rem;text-align:center;line-height:2rem;transition:all .15s;padding:0}
+.char-btn:hover{background:#27272a;border-color:#3f3f46}
+.char-btn.active{background:rgba(45,212,191,0.15);border-color:#2dd4bf;color:#2dd4bf;box-shadow:0 0 8px rgba(45,212,191,0.2)}
+.color-swatch{width:1.5rem;height:1.5rem;border-radius:0.375rem;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0}
+.color-swatch:hover{border-color:#3f3f46}
+.color-swatch.active{border-color:#2dd4bf;box-shadow:0 0 6px rgba(45,212,191,0.3)}
+.canvas-wrap{overflow:auto;background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;padding:0.5rem}
+#canvasTable{border-collapse:collapse;margin:0 auto}
+#canvasTable td.cell{text-align:center;vertical-align:middle;cursor:crosshair;border:1px solid #27272a;user-select:none;font-family:'Fira Code',monospace;line-height:1;overflow:hidden;transition:background-color 0.05s;padding:0}
+#canvasTable td.cell:hover{box-shadow:inset 0 0 6px rgba(45,212,191,0.2);z-index:1}
+.status-bar{display:flex;flex-wrap:wrap;gap:0.75rem 1.5rem;padding:0.5rem 0.75rem;background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;font-size:0.75rem;color:#a1a1aa;font-family:'Fira Code',monospace}
+.status-item{display:flex;align-items:center;gap:0.35rem}
+.status-item i{color:#52525b;font-size:0.7rem;width:0.85rem;text-align:center}
+.status-val{color:#2dd4bf}
+.preset-btn{background:#0f0f11;border:1px solid #27272a;color:#a1a1aa;padding:0.35rem 0.6rem;border-radius:0.375rem;font-size:0.72rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace;white-space:nowrap}
+.preset-btn:hover{background:#27272a;border-color:#2dd4bf;color:#e4e4e7}
+.preset-btn.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.tool-group{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}
+.slider-input{-webkit-appearance:none;appearance:none;background:#27272a;height:4px;border-radius:2px;outline:none}
+.slider-input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:#2dd4bf;cursor:pointer}
+.fade-in{animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#18181b;border:1px solid #2dd4bf;color:#2dd4bf;padding:0.6rem 1.2rem;border-radius:0.5rem;font-size:0.85rem;z-index:999;font-family:'Fira Code',monospace;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+</style>
+</head>
+<body>
+<div class="max-w-5xl mx-auto px-4 py-6">
+  <header class="text-center mb-6">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-paintbrush text-[#2dd4bf] text-2xl"></i>
+      ASCII Art Studio
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Draw, edit, and export ASCII masterpieces</p>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+
+    <div class="lg:col-span-2 space-y-4">
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-palette mr-2"></i>Toolbar</div>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs"><i class="fa-regular fa-font mr-1"></i>Character</label>
+            <div class="char-picker" id="charPicker"></div>
+            <div class="flex gap-2 mt-1">
+              <input id="customCharInput" class="input-field" type="text" maxlength="1" placeholder="Custom char" style="width:7rem;text-align:center;font-size:1.1rem;padding:0.3rem">
+              <button id="setCharBtn" class="btn-accent btn-sm"><i class="fa-regular fa-check mr-1"></i>Set</button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-4 items-end">
+            <div>
+              <label><i class="fa-regular fa-pencil mr-1"></i>Mode</label>
+              <div class="flex gap-1">
+                <button id="modePencil" class="btn-tool active" data-mode="pencil"><i class="fa-regular fa-pencil mr-1"></i>Pencil</button>
+                <button id="modeEraser" class="btn-tool" data-mode="eraser"><i class="fa-regular fa-eraser mr-1"></i>Eraser</button>
+              </div>
+            </div>
+            <div>
+              <label><i class="fa-regular fa-droplet mr-1"></i>Color</label>
+              <div class="flex flex-wrap gap-1 items-center" id="colorPicker"></div>
+            </div>
+            <div>
+              <label><i class="fa-regular fa-fill mr-1"></i>BG Color</label>
+              <div class="flex flex-wrap gap-1 items-center" id="bgColorPicker"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-grid-2 mr-2"></i>Canvas</div>
+        <div class="canvas-wrap">
+          <table id="canvasTable"></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-screwdriver-wrench mr-2"></i>Tools</div>
+        <div class="flex flex-wrap gap-x-6 gap-y-3 items-start">
+          <div class="tool-group">
+            <button id="undoBtn" class="btn-tool btn-sm" title="Undo (Ctrl+Z)"><i class="fa-regular fa-rotate-left mr-1"></i>Undo</button>
+            <button id="redoBtn" class="btn-tool btn-sm" title="Redo (Ctrl+Y)"><i class="fa-regular fa-rotate-right mr-1"></i>Redo</button>
+          </div>
+          <div class="tool-group">
+            <button id="clearBtn" class="btn-tool btn-sm"><i class="fa-regular fa-trash-can mr-1"></i>Clear</button>
+            <button id="fillBtn" class="btn-tool btn-sm"><i class="fa-regular fa-fill-drip mr-1"></i>Fill</button>
+            <button id="invertBtn" class="btn-tool btn-sm"><i class="fa-regular fa-arrows-rotate mr-1"></i>Invert</button>
+            <button id="mirrorHBtn" class="btn-tool btn-sm"><i class="fa-regular fa-arrow-left-arrow-right mr-1"></i>Mirror H</button>
+            <button id="mirrorVBtn" class="btn-tool btn-sm"><i class="fa-regular fa-arrow-up-arrow-down mr-1"></i>Mirror V</button>
+          </div>
+          <div class="flex flex-wrap gap-3 items-end ml-auto">
+            <div>
+              <label class="text-xs">Size</label>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-[#52525b]">16</span>
+                <input id="fontSizeSlider" class="slider-input" type="range" min="16" max="40" value="22" style="width:6rem">
+                <span class="text-xs text-[#52525b]">40</span>
+                <span id="fontSizeLabel" class="text-xs text-[#2dd4bf] w-6">22</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs">Grid</label>
+              <div class="flex items-center gap-1">
+                <input id="gridW" class="input-field" type="number" min="4" max="80" value="40" style="width:3.5rem;text-align:center;padding:0.25rem 0.3rem;font-size:0.75rem">
+                <span class="text-[#52525b] text-xs">×</span>
+                <input id="gridH" class="input-field" type="number" min="4" max="40" value="20" style="width:3.5rem;text-align:center;padding:0.25rem 0.3rem;font-size:0.75rem">
+                <button id="resizeBtn" class="btn-accent btn-sm" style="padding:0.25rem 0.5rem;font-size:0.7rem"><i class="fa-regular fa-arrow-rotate-right mr-1"></i>Resize</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="space-y-4">
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-download mr-2"></i>Export</div>
+        <div class="space-y-2">
+          <button id="copyTextBtn" class="btn-tool w-full text-left"><i class="fa-regular fa-copy mr-2"></i>Copy as Text</button>
+          <button id="copyHtmlBtn" class="btn-tool w-full text-left"><i class="fa-regular fa-code mr-2"></i>Copy as HTML</button>
+          <button id="downloadTxtBtn" class="btn-tool w-full text-left"><i class="fa-regular fa-file-lines mr-2"></i>Download .txt</button>
+          <button id="downloadHtmlBtn" class="btn-tool w-full text-left"><i class="fa-regular fa-file-code mr-2"></i>Download .html</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-regular fa-image mr-2"></i>Presets</div>
+        <div class="flex flex-wrap gap-1" id="presetsContainer"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="statusBar" class="status-bar mb-4"></div>
+
+  <footer class="text-center mt-6 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> ASCII Art Studio</a>
+  </footer>
+</div>
+
+<script>
+var chars = ['@','#','$','%','&','?','+','*','.',':',';','-','=','~','^','/','\\','|','(',')','{','}','[',']','<','>','!'];
+var colorPresets = ['#ffffff','#ff4444','#ff8800','#ffdd00','#44ff44','#44ddff','#4488ff','#aa44ff','#ff44aa','#2dd4bf'];
+var bgColorPresets = ['transparent','#333333','#444444','#555555','#222222','#1a1a2e','#2d1b00'];
+
+var grid = [];
+var gridWidth = 40;
+var gridHeight = 20;
+var currentChar = '@';
+var currentColor = '#ffffff';
+var currentBgColor = 'transparent';
+var drawMode = 'pencil';
+var fontSize = 22;
+var isDrawing = false;
+var undoStack = [];
+var redoStack = [];
+var maxUndo = 50;
+var cursorRow = -1;
+var cursorCol = -1;
+
+var presets = {};
+
+presets['Smiley Face'] = {
+  chars: ['@'],
+  data: [
+    "                                        ",
+    "                                        ",
+    "            @@@@@@@@@@@@@@              ",
+    "         @@@@@@@@@@@@@@@@@@@@           ",
+    "       @@@@@@@@@@@@@@@@@@@@@@@@         ",
+    "      @@@@@@@@   @@@@@@   @@@@@@@@      ",
+    "     @@@@@@@@     @@@@     @@@@@@@@     ",
+    "    @@@@@@@@@     @@@@     @@@@@@@@@    ",
+    "    @@@@@@@@@@@        @@@@@@@@@@@@@    ",
+    "    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    ",
+    "    @@@@@@@@@@@@    @@@@@@@@@@@@@@@@    ",
+    "     @@@@@@@@@@@  @@@@@@@@@@@@@@@@@     ",
+    "     @@@@@@@@@@ @@@@@@@@@@@@@@@@@@      ",
+    "      @@@@@@@@@@@@@@@@@@@@@@@@@@@       ",
+    "       @@@@@@@@@@@@@@@@@@@@@@@@@        ",
+    "        @@@@@@@@@@@@@@@@@@@@@@@         ",
+    "          @@@@@@@@@@@@@@@@@@@           ",
+    "            @@@@@@@@@@@@@@@             ",
+    "                                        ",
+    "                                        "
+  ]
+};
+
+presets['Mountain / Sunset'] = {
+  chars: ['@','#','%','+','.','-'],
+  data: [
+    "                                        ",
+    "                      ....              ",
+    "               .....-----....           ",
+    "           ....----------....            ",
+    "        .....-----------....             ",
+    "      .....------------....              ",
+    "    ....--------------....               ",
+    "   ...---------------....                ",
+    "  ...---------------....                 ",
+    " ...---------------....                  ",
+    " ..--------------....                    ",
+    " ...------------....                     ",
+    "  ...---------....                       ",
+    "   ...-------..##                        ",
+    "    ....---..####                        ",
+    "      .....#######                       ",
+    "       .##########                       ",
+    "      ############                       ",
+    "     ##############                      ",
+    "    ################                     "
+  ]
+};
+
+presets['Mona Lisa (simple)'] = {
+  chars: ['@','#','+','.',' '],
+  data: [
+    "                                        ",
+    "               .....                    ",
+    "            ....@@@@..                  ",
+    "          ..@@@#@@@@@@@                 ",
+    "         .@@@@@++@@@@@#                 ",
+    "        .#@@@@++++@@@@#.                ",
+    "        #@@@@++++++@@@#.                ",
+    "        @#@@@++@@++@@@#                 ",
+    "        #@@@+++++++@@@#                 ",
+    "        .#@@+++++++++@@.                ",
+    "         .@@@+++@@++@@.                 ",
+    "          .@@@+++++@@.                  ",
+    "            .@@++++..                   ",
+    "             .@++..@.                   ",
+    "             .+@.@..@                   ",
+    "              .@@..@.                   ",
+    "               ....                     ",
+    "                                        ",
+    "                                        ",
+    "                                        "
+  ]
+};
+
+presets['Skull'] = {
+  chars: ['@','#','%','+','.','*','O'],
+  data: [
+    "                                        ",
+    "              ############              ",
+    "           ################             ",
+    "         ####################           ",
+    "       ######################           ",
+    "      ########  ####  ########          ",
+    "     #########  ####  #########         ",
+    "    ############################        ",
+    "    #####  O##########O  #####          ",
+    "    #####  ############  #####          ",
+    "    #####    ########    #####          ",
+    "     ######  ########  ######           ",
+    "      #######       #######             ",
+    "       ####  ######### ####             ",
+    "       ###   ## ### ##   ###            ",
+    "       ###   ## ### ##   ###            ",
+    "        ##   ## ### ##   ##             ",
+    "          ######## #####                ",
+    "                                        ",
+    "                                        "
+  ]
+};
+
+presets['Dragon'] = {
+  chars: ['@','#','%','+','~','*','^'],
+  data: [
+    "                                        ",
+    "               ~~~~~~~                  ",
+    "              ~@@@@@@@~                 ",
+    "             ~@@@@@@@@@@                ",
+    "            ~@@@#  #@@@@                ",
+    "            @@@ @ @ @@@@                ",
+    "           @@@@@@ @@@@@@~               ",
+    "          @@@@@@@@@@@@@@@@              ",
+    "         @@@@  @@@@@  @@@@~             ",
+    "        @@@@   @@@@@   @@@@             ",
+    "        @@@@  @@@@@@@  @@@@             ",
+    "        @@@@  @@@@@@@  @@@@             ",
+    "        @@@@@         @@@@@             ",
+    "         _@@@@@@@@@@@@@@@_              ",
+    "           ~~~~~~~~~~~~~                ",
+    "        ~~~                ~~~          ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        "
+  ]
+};
+
+function initGrid(w, h) {
+  grid = [];
+  for (var r = 0; r < h; r++) {
+    grid[r] = [];
+    for (var c = 0; c < w; c++) {
+      grid[r][c] = { char: ' ', color: '#ffffff', bgColor: '' };
+    }
+  }
+  gridWidth = w;
+  gridHeight = h;
+}
+
+function cloneGrid(src) {
+  var g = [];
+  for (var r = 0; r < src.length; r++) {
+    g[r] = [];
+    for (var c = 0; c < src[r].length; c++) {
+      g[r][c] = { char: src[r][c].char, color: src[r][c].color, bgColor: src[r][c].bgColor };
+    }
+  }
+  return g;
+}
+
+function saveState() {
+  undoStack.push(cloneGrid(grid));
+  if (undoStack.length > maxUndo) undoStack.shift();
+  redoStack = [];
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  redoStack.push(cloneGrid(grid));
+  grid = undoStack.pop();
+  renderGrid();
+  updateStatus();
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  undoStack.push(cloneGrid(grid));
+  grid = redoStack.pop();
+  renderGrid();
+  updateStatus();
+}
+
+function renderGrid() {
+  var table = document.getElementById('canvasTable');
+  var html = '';
+  for (var r = 0; r < gridHeight; r++) {
+    html += '<tr>';
+    for (var c = 0; c < gridWidth; c++) {
+      var cell = grid[r][c];
+      var ch = cell.char;
+      var color = cell.color;
+      var bg = cell.bgColor;
+      var bgStyle = (bg && bg !== 'transparent') ? 'background-color:' + bg + ';' : '';
+      var sz = (fontSize > 28) ? fontSize - 6 : (fontSize > 20 ? fontSize - 4 : fontSize - 2);
+      html += '<td class="cell" data-row="' + r + '" data-col="' + c + '" style="color:' + color + ';' + bgStyle + 'width:' + fontSize + 'px;height:' + fontSize + 'px;font-size:' + sz + 'px">' + (ch === ' ' ? '&nbsp;' : escHtml(ch)) + '</td>';
+    }
+    html += '</tr>';
+  }
+  table.innerHTML = html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function paintCellAt(row, col) {
+  if (row < 0 || row >= gridHeight || col < 0 || col >= gridWidth) return;
+  if (drawMode === 'eraser') {
+    grid[row][col] = { char: ' ', color: '#ffffff', bgColor: '' };
+  } else {
+    var bg = (currentBgColor === 'transparent') ? '' : currentBgColor;
+    grid[row][col] = { char: currentChar, color: currentColor, bgColor: bg };
+  }
+}
+
+function paintAndRender(row, col) {
+  paintCellAt(row, col);
+  var cellEl = document.querySelector('#canvasTable td.cell[data-row="' + row + '"][data-col="' + col + '"]');
+  if (cellEl) {
+    var cell = grid[row][col];
+    cellEl.style.color = cell.color;
+    cellEl.style.backgroundColor = (cell.bgColor && cell.bgColor !== 'transparent') ? cell.bgColor : '';
+    cellEl.innerHTML = cell.char === ' ' ? '&nbsp;' : escHtml(cell.char);
+  }
+}
+
+function updateStatus() {
+  var filled = 0;
+  for (var r = 0; r < gridHeight; r++) {
+    for (var c = 0; c < gridWidth; c++) {
+      if (grid[r][c].char !== ' ') filled++;
+    }
+  }
+  var statusEl = document.getElementById('statusBar');
+  var pos = (cursorRow >= 0 && cursorCol >= 0) ? cursorRow + ':' + cursorCol : '-';
+  statusEl.innerHTML =
+    '<span class="status-item"><i class="fa-regular fa-location-crosshairs"></i>Pos: <span class="status-val">' + pos + '</span></span>' +
+    '<span class="status-item"><i class="fa-regular fa-font"></i>Char: <span class="status-val">' + (drawMode === 'eraser' ? 'erase' : escHtml(currentChar)) + '</span></span>' +
+    '<span class="status-item"><i class="fa-regular fa-maximize"></i>Size: <span class="status-val">' + gridWidth + '×' + gridHeight + '</span></span>' +
+    '<span class="status-item"><i class="fa-regular fa-cubes"></i>Filled: <span class="status-val">' + filled + '</span></span>';
+}
+
+function buildCharPicker() {
+  var container = document.getElementById('charPicker');
+  var html = '';
+  for (var i = 0; i < chars.length; i++) {
+    var active = (chars[i] === currentChar) ? ' active' : '';
+    html += '<button class="char-btn' + active + '" data-char="' + escHtml(chars[i]) + '">' + escHtml(chars[i]) + '</button>';
+  }
+  container.innerHTML = html;
+}
+
+function buildColorPicker() {
+  var container = document.getElementById('colorPicker');
+  var html = '';
+  for (var i = 0; i < colorPresets.length; i++) {
+    var c = colorPresets[i];
+    var active = (c === currentColor) ? ' active' : '';
+    html += '<span class="color-swatch' + active + '" style="background:' + c + '" data-color="' + c + '"></span>';
+  }
+  html += '<input id="customColorInput" type="color" value="' + currentColor + '" style="width:1.5rem;height:1.5rem;border-radius:0.375rem;cursor:pointer;border:2px solid #27272a;background:none;padding:0">';
+  container.innerHTML = html;
+}
+
+function buildBgColorPicker() {
+  var container = document.getElementById('bgColorPicker');
+  var html = '';
+  for (var i = 0; i < bgColorPresets.length; i++) {
+    var c = bgColorPresets[i];
+    var active = (c === currentBgColor) ? ' active' : '';
+    var style = (c === 'transparent') ? 'background:transparent;border:2px dashed #52525b' : 'background:' + c;
+    html += '<span class="color-swatch' + active + '" style="' + style + '" data-color="' + c + '"></span>';
+  }
+  html += '<input id="customBgColorInput" type="color" value="#333333" style="width:1.5rem;height:1.5rem;border-radius:0.375rem;cursor:pointer;border:2px solid #27272a;background:none;padding:0">';
+  container.innerHTML = html;
+}
+
+function buildPresets() {
+  var container = document.getElementById('presetsContainer');
+  var html = '';
+  var names = Object.keys(presets);
+  for (var i = 0; i < names.length; i++) {
+    html += '<button class="preset-btn" data-preset="' + escHtml(names[i]) + '">' + escHtml(names[i]) + '</button>';
+  }
+  container.innerHTML = html;
+}
+
+function loadPreset(name) {
+  var preset = presets[name];
+  if (!preset) return;
+  var data = preset.data;
+  var h = data.length;
+  var w = 0;
+  for (var r = 0; r < h; r++) {
+    if (data[r].length > w) w = data[r].length;
+  }
+  if (w < 4) w = 4;
+  if (h < 4) h = 4;
+  if (w > 80) w = 80;
+  if (h > 40) h = 40;
+  saveState();
+  initGrid(w, h);
+  for (var r = 0; r < h && r < data.length; r++) {
+    var row = data[r];
+    for (var c = 0; c < w && c < row.length; c++) {
+      var ch = row[c];
+      if (ch !== ' ') {
+        grid[r][c] = { char: ch, color: currentColor, bgColor: '' };
+      }
+    }
+  }
+  document.getElementById('gridW').value = w;
+  document.getElementById('gridH').value = h;
+  gridWidth = w;
+  gridHeight = h;
+  undoStack = [];
+  redoStack = [];
+  renderGrid();
+  updateStatus();
+}
+
+function getCanvasText() {
+  var lines = [];
+  for (var r = 0; r < gridHeight; r++) {
+    var line = '';
+    for (var c = 0; c < gridWidth; c++) {
+      line += grid[r][c].char;
+    }
+    line = line.replace(/\s+$/, '');
+    lines.push(line);
+  }
+  while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+  return lines.join('\n');
+}
+
+function getCanvasHtml() {
+  var lines = [];
+  for (var r = 0; r < gridHeight; r++) {
+    var line = '';
+    for (var c = 0; c < gridWidth; c++) {
+      line += grid[r][c].char;
+    }
+    line = line.replace(/\s+$/, '');
+    lines.push(line);
+  }
+  while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+  var html = '<div style="font-family:\'Fira Code\',monospace;font-size:14px;line-height:1.3;color:#e4e4e7;background:#0f0f11;padding:16px;white-space:pre;border-radius:8px;overflow:auto">\n';
+  for (var i = 0; i < lines.length; i++) {
+    html += escHtml(lines[i]) + '\n';
+  }
+  html += '</div>';
+  return html;
+}
+
+function getSelfContainedHtml() {
+  var text = getCanvasText();
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>ASCII Art</title>\n<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">\n<style>\n*{margin:0;padding:0;box-sizing:border-box}\nbody{background:#0f0f11;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}\npre{font-family:\'Fira Code\',monospace;font-size:14px;line-height:1.3;color:#e4e4e7;background:#18181b;padding:2rem;border-radius:12px;border:1px solid #27272a;white-space:pre;overflow:auto}\n</style>\n</head>\n<body>\n<pre>' + escHtml(text) + '</pre>\n</body>\n</html>';
+}
+
+function showToast(msg) {
+  var existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 2200);
+}
+
+function clearCanvas() {
+  saveState();
+  for (var r = 0; r < gridHeight; r++) {
+    for (var c = 0; c < gridWidth; c++) {
+      grid[r][c] = { char: ' ', color: '#ffffff', bgColor: '' };
+    }
+  }
+  renderGrid();
+  updateStatus();
+}
+
+function fillCanvas() {
+  saveState();
+  var bg = (currentBgColor === 'transparent') ? '' : currentBgColor;
+  for (var r = 0; r < gridHeight; r++) {
+    for (var c = 0; c < gridWidth; c++) {
+      grid[r][c] = { char: currentChar, color: currentColor, bgColor: bg };
+    }
+  }
+  renderGrid();
+  updateStatus();
+}
+
+function invertCanvas() {
+  saveState();
+  for (var r = 0; r < gridHeight; r++) {
+    for (var c = 0; c < gridWidth; c++) {
+      if (grid[r][c].char === ' ') {
+        grid[r][c] = { char: currentChar, color: currentColor, bgColor: (currentBgColor === 'transparent') ? '' : currentBgColor };
+      } else {
+        grid[r][c] = { char: ' ', color: '#ffffff', bgColor: '' };
+      }
+    }
+  }
+  renderGrid();
+  updateStatus();
+}
+
+function mirrorH() {
+  saveState();
+  for (var r = 0; r < gridHeight; r++) {
+    var row = grid[r];
+    for (var c = 0; c < Math.floor(gridWidth / 2); c++) {
+      var tmp = row[c];
+      row[c] = row[gridWidth - 1 - c];
+      row[gridWidth - 1 - c] = tmp;
+    }
+  }
+  renderGrid();
+  updateStatus();
+}
+
+function mirrorV() {
+  saveState();
+  for (var r = 0; r < Math.floor(gridHeight / 2); r++) {
+    var tmp = grid[r];
+    grid[r] = grid[gridHeight - 1 - r];
+    grid[gridHeight - 1 - r] = tmp;
+  }
+  renderGrid();
+  updateStatus();
+}
+
+function copyText() {
+  var text = getCanvasText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showToast('Copied as text!'); });
+  } else {
+    fallbackCopy(text, 'Text copied!');
+  }
+}
+
+function copyHtml() {
+  var html = getCanvasHtml();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(html).then(function() { showToast('Copied as HTML!'); });
+  } else {
+    fallbackCopy(html, 'HTML copied!');
+  }
+}
+
+function fallbackCopy(text, msg) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showToast(msg); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function downloadTxt() {
+  var text = getCanvasText();
+  var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'ascii-art.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Downloaded as .txt!');
+}
+
+function downloadHtml() {
+  var html = getSelfContainedHtml();
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'ascii-art.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Downloaded as .html!');
+}
+
+function setupEvents() {
+  var table = document.getElementById('canvasTable');
+
+  table.addEventListener('mousedown', function(e) {
+    var cell = e.target.closest('td.cell');
+    if (!cell) return;
+    e.preventDefault();
+    isDrawing = true;
+    var row = parseInt(cell.dataset.row);
+    var col = parseInt(cell.dataset.col);
+    cursorRow = row;
+    cursorCol = col;
+    saveState();
+    paintAndRender(row, col);
+    updateStatus();
+  });
+
+  table.addEventListener('mouseover', function(e) {
+    var cell = e.target.closest('td.cell');
+    if (!cell) return;
+    var row = parseInt(cell.dataset.row);
+    var col = parseInt(cell.dataset.col);
+    cursorRow = row;
+    cursorCol = col;
+    if (isDrawing) {
+      paintAndRender(row, col);
+    }
+    updateStatus();
+  });
+
+  table.addEventListener('mouseleave', function() {
+    cursorRow = -1;
+    cursorCol = -1;
+    updateStatus();
+  });
+
+  document.addEventListener('mouseup', function() {
+    isDrawing = false;
+  });
+
+  table.addEventListener('touchstart', function(e) {
+    var touch = e.touches[0];
+    var target = document.elementFromPoint(touch.clientX, touch.clientY);
+    var cell = target ? target.closest('td.cell') : null;
+    if (!cell) return;
+    e.preventDefault();
+    isDrawing = true;
+    var row = parseInt(cell.dataset.row);
+    var col = parseInt(cell.dataset.col);
+    cursorRow = row;
+    cursorCol = col;
+    saveState();
+    paintAndRender(row, col);
+    updateStatus();
+  }, { passive: false });
+
+  table.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    var touch = e.touches[0];
+    var target = document.elementFromPoint(touch.clientX, touch.clientY);
+    var cell = target ? target.closest('td.cell') : null;
+    if (!cell || !isDrawing) return;
+    var row = parseInt(cell.dataset.row);
+    var col = parseInt(cell.dataset.col);
+    cursorRow = row;
+    cursorCol = col;
+    paintAndRender(row, col);
+    updateStatus();
+  }, { passive: false });
+
+  table.addEventListener('touchend', function() {
+    isDrawing = false;
+  });
+
+  document.getElementById('charPicker').addEventListener('click', function(e) {
+    var btn = e.target.closest('.char-btn');
+    if (!btn) return;
+    document.querySelectorAll('.char-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentChar = btn.dataset.char;
+    document.getElementById('customCharInput').value = '';
+    updateStatus();
+  });
+
+  document.getElementById('setCharBtn').addEventListener('click', function() {
+    var val = document.getElementById('customCharInput').value;
+    if (val.length > 0) {
+      currentChar = val.charAt(0);
+      document.querySelectorAll('.char-btn').forEach(function(b) { b.classList.remove('active'); });
+      updateStatus();
+    }
+  });
+
+  document.getElementById('customCharInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('setCharBtn').click();
+  });
+
+  document.getElementById('colorPicker').addEventListener('click', function(e) {
+    var swatch = e.target.closest('.color-swatch');
+    if (!swatch) return;
+    document.querySelectorAll('#colorPicker .color-swatch').forEach(function(s) { s.classList.remove('active'); });
+    swatch.classList.add('active');
+    currentColor = swatch.dataset.color;
+  });
+
+  document.getElementById('colorPicker').addEventListener('input', function(e) {
+    if (e.target.id !== 'customColorInput') return;
+    currentColor = e.target.value;
+    document.querySelectorAll('#colorPicker .color-swatch').forEach(function(s) { s.classList.remove('active'); });
+  });
+
+  document.getElementById('bgColorPicker').addEventListener('click', function(e) {
+    var swatch = e.target.closest('.color-swatch');
+    if (!swatch) return;
+    document.querySelectorAll('#bgColorPicker .color-swatch').forEach(function(s) { s.classList.remove('active'); });
+    swatch.classList.add('active');
+    currentBgColor = swatch.dataset.color;
+  });
+
+  document.getElementById('bgColorPicker').addEventListener('input', function(e) {
+    if (e.target.id !== 'customBgColorInput') return;
+    currentBgColor = e.target.value;
+    document.querySelectorAll('#bgColorPicker .color-swatch').forEach(function(s) { s.classList.remove('active'); });
+  });
+
+  document.getElementById('modePencil').addEventListener('click', function() {
+    drawMode = 'pencil';
+    document.getElementById('modePencil').classList.add('active');
+    document.getElementById('modeEraser').classList.remove('active');
+    updateStatus();
+  });
+
+  document.getElementById('modeEraser').addEventListener('click', function() {
+    drawMode = 'eraser';
+    document.getElementById('modeEraser').classList.add('active');
+    document.getElementById('modePencil').classList.remove('active');
+    updateStatus();
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
+  document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+  document.getElementById('fillBtn').addEventListener('click', fillCanvas);
+  document.getElementById('invertBtn').addEventListener('click', invertCanvas);
+  document.getElementById('mirrorHBtn').addEventListener('click', mirrorH);
+  document.getElementById('mirrorVBtn').addEventListener('click', mirrorV);
+  document.getElementById('copyTextBtn').addEventListener('click', copyText);
+  document.getElementById('copyHtmlBtn').addEventListener('click', copyHtml);
+  document.getElementById('downloadTxtBtn').addEventListener('click', downloadTxt);
+  document.getElementById('downloadHtmlBtn').addEventListener('click', downloadHtml);
+
+  document.getElementById('fontSizeSlider').addEventListener('input', function() {
+    fontSize = parseInt(this.value);
+    document.getElementById('fontSizeLabel').textContent = fontSize;
+    renderGrid();
+  });
+
+  document.getElementById('resizeBtn').addEventListener('click', function() {
+    var newW = parseInt(document.getElementById('gridW').value);
+    var newH = parseInt(document.getElementById('gridH').value);
+    if (isNaN(newW) || newW < 4) newW = 4;
+    if (newW > 80) newW = 80;
+    if (isNaN(newH) || newH < 4) newH = 4;
+    if (newH > 40) newH = 40;
+    document.getElementById('gridW').value = newW;
+    document.getElementById('gridH').value = newH;
+    saveState();
+    var newGrid = [];
+    for (var r = 0; r < newH; r++) {
+      newGrid[r] = [];
+      for (var c = 0; c < newW; c++) {
+        if (r < gridHeight && c < gridWidth) {
+          newGrid[r][c] = { char: grid[r][c].char, color: grid[r][c].color, bgColor: grid[r][c].bgColor };
+        } else {
+          newGrid[r][c] = { char: ' ', color: '#ffffff', bgColor: '' };
+        }
+      }
+    }
+    grid = newGrid;
+    gridWidth = newW;
+    gridHeight = newH;
+    renderGrid();
+    updateStatus();
+  });
+
+  document.getElementById('presetsContainer').addEventListener('click', function(e) {
+    var btn = e.target.closest('.preset-btn');
+    if (!btn) return;
+    loadPreset(btn.dataset.preset);
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault();
+      undo();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+      e.preventDefault();
+      redo();
+    }
+  });
+}
+
+function init() {
+  initGrid(40, 20);
+  buildCharPicker();
+  buildColorPicker();
+  buildBgColorPicker();
+  buildPresets();
+  setupEvents();
+  loadPreset('Smiley Face');
+}
+
+init();
+</script>
+</body>
+</html>

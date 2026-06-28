@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic 8 Ball</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.btn-primary{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.625rem 1.5rem;border-radius:0.5rem;font-weight:600;font-size:0.875rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.btn-primary:hover{opacity:0.9}
+.btn-primary:active{opacity:0.8}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.ball-wrapper{position:relative;width:280px;height:280px;margin:0 auto 1.5rem;cursor:pointer}
+.eight-ball{width:280px;height:280px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#1a3a5c,#0d1b2a 60%,#050a12);border:4px solid #1e3a5f;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(0,100,200,0.15),inset 0 -20px 40px rgba(0,0,0,0.5),inset 0 20px 40px rgba(255,255,255,0.05)}
+.eight-ball .eight-text{font-size:6rem;font-weight:800;color:rgba(255,255,255,0.15);text-shadow:0 2px 4px rgba(0,0,0,0.3);user-select:none;transition:opacity .3s}
+.eight-ball .triangle-window{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:100px;height:70px;clip-path:polygon(50% 0%,0% 100%,100% 100%);background:#0a0a1a;border:2px solid #1e3a5f;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;opacity:0;transition:opacity .3s}
+.eight-ball .triangle-window .response-text{color:#2dd4bf;font-size:0.6rem;font-weight:600;text-align:center;line-height:1.2;padding:0 6px;word-break:break-word;max-height:40px;overflow:hidden}
+.eight-ball.showing-response .eight-text{opacity:0}
+.eight-ball.showing-response .triangle-window{opacity:1}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}10%{transform:translateX(-8px) rotate(-3deg)}20%{transform:translateX(8px) rotate(3deg)}30%{transform:translateX(-6px) rotate(-2deg)}40%{transform:translateX(6px) rotate(2deg)}50%{transform:translateX(-4px) rotate(-1deg)}60%{transform:translateX(4px) rotate(1deg)}70%{transform:translateX(-2px)}80%{transform:translateX(2px)}90%{transform:translateX(-1px)}}
+.eight-ball.shake{animation:shake .5s ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.eight-ball.float{animation:float 3s ease-in-out infinite}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #27272a;font-size:0.8rem}
+.history-item:last-child{border-bottom:none}
+.history-q{color:#a1a1aa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;flex-shrink:1}
+.history-a{color:#2dd4bf;font-weight:600;flex-shrink:0;margin-left:0.5rem}
+input[type=text]{background:#27272a;border:1px solid #3f3f46;color:#e4e4e7;padding:0.625rem 0.75rem;border-radius:0.5rem;font-family:'Inter',sans-serif;font-size:0.875rem;outline:none;transition:border-color .2s;width:100%}
+input[type=text]:focus{border-color:#2dd4bf}
+</style>
+</head>
+<body>
+
+<div class="max-w-lg w-full mx-auto px-4 py-6">
+  <header class="text-center mb-6">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-regular fa-crystal-ball text-[#2dd4bf] text-2xl"></i>
+      Magic 8 Ball
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Pregunta el que vulguis i descobreix el teu dest&iacute;</p>
+  </header>
+
+  <div class="card mb-6 text-center">
+    <div class="ball-wrapper" id="ballWrapper">
+      <div class="eight-ball float" id="eightBall">
+        <div class="triangle-window">
+          <div class="response-text" id="responseText"></div>
+        </div>
+        <div class="eight-text" id="eightText">8</div>
+      </div>
+    </div>
+
+    <div class="flex gap-2 items-center">
+      <input type="text" id="questionInput" placeholder="Escriu la teva pregunta..." maxlength="200">
+      <button class="btn-primary" id="askBtn" style="white-space:nowrap;flex-shrink:0"><i class="fa-regular fa-wand-magic-sparkles mr-1"></i>Pregunta</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fa-regular fa-clock-rotate-left mr-2"></i>Historial (darreres 10)</div>
+    <div id="historyList">
+      <div class="text-sm text-[#a1a1aa] text-center py-2">Encara no has fet cap pregunta</div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-6 pb-4">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i>Magic 8 Ball - Sergi Gallart</a>
+  </footer>
+</div>
+
+<script>
+const responses = [
+  { text: 'És cert', type: 'affirmative' },
+  { text: 'Sense cap dubte', type: 'affirmative' },
+  { text: 'Definitivament sí', type: 'affirmative' },
+  { text: 'Pots confiar-hi', type: 'affirmative' },
+  { text: 'Com jo ho veig, sí', type: 'affirmative' },
+  { text: 'Molt probablement', type: 'affirmative' },
+  { text: 'Bona perspectiva', type: 'affirmative' },
+  { text: 'Sí', type: 'affirmative' },
+  { text: 'Els senyals diuen que sí', type: 'affirmative' },
+  { text: 'Totalment afirmatiu', type: 'affirmative' },
+  { text: 'Pregunta més tard', type: 'non-committal' },
+  { text: 'No ho puc predir ara', type: 'non-committal' },
+  { text: 'Concèntrat i pregunta de nou', type: 'non-committal' },
+  { text: 'És possible', type: 'non-committal' },
+  { text: 'Ara no és el moment', type: 'non-committal' },
+  { text: 'No hi comptis', type: 'negative' },
+  { text: 'Les meves fonts diuen que no', type: 'negative' },
+  { text: 'Molt dubtós', type: 'negative' },
+  { text: 'No', type: 'negative' },
+  { text: 'Les perspectives no són bones', type: 'negative' }
+];
+
+const ball = document.getElementById('eightBall');
+const responseText = document.getElementById('responseText');
+const eightText = document.getElementById('eightText');
+const questionInput = document.getElementById('questionInput');
+const askBtn = document.getElementById('askBtn');
+const historyList = document.getElementById('historyList');
+
+let isAnimating = false;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem('magic8ballHistory') || '[]'); }
+  catch { return []; }
+}
+
+function saveHistory(entry) {
+  const h = loadHistory();
+  h.unshift(entry);
+  if (h.length > 10) h.length = 10;
+  localStorage.setItem('magic8ballHistory', JSON.stringify(h));
+}
+
+function renderHistory() {
+  const h = loadHistory();
+  if (!h.length) {
+    historyList.innerHTML = '<div class="text-sm text-[#a1a1aa] text-center py-2">Encara no has fet cap pregunta</div>';
+    return;
+  }
+  historyList.innerHTML = h.map(function(e) {
+    return '<div class="history-item">' +
+      '<span class="history-q"><i class="fa-regular fa-circle-question text-[#52525b] mr-1"></i>' + escapeHtml(e.q) + '</span>' +
+      '<span class="history-a">' + escapeHtml(e.a) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function escapeHtml(s) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(s));
+  return div.innerHTML;
+}
+
+function getRandomResponse() {
+  return responses[Math.floor(Math.random() * responses.length)];
+}
+
+function askQuestion() {
+  if (isAnimating) return;
+  var question = questionInput.value.trim();
+  if (!question) {
+    questionInput.focus();
+    questionInput.style.borderColor = '#ef4444';
+    setTimeout(function() { questionInput.style.borderColor = ''; }, 1000);
+    return;
+  }
+
+  isAnimating = true;
+  ball.classList.remove('float');
+  ball.classList.remove('showing-response');
+  ball.classList.add('shake');
+
+  var response = getRandomResponse();
+
+  setTimeout(function() {
+    ball.classList.remove('shake');
+    responseText.textContent = response.text;
+    ball.classList.add('showing-response');
+
+    saveHistory({ q: question, a: response.text, type: response.type });
+    renderHistory();
+    questionInput.value = '';
+    isAnimating = false;
+
+    setTimeout(function() {
+      ball.classList.remove('showing-response');
+      ball.classList.add('float');
+    }, 4000);
+  }, 600);
+}
+
+askBtn.addEventListener('click', askQuestion);
+questionInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') askQuestion();
+});
+
+ball.addEventListener('click', function() {
+  if (questionInput.value.trim()) askQuestion();
+});
+
+renderHistory();
+</script>
+</body>
+</html>

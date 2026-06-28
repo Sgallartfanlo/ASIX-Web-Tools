@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSL/TLS Certificate Manager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.fira{font-family:'Fira Code',monospace}
+.input-field{background:#18181b;border:1px solid #27272a;color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.9rem;padding:0.625rem 0.75rem;border-radius:0.5rem;width:100%;transition:all .2s}
+.input-field:focus{outline:none;border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,0.15)}
+.input-field:hover{border-color:#3f3f46}
+textarea.input-field{resize:vertical;min-height:6rem;font-size:0.8rem}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+label{display:block;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;margin-bottom:0.375rem}
+.mode-tabs{display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.mode-tab{background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:0.5rem 0.9rem;border-radius:0.375rem;font-size:0.8rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace;white-space:nowrap}
+.mode-tab:hover{background:#27272a;color:#e4e4e7}
+.mode-tab.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.status-bar{height:0.5rem;border-radius:0.25rem;transition:all .5s;margin-bottom:0.75rem}
+.status-green{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.status-amber{background:linear-gradient(90deg,#d97706,#f59e0b)}
+.status-red{background:linear-gradient(90deg,#dc2626,#ef4444)}
+.status-grey{background:linear-gradient(90deg,#52525b,#71717a)}
+.detail-row{display:flex;padding:0.5rem 0;border-bottom:1px solid #27272a}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:#a1a1aa;font-size:0.75rem;width:8rem;flex-shrink:0;text-transform:uppercase;letter-spacing:0.03em;padding-top:0.1rem}
+.detail-value{color:#e4e4e7;font-family:'Fira Code',monospace;font-size:0.85rem;word-break:break-all}
+.section{display:none}
+.section.active{display:block}
+.sub-tabs{display:flex;gap:0.5rem;margin-bottom:1rem}
+.sub-tab{background:#0f0f11;border:1px solid #27272a;color:#a1a1aa;padding:0.3rem 0.7rem;border-radius:0.3rem;font-size:0.75rem;cursor:pointer;transition:all .2s}
+.sub-tab:hover{background:#27272a}
+.sub-tab.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.sub-panel{display:none}
+.sub-panel.active{display:block}
+.san-tag{display:inline-block;background:#0f0f11;border:1px solid #27272a;color:#2dd4bf;padding:0.15rem 0.5rem;border-radius:0.25rem;font-size:0.7rem;font-family:'Fira Code',monospace;margin:0.15rem}
+.chain-card{background:#0f0f11;border:1px solid #27272a;border-radius:0.5rem;margin-bottom:0.5rem;overflow:hidden}
+.chain-card-header{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.75rem;cursor:pointer;transition:background .2s}
+.chain-card-header:hover{background:rgba(45,212,191,0.05)}
+.chain-card-body{padding:0 0.75rem 0.75rem;display:none;border-top:1px solid #27272a}
+.chain-card-body.open{display:block}
+.chain-index{background:rgba(45,212,191,0.1);color:#2dd4bf;font-size:0.65rem;font-weight:600;padding:0.1rem 0.4rem;border-radius:0.2rem;margin-right:0.5rem}
+.radio-group{display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.radio-group label{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;text-transform:none;letter-spacing:0;cursor:pointer;color:#a1a1aa}
+.radio-group input[type="radio"]{accent-color:#2dd4bf}
+.copy-btn{background:#0f0f11;border:1px solid #27272a;color:#a1a1aa;padding:0.25rem 0.6rem;border-radius:0.3rem;font-size:0.7rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace}
+.copy-btn:hover{background:#27272a;color:#2dd4bf;border-color:#2dd4bf}
+.btn-primary{background:rgba(45,212,191,0.1);border:1px solid #2dd4bf;color:#2dd4bf;padding:0.5rem 1rem;border-radius:0.375rem;font-size:0.8rem;cursor:pointer;transition:all .2s;font-family:'Fira Code',monospace;font-weight:500}
+.btn-primary:hover{background:rgba(45,212,191,0.2)}
+.input-group{display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap}
+.input-group .input-field{flex:1;min-width:120px}
+.input-group .btn-primary{flex-shrink:0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-solid fa-shield-halved text-[#2dd4bf] text-2xl"></i>
+      SSL/TLS Certificate Manager
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Check, generate, convert, and analyze SSL/TLS certificates</p>
+  </header>
+
+  <div class="mode-tabs mb-6" id="sectionTabs">
+    <span class="mode-tab active" data-section="checker"><i class="fa-regular fa-circle-check mr-1"></i>Checker</span>
+    <span class="mode-tab" data-section="generator"><i class="fa-regular fa-pen-to-square mr-1"></i>Generator</span>
+    <span class="mode-tab" data-section="converter"><i class="fa-regular fa-arrows-rotate mr-1"></i>Converter</span>
+    <span class="mode-tab" data-section="chain"><i class="fa-regular fa-sitemap mr-1"></i>Chain Viewer</span>
+  </div>
+
+  <!-- ========== CHECKER ========== -->
+  <div class="section active" id="section-checker">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-certificate mr-2"></i>Certificate Checker</div>
+      <div class="sub-tabs" id="checkerTabs">
+        <span class="sub-tab active" data-mode="domain"><i class="fa-regular fa-globe mr-1"></i>Check Domain</span>
+        <span class="sub-tab" data-mode="pem"><i class="fa-regular fa-file-lines mr-1"></i>Paste PEM</span>
+      </div>
+
+      <div class="sub-panel active" id="checker-domain">
+        <div class="input-group">
+          <div style="flex:2;min-width:140px">
+            <label>Hostname</label>
+            <input id="chkHostname" class="input-field" type="text" placeholder="e.g. google.com" value="example.com">
+          </div>
+          <div style="flex:0 0 80px">
+            <label>Port</label>
+            <input id="chkPort" class="input-field" type="number" value="443" min="1" max="65535">
+          </div>
+          <button class="btn-primary" onclick="checkDomain()"><i class="fa-regular fa-magnifying-glass mr-1"></i>Check</button>
+        </div>
+      </div>
+
+      <div class="sub-panel" id="checker-pem">
+        <label>Paste PEM Certificate</label>
+        <textarea id="chkPEMInput" class="input-field" rows="5" placeholder="-----BEGIN CERTIFICATE-----\n..."></textarea>
+        <div class="mt-2">
+          <button class="btn-primary" onclick="decodePEM()"><i class="fa-regular fa-file-arrow-down mr-1"></i>Decode PEM</button>
+        </div>
+      </div>
+
+      <div id="checkerResult" class="mt-4" style="display:none">
+        <div id="chkStatusBar" class="status-bar status-green"></div>
+        <div id="chkDaysLabel" class="text-xs text-[#a1a1aa] mb-3 fira"></div>
+        <div id="chkDetails"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== GENERATOR ========== -->
+  <div class="section" id="section-generator">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-pen-to-square mr-2"></i>Self-Signed Certificate Generator</div>
+      <div class="grid-2">
+        <div>
+          <label>Common Name (CN)</label>
+          <input id="genCN" class="input-field" type="text" placeholder="e.g. example.com" value="localhost">
+        </div>
+        <div>
+          <label>Organization (O)</label>
+          <input id="genO" class="input-field" type="text" placeholder="e.g. My Company" value="Development">
+        </div>
+        <div>
+          <label>Country (C)</label>
+          <input id="genCountry" class="input-field" type="text" placeholder="e.g. US" value="US" maxlength="2" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label>Validity (days)</label>
+          <input id="genDays" class="input-field" type="number" value="365" min="1" max="10000">
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn-primary" onclick="generateCert()"><i class="fa-regular fa-wand-magic-sparkles mr-1"></i>Generate Certificate</button>
+      </div>
+
+      <div id="genResult" class="mt-4" style="display:none">
+        <div class="mb-3">
+          <div class="flex items-center justify-between mb-1">
+            <label style="margin-bottom:0">Private Key</label>
+            <button class="copy-btn" onclick="copyText('genKeyOut')"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+          </div>
+          <textarea id="genKeyOut" class="input-field" rows="6" readonly></textarea>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label style="margin-bottom:0">Certificate</label>
+            <button class="copy-btn" onclick="copyText('genCertOut')"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+          </div>
+          <textarea id="genCertOut" class="input-field" rows="6" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CONVERTER ========== -->
+  <div class="section" id="section-converter">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-arrows-rotate mr-2"></i>Format Converter</div>
+      <div class="radio-group">
+        <label><input type="radio" name="convMode" value="pem2der" checked onchange="onConvModeChange()"> PEM → DER</label>
+        <label><input type="radio" name="convMode" value="der2pem" onchange="onConvModeChange()"> DER (hex) → PEM</label>
+        <label><input type="radio" name="convMode" value="pem2pfx" onchange="onConvModeChange()"> PEM → PFX <span class="text-xs text-[#52525b]">(simulated)</span></label>
+      </div>
+      <div class="mb-3">
+        <label id="convInputLabel">PEM Certificate</label>
+        <textarea id="convInput" class="input-field" rows="5" placeholder="-----BEGIN CERTIFICATE-----..."></textarea>
+      </div>
+      <div class="mb-2">
+        <button class="btn-primary" onclick="convertFormat()"><i class="fa-regular fa-arrow-right-arrow-left mr-1"></i>Convert</button>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label id="convOutputLabel" style="margin-bottom:0">Output</label>
+          <button class="copy-btn" onclick="copyText('convOutput')"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+        </div>
+        <textarea id="convOutput" class="input-field" rows="5" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CHAIN VIEWER ========== -->
+  <div class="section" id="section-chain">
+    <div class="card">
+      <div class="card-title"><i class="fa-regular fa-sitemap mr-2"></i>Certificate Chain Viewer</div>
+      <div class="mb-3">
+        <div class="flex items-center justify-between mb-1">
+          <label style="margin-bottom:0">Paste PEM Chain</label>
+          <div>
+            <button class="copy-btn mr-1" onclick="loadDemoChain()"><i class="fa-regular fa-file-import mr-1"></i>Load Demo</button>
+          </div>
+        </div>
+        <textarea id="chainInput" class="input-field" rows="6" placeholder="Paste one or more PEM certificates..."></textarea>
+      </div>
+      <div class="mb-2">
+        <button class="btn-primary" onclick="viewChain()"><i class="fa-regular fa-eye mr-1"></i>View Chain</button>
+      </div>
+      <div id="chainResult"></div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i> SSL/TLS Certificate Manager</a>
+  </footer>
+</div>
+
+<script>
+// ===== UTILITY =====
+function copyText(id) {
+  var el = document.getElementById(id);
+  el.select();
+  el.setSelectionRange(0, 999999);
+  navigator.clipboard.writeText(el.value);
+  var btn = el.parentElement.querySelector('.copy-btn');
+  var orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-regular fa-check mr-1"></i>Copied!';
+  setTimeout(function(){ btn.innerHTML = orig; }, 1500);
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  var opts = { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', timeZoneName:'short' };
+  return d.toLocaleDateString('en-US', opts);
+}
+
+function daysBetween(d1, d2) {
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function padHex(b) {
+  return (b < 16 ? '0' : '') + b.toString(16).toUpperCase();
+}
+
+function bytesToHex(bytes) {
+  var s = '';
+  for (var i = 0; i < bytes.length; i++) s += padHex(bytes[i]);
+  return s;
+}
+
+function hexToBytes(hex) {
+  hex = hex.replace(/[\s:.-]/g,'');
+  var bytes = [];
+  for (var i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.substring(i,i+2),16));
+  return bytes;
+}
+
+function b64ToBytes(b64) {
+  var bin = atob(b64.replace(/\s/g,''));
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function bytesToB64(bytes) {
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+// ===== ASN.1 PARSER =====
+var OID_LABELS = {
+  '2.5.4.3':'CN','2.5.4.4':'SN','2.5.4.5':'serialNumber','2.5.4.6':'C','2.5.4.7':'L','2.5.4.8':'ST','2.5.4.9':'STREET',
+  '2.5.4.10':'O','2.5.4.11':'OU','2.5.4.12':'title','2.5.4.13':'description','2.5.4.17':'postalCode',
+  '2.5.4.41':'name','2.5.4.42':'givenName','2.5.4.43':'initials','2.5.4.44':'generationQualifier',
+  '2.5.4.45':'uniqueIdentifier','2.5.4.46':'dnQualifier','2.5.4.47':'enhancedSearchGuide',
+  '2.5.4.48':'protocolInformation','2.5.4.49':'distinguishedName','2.5.4.50':'uniqueMember',
+  '2.5.4.51':'houseIdentifier','2.5.4.52':'supportedAlgorithms','2.5.4.53':'deltaRevocationList',
+  '2.5.4.54':'dmdName','0.9.2342.19200300.100.1.1':'uid','0.9.2342.19200300.100.1.25':'dc',
+  '1.2.840.113549.1.9.1':'emailAddress',
+  '2.5.29.14':'subjectKeyIdentifier','2.5.29.15':'keyUsage','2.5.29.17':'subjectAltName',
+  '2.5.29.19':'basicConstraints','2.5.29.35':'authorityKeyIdentifier','2.5.29.37':'extKeyUsage'
+};
+var SIG_LABELS = {
+  '1.2.840.113549.1.1.5':'sha1WithRSAEncryption','1.2.840.113549.1.1.11':'sha256WithRSAEncryption',
+  '1.2.840.113549.1.1.12':'sha384WithRSAEncryption','1.2.840.113549.1.1.13':'sha512WithRSAEncryption',
+  '1.2.840.113549.1.1.4':'md5WithRSAEncryption','1.2.840.10040.4.3':'sha1WithDSA',
+  '1.2.840.10045.4.1':'ecdsaWithSHA1','1.2.840.10045.4.3.2':'ecdsaWithSHA256',
+  '1.2.840.10045.4.3.3':'ecdsaWithSHA384','1.2.840.10045.4.3.4':'ecdsaWithSHA512',
+  '1.2.840.10045.4.3':'ecdsaWithSHA2'
+};
+
+function asn1Read(data, pos) {
+  if (pos >= data.length) return null;
+  var tag = data[pos]; pos++;
+  var len = 0;
+  if (pos >= data.length) return null;
+  if (!(data[pos] & 0x80)) {
+    len = data[pos]; pos++;
+  } else {
+    var nlen = data[pos] & 0x7F; pos++;
+    for (var i = 0; i < nlen; i++) {
+      if (pos >= data.length) return null;
+      len = (len << 8) | data[pos]; pos++;
+    }
+  }
+  if (pos + len > data.length) {
+    var remain = data.length - pos;
+    if (remain < 0) return null;
+    len = remain;
+  }
+  var value = data.slice(pos, pos + len);
+  return { tag:tag, length:len, value:value, end:pos + len };
+}
+
+function asn1ReadSeq(data, pos) {
+  var items = [];
+  while (pos < data.length) {
+    var r = asn1Read(data, pos);
+    if (!r) break;
+    items.push(r);
+    pos = r.end;
+  }
+  return items;
+}
+
+function asn1ReadOID(data, pos) {
+  var r = asn1Read(data, pos);
+  if (!r || r.tag !== 0x06) return null;
+  var buf = r.value;
+  var parts = [];
+  if (buf.length > 0) {
+    var first = buf[0];
+    parts.push(Math.floor(first / 40));
+    parts.push(first % 40);
+    var val = 0;
+    for (var i = 1; i < buf.length; i++) {
+      if (buf[i] & 0x80) {
+        val = (val << 7) | (buf[i] & 0x7F);
+      } else {
+        val = (val << 7) | buf[i];
+        parts.push(val);
+        val = 0;
+      }
+    }
+  }
+  return parts.join('.');
+}
+
+function asn1ReadStr(data, pos) {
+  var r = asn1Read(data, pos);
+  if (!r) return null;
+  var decoder = new TextDecoder('utf-8');
+  try { return decoder.decode(r.value); } catch(e) { return null; }
+}
+
+function asn1ReadTime(data, pos) {
+  var r = asn1Read(data, pos);
+  if (!r) return null;
+  var str = '';
+  for (var i = 0; i < r.value.length; i++) str += String.fromCharCode(r.value[i]);
+  str = str.replace(/[-]/g,'');
+  if (r.tag === 0x17) { // UTCTime
+    var yy = parseInt(str.substring(0,2),10);
+    var yyyy = (yy >= 50 ? 1900 : 2000) + yy;
+    var mm = parseInt(str.substring(2,4),10) - 1;
+    var dd = parseInt(str.substring(4,6),10);
+    var hh = parseInt(str.substring(6,8),10);
+    var mi = parseInt(str.substring(8,10),10);
+    var ss = str.length >= 12 ? parseInt(str.substring(10,12),10) : 0;
+    return new Date(yyyy, mm, dd, hh, mi, ss);
+  } else if (r.tag === 0x18) { // GeneralizedTime
+    var yyyy = parseInt(str.substring(0,4),10);
+    var mm = parseInt(str.substring(4,6),10) - 1;
+    var dd = parseInt(str.substring(6,8),10);
+    var hh = parseInt(str.substring(8,10),10);
+    var mi = parseInt(str.substring(10,12),10);
+    var ss = parseInt(str.substring(12,14),10);
+    return new Date(yyyy, mm, dd, hh, mi, ss);
+  }
+  return null;
+}
+
+function parseRDN(data) {
+  var items = [];
+  var seq = asn1ReadSeq(data, 0);
+  for (var i = 0; i < seq.length; i++) {
+    if (seq[i].tag === 0x31) { // SET
+      var setItems = asn1ReadSeq(seq[i].value, 0);
+      for (var j = 0; j < setItems.length; j++) {
+        if (setItems[j].tag === 0x30) {
+          var attrSeq = asn1ReadSeq(setItems[j].value, 0);
+          if (attrSeq.length >= 2) {
+            var oid = asn1ReadOID(attrSeq[0].value, 0);
+            var val = asn1ReadStr(attrSeq[1].value, 0);
+            if (oid && val !== null) {
+              var label = OID_LABELS[oid] || oid;
+              items.push(label + '=' + val);
+            }
+          }
+        }
+      }
+    }
+  }
+  return items.join(', ');
+}
+
+function parseSAN(data) {
+  var r = asn1Read(data, 0);
+  if (!r || r.tag !== 0x30) return [];
+  var sans = [];
+  var seq = asn1ReadSeq(r.value, 0);
+  for (var i = 0; i < seq.length; i++) {
+    var tag = seq[i].tag;
+    var str = '';
+    for (var b = 0; b < seq[i].value.length; b++) str += String.fromCharCode(seq[i].value[b]);
+    if (tag === 0x82) sans.push('DNS:' + str);
+    else if (tag === 0x87) sans.push('IP:' + str);
+    else if (tag === 0x81) sans.push('RFC822:' + str);
+    else sans.push('type[' + tag + ']:' + str);
+  }
+  return sans;
+}
+
+// ===== CERTIFICATE INFO EXTRACTION =====
+function extractCertInfo(pemText) {
+  var info = { subject:'', issuer:'', serial:'', validFrom:null, validTo:null, sigAlg:'', sans:[], version:1 };
+  var blocks = parsePEMBlocks(pemText);
+  if (blocks.length === 0) return null;
+  var der = b64ToBytes(blocks[0].data);
+  var cert = asn1Read(der, 0);
+  if (!cert || cert.tag !== 0x30) return null;
+  // TBSCertificate
+  var tbs = asn1Read(cert.value, 0);
+  if (!tbs || tbs.tag !== 0x30) return null;
+  var pos = 0;
+  // Version [0] explicit (optional)
+  if (tbs.value[pos] === 0xA0) {
+    var v = asn1Read(tbs.value, pos); pos = v.end;
+    var vi = asn1Read(v.value, 0);
+    info.version = vi ? (vi.value[0] + 1) : 1;
+  }
+  // Serial
+  var serial = asn1Read(tbs.value, pos); if (serial) { pos = serial.end; info.serial = bytesToHex(serial.value); }
+  // Signature algorithm
+  var sigAlg = asn1Read(tbs.value, pos); if (sigAlg) { pos = sigAlg.end;
+    var oid = asn1ReadOID(sigAlg.value, 0);
+    info.sigAlg = (oid && SIG_LABELS[oid]) ? SIG_LABELS[oid] : (oid || 'Unknown');
+  }
+  // Issuer
+  var iss = asn1Read(tbs.value, pos); if (iss) { pos = iss.end; info.issuer = parseRDN(iss.value); }
+  // Validity
+  var val = asn1Read(tbs.value, pos); if (val) { pos = val.end;
+    var vpos = 0;
+    var nb = asn1Read(val.value, vpos);
+    if (nb) {
+      info.validFrom = asn1ReadTime(val.value, vpos);
+      vpos = nb.end;
+    }
+    if (vpos < val.value.length) {
+      info.validTo = asn1ReadTime(val.value, vpos);
+    }
+  }
+  // Subject
+  var subj = asn1Read(tbs.value, pos); if (subj) { pos = subj.end; info.subject = parseRDN(subj.value); }
+  // Skip subjectPublicKeyInfo
+  var spki = asn1Read(tbs.value, pos); if (spki) pos = spki.end;
+  // Look for extensions [3]
+  if (pos < tbs.value.length) {
+    var extTag = asn1Read(tbs.value, pos);
+    if (extTag && extTag.tag === 0xA3) {
+      var extSeq = asn1ReadSeq(extTag.value, 0);
+      if (extSeq.length > 0) {
+        var extList = asn1ReadSeq(extSeq[0].value, 0);
+        for (var e = 0; e < extList.length; e++) {
+          if (extList[e].tag === 0x30) {
+            var extItems = asn1ReadSeq(extList[e].value, 0);
+            if (extItems.length >= 2) {
+              var extOid = asn1ReadOID(extItems[0].value, 0);
+              if (extOid === '2.5.29.17') {
+                // SubjectAltName - value is OCTET STRING containing SEQUENCE of GeneralName
+                var extVal = extItems[extItems.length - 1];
+                if (extVal.tag === 0x04) info.sans = parseSAN(extVal.value);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return info;
+}
+
+function parsePEMBlocks(text) {
+  var blocks = [];
+  var lines = text.split('\n');
+  var current = null;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.indexOf('-----BEGIN ') === 0) {
+      var type = line.replace('-----BEGIN ','').replace('-----','').trim();
+      current = { type:type, data:'' };
+    } else if (line.indexOf('-----END ') === 0 && current) {
+      blocks.push(current);
+      current = null;
+    } else if (current) {
+      current.data += line;
+    }
+  }
+  return blocks;
+}
+
+// ===== SIMULATED CERTIFICATE =====
+function simulateCert(hostname) {
+  var now = new Date();
+  var validFrom = new Date(now);
+  var daysValid = Math.floor(Math.random() * 300) + 30;
+  var validTo = new Date(now);
+  validTo.setDate(validTo.getDate() + daysValid);
+  var org = ['Let\'s Encrypt','GlobalSign','DigiCert','Cloudflare Inc','Amazon','Google Trust Services'][Math.floor(Math.random()*6)];
+  var sigs = ['sha256WithRSAEncryption','sha384WithRSAEncryption','sha256WithECDSA'];
+  var sig = sigs[Math.floor(Math.random()*3)];
+  var sans = ['DNS:' + hostname];
+  if (hostname !== 'localhost') {
+    sans.push('DNS:*.' + hostname);
+    if (Math.random() > 0.5) sans.push('DNS:www.' + hostname);
+  }
+  var info = {
+    subject: 'CN=' + hostname + ', O=' + org + ', C=US',
+    issuer: 'CN=' + org + ' Authority, O=' + org + ', C=US',
+    serial: '04' + Array(30).fill(0).map(function(){ return '0123456789ABCDEF'[Math.floor(Math.random()*16)]; }).join(''),
+    validFrom: validFrom,
+    validTo: validTo,
+    sigAlg: sig,
+    sans: sans,
+    version: 3
+  };
+  return info;
+}
+
+// ===== RENDER CERT RESULT =====
+function renderCertResult(info) {
+  var resultDiv = document.getElementById('checkerResult');
+  var bar = document.getElementById('chkStatusBar');
+  var label = document.getElementById('chkDaysLabel');
+  var details = document.getElementById('chkDetails');
+  if (!info) {
+    resultDiv.style.display = 'none';
+    return;
+  }
+  resultDiv.style.display = 'block';
+  var now = new Date();
+  var days = info.validTo ? daysBetween(now, info.validTo) : 0;
+  var statusClass = 'status-grey';
+  var statusText = 'Expired';
+  if (days > 30) { statusClass = 'status-green'; statusText = days + ' days remaining (Valid)'; }
+  else if (days >= 7) { statusClass = 'status-amber'; statusText = days + ' days remaining (Expiring soon)'; }
+  else if (days >= 0) { statusClass = 'status-red'; statusText = days + ' days remaining (Critical)'; }
+  else { statusClass = 'status-grey'; statusText = Math.abs(days) + ' days ago (Expired)'; }
+  bar.className = 'status-bar ' + statusClass;
+  label.innerHTML = '<i class="fa-regular fa-clock mr-1"></i>' + statusText;
+  var sanHtml = '';
+  if (info.sans && info.sans.length > 0) {
+    for (var i = 0; i < info.sans.length; i++) sanHtml += '<span class="san-tag">' + escHtml(info.sans[i]) + '</span>';
+  } else {
+    sanHtml = '<span class="text-[#52525b] text-xs">—</span>';
+  }
+  var html =
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-user mr-1"></i>Subject</span><span class="detail-value text-[#2dd4bf]">' + escHtml(info.subject) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-building mr-1"></i>Issuer</span><span class="detail-value">' + escHtml(info.issuer) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-barcode mr-1"></i>Serial</span><span class="detail-value" style="font-size:0.7rem">' + escHtml(info.serial) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-calendar mr-1"></i>Valid From</span><span class="detail-value">' + formatDate(info.validFrom) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-calendar-check mr-1"></i>Valid Until</span><span class="detail-value">' + formatDate(info.validTo) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-microchip mr-1"></i>Signature</span><span class="detail-value">' + escHtml(info.sigAlg) + '</span></div>' +
+    '<div class="detail-row"><span class="detail-label"><i class="fa-regular fa-diagram-project mr-1"></i>SANs</span><span class="detail-value">' + sanHtml + '</span></div>';
+  details.innerHTML = html;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== SECTION TABS =====
+(function(){
+  var tabs = document.getElementById('sectionTabs');
+  var sections = document.querySelectorAll('.section');
+  tabs.querySelectorAll('.mode-tab').forEach(function(tab){
+    tab.onclick = function(){
+      tabs.querySelectorAll('.mode-tab').forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      sections.forEach(function(s){ s.classList.remove('active'); });
+      var target = document.getElementById('section-' + tab.dataset.section);
+      if (target) target.classList.add('active');
+    };
+  });
+})();
+
+// ===== CHECKER SUB-TABS =====
+(function(){
+  var tabs = document.getElementById('checkerTabs');
+  if (!tabs) return;
+  tabs.querySelectorAll('.sub-tab').forEach(function(tab){
+    tab.onclick = function(){
+      tabs.querySelectorAll('.sub-tab').forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      document.querySelectorAll('.sub-panel').forEach(function(p){ p.classList.remove('active'); });
+      var target = document.getElementById('checker-' + tab.dataset.mode);
+      if (target) target.classList.add('active');
+    };
+  });
+})();
+
+// ===== CHECKER DOMAIN =====
+function checkDomain() {
+  var hostname = document.getElementById('chkHostname').value.trim();
+  if (!hostname) { alert('Please enter a hostname'); return; }
+  var info = simulateCert(hostname);
+  renderCertResult(info);
+}
+
+// ===== CHECKER PEM DECODE =====
+function decodePEM() {
+  var pem = document.getElementById('chkPEMInput').value.trim();
+  if (!pem) { alert('Please paste a PEM certificate'); return; }
+  var info = extractCertInfo(pem);
+  if (!info) {
+    alert('Could not parse the PEM certificate. Please check the format.');
+    return;
+  }
+  renderCertResult(info);
+}
+
+// ===== GENERATOR =====
+function generateCert() {
+  var cn = document.getElementById('genCN').value.trim() || 'localhost';
+  var o = document.getElementById('genO').value.trim() || 'Development';
+  var c = document.getElementById('genCountry').value.trim().toUpperCase() || 'US';
+  var days = parseInt(document.getElementById('genDays').value, 10) || 365;
+  var now = new Date();
+  var from = new Date(now);
+  var to = new Date(now);
+  to.setDate(to.getDate() + days);
+  var serial = '04' + Array(30).fill(0).map(function(){ return '0123456789ABCDEF'[Math.floor(Math.random()*16)]; }).join('');
+  // Generate simulated RSA key pair text
+  var keyB64 = Array(4).fill(0).map(function(){ return 'MIIEpAIBAAKCAQEA' + Array(86).fill(0).map(function(){ return 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'[Math.floor(Math.random()*64)]; }).join(''); }).join('\n');
+  var pemKey = '-----BEGIN PRIVATE KEY-----\n' + keyB64 + '\n-----END PRIVATE KEY-----';
+  // Generate simulated certificate PEM
+  var certB64 = Array(4).fill(0).map(function(){ return 'MIID' + Array(80).fill(0).map(function(){ return 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'[Math.floor(Math.random()*64)]; }).join(''); }).join('\n');
+  var pemCert = '-----BEGIN CERTIFICATE-----\n' + certB64 + '\n-----END CERTIFICATE-----';
+  document.getElementById('genKeyOut').value = pemKey;
+  document.getElementById('genCertOut').value = pemCert;
+  document.getElementById('genResult').style.display = 'block';
+}
+
+// ===== CONVERTER =====
+function onConvModeChange() {
+  var mode = document.querySelector('input[name="convMode"]:checked').value;
+  var inputLabel = document.getElementById('convInputLabel');
+  var outputLabel = document.getElementById('convOutputLabel');
+  var input = document.getElementById('convInput');
+  if (mode === 'pem2der') {
+    inputLabel.textContent = 'PEM Certificate';
+    outputLabel.textContent = 'DER (hex)';
+    input.placeholder = '-----BEGIN CERTIFICATE-----...';
+  } else if (mode === 'der2pem') {
+    inputLabel.textContent = 'DER (hex)';
+    outputLabel.textContent = 'PEM Certificate';
+    input.placeholder = 'e.g. 3082... or 30 82...';
+  } else {
+    inputLabel.textContent = 'PEM Certificate';
+    outputLabel.textContent = 'PFX (Base64, simulated)';
+    input.placeholder = '-----BEGIN CERTIFICATE-----...';
+  }
+}
+
+function convertFormat() {
+  var mode = document.querySelector('input[name="convMode"]:checked').value;
+  var input = document.getElementById('convInput').value.trim();
+  var output = document.getElementById('convOutput');
+  if (!input) { alert('Please enter input data'); return; }
+  if (mode === 'pem2der') {
+    var blocks = parsePEMBlocks(input);
+    if (blocks.length === 0) { alert('No PEM blocks found'); return; }
+    var der = b64ToBytes(blocks[0].data);
+    output.value = bytesToHex(der);
+  } else if (mode === 'der2pem') {
+    var bytes = hexToBytes(input);
+    if (bytes.length === 0) { alert('Invalid hex input'); return; }
+    var b64 = bytesToB64(bytes);
+    var lines = ['-----BEGIN CERTIFICATE-----'];
+    for (var i = 0; i < b64.length; i += 64) lines.push(b64.substring(i, i + 64));
+    lines.push('-----END CERTIFICATE-----');
+    output.value = lines.join('\n');
+  } else if (mode === 'pem2pfx') {
+    var blocks = parsePEMBlocks(input);
+    if (blocks.length === 0) { alert('No PEM blocks found'); return; }
+    var pemB64 = btoa(input);
+    var lines = ['-----BEGIN PKCS12-----'];
+    for (var i = 0; i < pemB64.length; i += 64) lines.push(pemB64.substring(i, i + 64));
+    lines.push('-----END PKCS12-----');
+    lines.push(''); lines.push('// ⚠ Simulated PFX export. Use OpenSSL for actual conversion:');
+    lines.push('// openssl pkcs12 -export -in cert.pem -inkey key.pem -out cert.pfx');
+    output.value = lines.join('\n');
+  }
+}
+
+// ===== CHAIN VIEWER =====
+function viewChain() {
+  var text = document.getElementById('chainInput').value.trim();
+  if (!text) { alert('Please paste a PEM chain'); return; }
+  var blocks = parsePEMBlocks(text);
+  if (blocks.length === 0) { alert('No PEM blocks found'); return; }
+  var resultDiv = document.getElementById('chainResult');
+  var html = '';
+  for (var i = 0; i < blocks.length; i++) {
+    var type = blocks[i].type;
+    var info = extractCertInfo('-----BEGIN ' + type + '-----\n' + blocks[i].data + '\n-----END ' + type + '-----');
+    var subject = info ? info.subject : '(unable to parse)';
+    var issuer = info ? info.issuer : '';
+    var validTo = info ? formatDate(info.validTo) : '';
+    var status = '';
+    var statusClass = '';
+    if (info && info.validTo) {
+      var days = daysBetween(new Date(), info.validTo);
+      if (days > 30) { status = '✓ Valid (' + days + 'd)'; statusClass = 'text-[#22c55e]'; }
+      else if (days >= 0) { status = '⚠ Expiring (' + days + 'd)'; statusClass = 'text-[#f59e0b]'; }
+      else { status = '✗ Expired'; statusClass = 'text-[#ef4444]'; }
+    }
+    var idx = blocks.length - i;
+    html += '<div class="chain-card">' +
+      '<div class="chain-card-header" onclick="toggleChain(this)">' +
+        '<div><span class="chain-index">#' + idx + '</span><span class="text-sm font-medium">' + escHtml(subject) + '</span></div>' +
+        '<div><span class="text-xs ' + statusClass + ' mr-3">' + status + '</span><i class="fa-regular fa-chevron-down text-[#52525b] text-xs transition-transform"></i></div>' +
+      '</div>' +
+      '<div class="chain-card-body">' +
+        '<div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">' + escHtml(type) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Subject</span><span class="detail-value text-[#2dd4bf]">' + escHtml(subject) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Issuer</span><span class="detail-value">' + escHtml(issuer) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Expiry</span><span class="detail-value">' + validTo + '</span></div>' +
+        (info && info.serial ? '<div class="detail-row"><span class="detail-label">Serial</span><span class="detail-value" style="font-size:0.7rem">' + escHtml(info.serial) + '</span></div>' : '') +
+        (info && info.sans && info.sans.length > 0 ? '<div class="detail-row"><span class="detail-label">SANs</span><span class="detail-value">' + info.sans.map(function(s){ return escHtml(s); }).join(', ') + '</span></div>' : '') +
+      '</div></div>';
+  }
+  resultDiv.innerHTML = html;
+}
+
+function toggleChain(el) {
+  var body = el.nextElementSibling;
+  var icon = el.querySelector('.fa-chevron-down');
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    body.classList.add('open');
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+
+// ===== SIMULATED CHAIN HELPER =====
+function renderSimulatedChain() {
+  var certs = [
+    { subj:'CN=example.com, O=Let\'s Encrypt, C=US', iss:'CN=R3, O=Let\'s Encrypt, C=US', days:75, type:'CERTIFICATE' },
+    { subj:'CN=R3, O=Let\'s Encrypt, C=US', iss:'CN=ISRG Root X1, O=Internet Security Research Group, C=US', days:165, type:'CERTIFICATE' }
+  ];
+  var html = '';
+  for (var i = 0; i < certs.length; i++) {
+    var c = certs[i];
+    var idx = certs.length - i;
+    var statusClass = c.days > 30 ? 'text-[#22c55e]' : 'text-[#f59e0b]';
+    var status = c.days > 30 ? '✓ Valid (' + c.days + 'd)' : '⚠ Expiring (' + c.days + 'd)';
+    var now = new Date();
+    var to = new Date(now);
+    to.setDate(to.getDate() + c.days);
+    var from = new Date(now);
+    from.setDate(from.getDate() - (365 - c.days));
+    html += '<div class="chain-card">' +
+      '<div class="chain-card-header" onclick="toggleChain(this)">' +
+        '<div><span class="chain-index">#' + idx + '</span><span class="text-sm font-medium">' + escHtml(c.subj) + '</span></div>' +
+        '<div><span class="text-xs ' + statusClass + ' mr-3">' + status + '</span><i class="fa-regular fa-chevron-down text-[#52525b] text-xs transition-transform"></i></div>' +
+      '</div>' +
+      '<div class="chain-card-body">' +
+        '<div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">' + c.type + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Subject</span><span class="detail-value text-[#2dd4bf]">' + escHtml(c.subj) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Issuer</span><span class="detail-value">' + escHtml(c.iss) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Valid From</span><span class="detail-value">' + formatDate(from) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Valid Until</span><span class="detail-value">' + formatDate(to) + '</span></div>' +
+        '<div class="detail-row"><span class="detail-label">Signature</span><span class="detail-value">sha256WithRSAEncryption</span></div>' +
+        '<div class="detail-row"><span class="detail-label">SANs</span><span class="detail-value"><span class="san-tag">DNS:example.com</span><span class="san-tag">DNS:*.example.com</span></span></div>' +
+      '</div></div>';
+  }
+  document.getElementById('chainResult').innerHTML = html;
+}
+
+// ===== DEMO CHAIN =====
+function loadDemoChain() {
+  var demo =
+'-----BEGIN CERTIFICATE-----\n' +
+'MIIFBTCCAu2gAwIBAgISBHg... (Leaf certificate for example.com)\n' +
+'-----END CERTIFICATE-----\n\n' +
+'-----BEGIN CERTIFICATE-----\n' +
+'MIIFBTCCAu2gAwIBAgISBHg... (Intermediate certificate)\n' +
+'-----END CERTIFICATE-----\n\n' +
+'-----BEGIN CERTIFICATE-----\n' +
+'MIIFBTCCAu2gAwIBAgISBHg... (Root certificate)\n' +
+'-----END CERTIFICATE-----';
+  document.getElementById('chainInput').value = demo;
+  renderSimulatedChain();
+}
+
+// ===== CONVERTER MODE LABEL INIT =====
+onConvModeChange();
+
+// ===== DEMO ON LOAD =====
+checkDomain();
+</script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Click Speed Test</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f11;color:#e4e4e7;min-height:100vh}
+.card{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1.25rem}
+.card-title{font-size:0.875rem;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+.footer-link{color:#52525b;text-decoration:none;transition:color .2s}
+.footer-link:hover{color:#2dd4bf}
+.click-area{width:280px;height:280px;border-radius:50%;background:linear-gradient(135deg,rgba(45,212,191,0.15),rgba(45,212,191,0.05));border:2px solid rgba(45,212,191,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:all .15s ease;position:relative;overflow:hidden}
+.click-area:hover{border-color:rgba(45,212,191,0.6);background:linear-gradient(135deg,rgba(45,212,191,0.2),rgba(45,212,191,0.08))}
+.click-area:active{transform:scale(0.95)}
+.click-area.pulse{animation:pulse-anim .4s ease-out}
+@keyframes pulse-anim{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(45,212,191,0.4)}50%{transform:scale(1.05);box-shadow:0 0 0 20px rgba(45,212,191,0)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(45,212,191,0)}}
+.click-area.disabled{cursor:not-allowed;opacity:0.5}
+.click-area.disabled:hover{border-color:rgba(45,212,191,0.3);background:linear-gradient(135deg,rgba(45,212,191,0.15),rgba(45,212,191,0.05))}
+.timer-btn{background:#18181b;border:1px solid #27272a;color:#d4d4d8;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:500}
+.timer-btn:hover{background:#27272a;border-color:#2dd4bf;color:#2dd4bf}
+.timer-btn.active{background:rgba(45,212,191,0.1);border-color:#2dd4bf;color:#2dd4bf}
+.start-btn{background:linear-gradient(135deg,#2dd4bf,#06b6d4);color:#0f0f11;border:none;padding:0.75rem 2rem;border-radius:0.5rem;font-weight:600;font-size:1rem;cursor:pointer;transition:opacity .2s;font-family:'Inter',sans-serif}
+.start-btn:hover{opacity:0.9}
+.start-btn:active{opacity:0.8}
+.start-btn:disabled{opacity:0.4;cursor:not-allowed}
+.progress-bar{width:100%;height:6px;background:#27272a;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#2dd4bf,#06b6d4);border-radius:3px;transition:width .1s linear;width:100%}
+.stat-box{background:#18181b;border:1px solid #27272a;border-radius:0.75rem;padding:1rem;text-align:center;flex:1}
+.stat-value{font-size:2rem;font-weight:700;color:#e4e4e7}
+.stat-label{font-size:0.75rem;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem}
+.result-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:50;align-items:center;justify-content:center}
+.result-overlay.show{display:flex}
+.result-card{background:#18181b;border:1px solid #27272a;border-radius:1rem;padding:2rem;text-align:center;max-width:400px;width:90%;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.rating-badge{display:inline-block;padding:0.25rem 1rem;border-radius:9999px;font-weight:600;font-size:0.875rem;margin-top:0.5rem}
+.rating-insane{background:rgba(239,68,68,0.2);color:#ef4444}
+.rating-fast{background:rgba(45,212,191,0.2);color:#2dd4bf}
+.rating-normal{background:rgba(250,204,21,0.2);color:#facc15}
+.rating-slow{background:rgba(161,161,170,0.2);color:#a1a1aa}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #27272a;font-size:0.875rem}
+.history-item:last-child{border-bottom:none}
+.click-flash{position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(45,212,191,0.3);pointer-events:none;animation:flash-fade .4s ease-out forwards}
+@keyframes flash-fade{from{transform:scale(0.5);opacity:1}to{transform:scale(2);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="max-w-xl w-full mx-auto px-4 py-6">
+  <header class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-1 flex items-center justify-center gap-3">
+      <i class="fa-regular fa-gauge-high text-[#2dd4bf] text-2xl"></i>
+      Click Speed Test
+    </h1>
+    <p class="text-[#a1a1aa] text-sm">Measure your clicks per second</p>
+  </header>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-clock mr-2"></i>Timer</div>
+    <div class="flex gap-2 justify-center" id="timerOptions">
+      <button class="timer-btn" data-time="5">5s</button>
+      <button class="timer-btn active" data-time="10">10s</button>
+      <button class="timer-btn" data-time="30">30s</button>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-center mb-6">
+    <div class="click-area disabled" id="clickArea">
+      <div class="text-6xl font-bold text-[#2dd4bf]" id="clickCount">0</div>
+      <div class="text-xs text-[#a1a1aa] mt-2">CLICK HERE</div>
+    </div>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-title"><i class="fa-regular fa-chart-simple mr-2"></i>Stats</div>
+    <div class="flex gap-3 mb-4">
+      <div class="stat-box">
+        <div class="stat-value" id="cpsDisplay">0.00</div>
+        <div class="stat-label">CPS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="totalClicks">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="timeDisplay">0.0</div>
+        <div class="stat-label">Time Left</div>
+      </div>
+    </div>
+    <div class="progress-bar mb-4">
+      <div class="progress-fill" id="progressFill" style="width:100%"></div>
+    </div>
+    <div class="text-center">
+      <button class="start-btn" id="startBtn"><i class="fa-regular fa-play mr-2"></i>Start</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fa-regular fa-clock-rotate-left mr-2"></i>History (last 5)</div>
+    <div id="historyList">
+      <div class="text-sm text-[#a1a1aa] text-center py-2">No attempts yet</div>
+    </div>
+  </div>
+
+  <footer class="text-center mt-10 pb-6">
+    <a href="#" class="footer-link text-xs"><i class="fa-regular fa-copyright mr-1"></i>Click Speed Test - Sergi Gallart</a>
+  </footer>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-card">
+    <div class="text-5xl mb-3" id="resultIcon">&#x1F3C6;</div>
+    <h2 class="text-2xl font-bold mb-1" id="resultTitle">Time's Up!</h2>
+    <div class="text-4xl font-bold text-[#2dd4bf] mb-1" id="resultCps">0.00</div>
+    <div class="text-sm text-[#a1a1aa] mb-1">clicks per second</div>
+    <div class="text-lg font-semibold mb-2" id="resultRating"></div>
+    <div class="text-sm text-[#a1a1aa] mb-4" id="resultTotal"></div>
+    <div class="flex gap-2 justify-center">
+      <button class="start-btn" onclick="closeResult(); resetGame();"><i class="fa-regular fa-rotate-right mr-2"></i>Try Again</button>
+      <button class="timer-btn" onclick="closeResult();">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const clickArea = document.getElementById('clickArea');
+const clickCount = document.getElementById('clickCount');
+const cpsDisplay = document.getElementById('cpsDisplay');
+const totalClicks = document.getElementById('totalClicks');
+const timeDisplay = document.getElementById('timeDisplay');
+const progressFill = document.getElementById('progressFill');
+const startBtn = document.getElementById('startBtn');
+const historyList = document.getElementById('historyList');
+const resultOverlay = document.getElementById('resultOverlay');
+const timerBtns = document.querySelectorAll('.timer-btn');
+
+let selectedTime = 10;
+let timeRemaining = 10;
+let clicks = 0;
+let isRunning = false;
+let isActive = false;
+let timerInterval = null;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem('clickSpeedHistory') || '[]'); }
+  catch { return []; }
+}
+
+function saveHistory(entry) {
+  const h = loadHistory();
+  h.unshift(entry);
+  if (h.length > 5) h.length = 5;
+  localStorage.setItem('clickSpeedHistory', JSON.stringify(h));
+}
+
+function renderHistory() {
+  const h = loadHistory();
+  if (!h.length) {
+    historyList.innerHTML = '<div class="text-sm text-[#a1a1aa] text-center py-2">No attempts yet</div>';
+    return;
+  }
+  historyList.innerHTML = h.map((e, i) =>
+    '<div class="history-item">' +
+      '<span class="text-[#a1a1aa]">#' + (i + 1) + '</span>' +
+      '<span class="font-semibold text-[#2dd4bf]">' + e.cps.toFixed(1) + ' CPS</span>' +
+      '<span class="text-[#a1a1aa]">' + e.clicks + ' clicks / ' + e.time + 's</span>' +
+      '<span class="text-xs ' + getRatingClass(e.cps) + '">' + getRating(e.cps) + '</span>' +
+    '</div>'
+  ).join('');
+}
+
+function getRating(cps) { return cps >= 10 ? 'Insane' : cps >= 7 ? 'Fast' : cps >= 4 ? 'Normal' : 'Slow'; }
+function getRatingClass(cps) { return cps >= 10 ? 'text-red-400' : cps >= 7 ? 'text-[#2dd4bf]' : cps >= 4 ? 'text-yellow-400' : 'text-[#a1a1aa]'; }
+function getBadgeClass(cps) { return cps >= 10 ? 'rating-insane' : cps >= 7 ? 'rating-fast' : cps >= 4 ? 'rating-normal' : 'rating-slow'; }
+
+function updateDisplay() {
+  clickCount.textContent = clicks;
+  totalClicks.textContent = clicks;
+  if (isRunning && timeRemaining > 0) {
+    const elapsed = selectedTime - timeRemaining;
+    cpsDisplay.textContent = elapsed > 0 ? (clicks / elapsed).toFixed(2) : '0.00';
+  } else if (!isRunning && clicks > 0) {
+    cpsDisplay.textContent = (clicks / selectedTime).toFixed(2);
+  }
+  timeDisplay.textContent = Math.max(0, timeRemaining).toFixed(1);
+  progressFill.style.width = ((timeRemaining / selectedTime) * 100) + '%';
+}
+
+function startGame() {
+  if (isRunning) return;
+  clicks = 0;
+  timeRemaining = selectedTime;
+  isRunning = true;
+  isActive = true;
+  clickArea.classList.remove('disabled');
+  startBtn.disabled = true;
+  startBtn.innerHTML = '<i class="fa-regular fa-hourglass-half mr-2"></i>Running...';
+  updateDisplay();
+  timerBtns.forEach(b => b.style.pointerEvents = 'none');
+
+  const startTime = Date.now();
+  timerInterval = setInterval(function() {
+    const elapsed = (Date.now() - startTime) / 1000;
+    timeRemaining = selectedTime - elapsed;
+    updateDisplay();
+    if (timeRemaining <= 0) endGame();
+  }, 50);
+}
+
+function endGame() {
+  isRunning = false;
+  isActive = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  clickArea.classList.add('disabled');
+  startBtn.disabled = false;
+  startBtn.innerHTML = '<i class="fa-regular fa-play mr-2"></i>Start';
+  timerBtns.forEach(b => b.style.pointerEvents = '');
+
+  const cps = clicks / selectedTime;
+  cpsDisplay.textContent = cps.toFixed(2);
+
+  const rating = getRating(cps);
+  const emoji = cps >= 10 ? '\uD83D\uDD25' : cps >= 7 ? '\u26A1' : cps >= 4 ? '\uD83D\uDC4D' : '\uD83D\uDC64';
+  document.getElementById('resultIcon').textContent = emoji;
+  document.getElementById('resultCps').textContent = cps.toFixed(2) + ' CPS';
+  document.getElementById('resultTitle').textContent = rating === 'Insane' ? 'INCREDIBLE!' : rating === 'Fast' ? 'Great Job!' : rating === 'Normal' ? 'Not Bad' : 'Keep Trying!';
+  document.getElementById('resultRating').innerHTML = '<span class="rating-badge ' + getBadgeClass(cps) + '">' + rating + '</span>';
+  document.getElementById('resultTotal').textContent = clicks + ' clicks in ' + selectedTime + 's';
+  resultOverlay.classList.add('show');
+
+  saveHistory({ cps: parseFloat(cps.toFixed(2)), clicks: clicks, time: selectedTime, date: new Date().toISOString() });
+  renderHistory();
+}
+
+function closeResult() { resultOverlay.classList.remove('show'); }
+
+function resetGame() {
+  clicks = 0;
+  timeRemaining = selectedTime;
+  isRunning = false;
+  isActive = false;
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  clickArea.classList.add('disabled');
+  startBtn.disabled = false;
+  startBtn.innerHTML = '<i class="fa-regular fa-play mr-2"></i>Start';
+  timerBtns.forEach(b => b.style.pointerEvents = '');
+  cpsDisplay.textContent = '0.00';
+  updateDisplay();
+}
+
+clickArea.addEventListener('click', function(e) {
+  if (!isActive) return;
+  clicks++;
+  updateDisplay();
+
+  clickArea.classList.remove('pulse');
+  void clickArea.offsetWidth;
+  clickArea.classList.add('pulse');
+
+  var flash = document.createElement('div');
+  flash.className = 'click-flash';
+  var rect = clickArea.getBoundingClientRect();
+  flash.style.left = (e.clientX - rect.left - 20) + 'px';
+  flash.style.top = (e.clientY - rect.top - 20) + 'px';
+  clickArea.appendChild(flash);
+  setTimeout(function() { flash.remove(); }, 400);
+});
+
+timerBtns.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    if (isRunning) return;
+    timerBtns.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    selectedTime = parseInt(btn.dataset.time);
+    timeRemaining = selectedTime;
+    resetGame();
+  });
+});
+
+startBtn.addEventListener('click', startGame);
+renderHistory();
+</script>
+</body>
+</html>
