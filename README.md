@@ -83,4 +83,4 @@ Totes les eines funcionen 100% al client, sense enviar dades a cap servidor.
 
 ---
 
-*Projectes realitzats com a parte del cicle formatiu ASIX.*
+*Projectes realitzats com a part del cicle formatiu ASIX.*
